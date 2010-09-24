@@ -26,11 +26,19 @@ class Editor(object):
         
         self.window.add(self.view)
 
-        if filename:        
+        self.window.show_all()
+        
+        self.load_file(filename)
+
+    def load_file(self, filename):
+        if filename:
+            lm = gtksourceview2.language_manager_get_default()
+            lang = lm.guess_language(filename, None)
+            
+            self.buffer.set_language(lang)
+            self.buffer.set_text(open(filename).read().decode('utf-8'))    
             self.window.set_title(filename)
         
-        self.window.show_all()
-
     def on_destroy(self, *args):
         self.signals.editor_closed.emit(self)
     
