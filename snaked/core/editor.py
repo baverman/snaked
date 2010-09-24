@@ -18,13 +18,17 @@ class Editor(object):
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.connect('delete-event', self.on_delete_event)
         self.window.connect('destroy', self.on_destroy)
-        
+
+        scrolled_window = gtk.ScrolledWindow()
+        scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
+        self.window.add(scrolled_window)
+                
         self.buffer = gtksourceview2.Buffer()
         self.view = gtksourceview2.View()
         
         self.view.props.buffer = self.buffer
         
-        self.window.add(self.view)
+        scrolled_window.add(self.view)
 
         self.window.show_all()
         
