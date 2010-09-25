@@ -4,9 +4,12 @@ import pango
 
 from gsignals import connect_all
 
+from ..util import save_file
+
 from .signals import EditorSignals
 from .prefs import Preferences, LangPreferences
 from .shortcuts import ShortcutManager, ShortcutActivator
+
 
 class Editor(object):
     """
@@ -17,6 +20,8 @@ class Editor(object):
     
     def __init__(self):    
         self.signals = EditorSignals()
+        
+        self.uri = None
         
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.connect('delete-event', self.on_delete_event)
@@ -38,6 +43,7 @@ class Editor(object):
 
     def init_shortcuts(self, manager):
         manager.bind(self.activator, 'close-window', self.close)
+        manager.bind(self.activator, 'save', self.save)
 
     def load_file(self, filename):
         self.uri = filename
@@ -58,7 +64,16 @@ class Editor(object):
     
     def close(self):
         self.window.destroy()
+        
+    def save(self):
+        if self.uri:
+            save_file(self.uri, self.buffer.get_text(*self.buffer.get_bounds()), 'utf-8')
 
+    @staticmethod
+    def register_shortcuts(manager):
+        manager.add('close-window', '<ctrl>w', 'Window', 'Closes window')
+        manager.add('save', '<ctrl>s', 'File', 'Saves file')
+        
         
 class EditorManager(object):
     """
@@ -84,9 +99,9 @@ class EditorManager(object):
     
     def init_shortcut_manager(self):
         self.shortcuts = ShortcutManager()
-        self.shortcuts.add('close-window', '<ctrl>w', 'Window', 'Closes window')
         self.shortcuts.add('quit', '<ctrl>q', 'Application', 'Quit')        
-    
+        Editor.register_shortcuts(self.shortcuts)
+        
     def open(self, filename):
         editor = Editor()
         self.editors.append(editor)
