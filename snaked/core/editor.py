@@ -12,7 +12,7 @@ class Editor(object):
     Editor can be both standalone window and embedded into tab. 
     """
     
-    def __init__(self, filename):    
+    def __init__(self):    
         self.signals = EditorSignals()
         
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
@@ -31,17 +31,14 @@ class Editor(object):
         scrolled_window.add(self.view)
 
         self.window.show_all()
-        
-        self.load_file(filename)
 
     def load_file(self, filename):
-        if filename:
-            lm = gtksourceview2.language_manager_get_default()
-            lang = lm.guess_language(filename, None)
-            
-            self.buffer.set_language(lang)
-            self.buffer.set_text(open(filename).read().decode('utf-8'))    
-            self.window.set_title(filename)
+        self.uri = filename
+        
+        self.buffer.set_text(open(filename).read().decode('utf-8'))
+        self.buffer.place_cursor(self.buffer.get_start_iter())
+        
+        self.window.set_title(filename)
         
     def on_destroy(self, *args):
         self.signals.editor_closed.emit(self)
@@ -60,15 +57,32 @@ class EditorManager(object):
     
     def __init__(self):
         self.editors = []
+        self.style_manager = gtksourceview2.style_scheme_manager_get_default()
+        self.lang_manager = gtksourceview2.language_manager_get_default()
         
     def open(self, filename):
-        editor = Editor(filename)
+        editor = Editor()
         self.editors.append(editor)
         connect_all(self, editor.signals)
+        
+        self.set_editor_lang(editor, filename)
+        self.set_editor_style(editor)
+        
+        if filename:
+            editor.load_file(filename)
+        
         return editor
     
+    def set_editor_lang(self, editor, filename):
+        lang = self.lang_manager.guess_language(filename, None)
+        editor.buffer.set_language(lang)
+        
+    def set_editor_style(self, editor):
+        style_scheme = self.style_manager.get_scheme('babymate')
+        editor.buffer.set_style_scheme(style_scheme)
+    
     @EditorSignals.editor_closed(idle=True)
-    def editor_closed(self, sender, editor):
+    def on_editor_closed(self, sender, editor):
         self.editors.remove(editor)
         if not self.editors:
             gtk.main_quit()
