@@ -1,5 +1,6 @@
 import gtk
 import gtksourceview2
+import pango
 
 from gsignals import connect_all
 
@@ -24,10 +25,9 @@ class Editor(object):
         self.window.add(scrolled_window)
                 
         self.buffer = gtksourceview2.Buffer()
+        
         self.view = gtksourceview2.View()
-        
-        self.view.props.buffer = self.buffer
-        
+        self.view.set_buffer(self.buffer)
         scrolled_window.add(self.view)
 
         self.window.show_all()
@@ -65,21 +65,22 @@ class EditorManager(object):
         self.editors.append(editor)
         connect_all(self, editor.signals)
         
-        self.set_editor_lang(editor, filename)
-        self.set_editor_style(editor)
+        self.set_editor_prefs(editor, filename)
         
         if filename:
             editor.load_file(filename)
         
         return editor
     
-    def set_editor_lang(self, editor, filename):
+    def set_editor_prefs(self, editor, filename):
         lang = self.lang_manager.guess_language(filename, None)
         editor.buffer.set_language(lang)
         
-    def set_editor_style(self, editor):
         style_scheme = self.style_manager.get_scheme('babymate')
         editor.buffer.set_style_scheme(style_scheme)
+        
+        font = pango.FontDescription('Monospace 11')
+        editor.view.modify_font(font)
     
     @EditorSignals.editor_closed(idle=True)
     def on_editor_closed(self, sender, editor):
