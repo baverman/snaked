@@ -4,7 +4,7 @@ import pango
 
 from gsignals import connect_all
 
-from ..util import save_file
+from ..util import save_file, connect
 
 from .signals import EditorSignals
 from .prefs import Preferences, LangPreferences
@@ -34,6 +34,8 @@ class Editor(object):
         self.window.add(scrolled_window)
                 
         self.buffer = gtksourceview2.Buffer()
+        self.on_modified_changed_handler = connect(
+            self.buffer, 'modified-changed', self, 'on_modified_changed', idle=True) 
         
         self.view = gtksourceview2.View()
         self.view.set_buffer(self.buffer)
@@ -45,16 +47,26 @@ class Editor(object):
         manager.bind(self.activator, 'close-window', self.close)
         manager.bind(self.activator, 'save', self.save)
 
+    def update_title(self):
+        modified = '*' if self.buffer.get_modified() else ''
+        title = self.uri if self.uri else 'Unknown'
+        self.window.set_title(modified + title)
+
     def load_file(self, filename):
         self.uri = filename
         
+        self.on_modified_changed_handler.block()
         self.buffer.begin_not_undoable_action()
+        
         self.buffer.set_text(open(filename).read().decode('utf-8'))
+        self.buffer.set_modified(False)
+        
         self.buffer.end_not_undoable_action()
+        self.on_modified_changed_handler.unblock()
         
         self.buffer.place_cursor(self.buffer.get_start_iter())
         
-        self.window.set_title(filename)
+        self.update_title()
         
     def on_destroy(self, *args):
         self.signals.editor_closed.emit(self)
@@ -62,12 +74,16 @@ class Editor(object):
     def on_delete_event(self, *args):
         return False
     
+    def on_modified_changed(self, *args):
+        self.update_title()
+            
     def close(self):
         self.window.destroy()
         
     def save(self):
         if self.uri:
             save_file(self.uri, self.buffer.get_text(*self.buffer.get_bounds()), 'utf-8')
+            self.buffer.set_modified(False)
 
     @staticmethod
     def register_shortcuts(manager):
