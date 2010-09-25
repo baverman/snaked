@@ -1,6 +1,25 @@
 import gtk
 
 class ShortcutManager(object):
+    def __init__(self):
+        self.shortcuts = {}
+        
+    def add(self, name, accel, category, desc):
+        self.shortcuts[name] = Shortcut(name, accel, category, desc)
+
+    def bind(self, activator, name, callback):
+        activator.bind(self.shortcuts[name].accel, callback)
+                
+
+class Shortcut(object):
+    def __init__(self, name, accel, category, desc):
+        self.name = name
+        self.accel = accel
+        self.category = category
+        self.desc = desc
+
+
+class ShortcutActivator(object):
     def __init__(self, window):
         self.window = window
         self.accel_group = gtk.AccelGroup()
@@ -8,7 +27,7 @@ class ShortcutManager(object):
         
         self.shortcuts = {}
         
-    def add_shortcut(self, name, accel, category, desc, callback):
+    def bind(self, accel, callback):
         key, modifier = gtk.accelerator_parse(accel)
         self.shortcuts[(key, modifier)] = callback
         

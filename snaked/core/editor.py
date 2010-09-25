@@ -6,7 +6,7 @@ from gsignals import connect_all
 
 from .signals import EditorSignals
 from .prefs import Preferences, LangPreferences
-from .shortcuts import ShortcutManager
+from .shortcuts import ShortcutManager, ShortcutActivator
 
 class Editor(object):
     """
@@ -22,7 +22,7 @@ class Editor(object):
         self.window.connect('delete-event', self.on_delete_event)
         self.window.connect('destroy', self.on_destroy)
 
-        self.shortcuts = ShortcutManager(self.window)
+        self.activator = ShortcutActivator(self.window)
         
         scrolled_window = gtk.ScrolledWindow()
         scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
@@ -36,8 +36,8 @@ class Editor(object):
 
         self.window.show_all()
 
-    def init_shortcuts(self):
-        self.shortcuts.add_shortcut('close-window', '<ctrl>w', 'Window', 'Closes window', self.close)
+    def init_shortcuts(self, manager):
+        manager.bind(self.activator, 'close-window', self.close)
 
     def load_file(self, filename):
         self.uri = filename
@@ -69,7 +69,9 @@ class EditorManager(object):
         self.editors = []
         self.style_manager = gtksourceview2.style_scheme_manager_get_default()
         self.lang_manager = gtksourceview2.language_manager_get_default()
-
+        
+        self.init_shortcut_manager()
+        
         self.prefs = Preferences()
         self.lang_prefs = {}
 
@@ -79,6 +81,11 @@ class EditorManager(object):
         except KeyError:
             self.lang_prefs[lang_id] = LangPreferences(lang_id, self.prefs)
             return self.lang_prefs[lang_id]
+    
+    def init_shortcut_manager(self):
+        self.shortcuts = ShortcutManager()
+        self.shortcuts.add('close-window', '<ctrl>w', 'Window', 'Closes window')
+        self.shortcuts.add('quit', '<ctrl>q', 'Application', 'Quit')        
     
     def open(self, filename):
         editor = Editor()
@@ -122,8 +129,8 @@ class EditorManager(object):
             editor.view.set_show_right_margin(False)
 
     def set_editor_shortcuts(self, editor):
-        editor.init_shortcuts()
-        editor.shortcuts.add_shortcut('quit', '<ctrl>q', 'Window', 'Quit from editor', self.quit)        
+        editor.init_shortcuts(self.shortcuts)
+        self.shortcuts.bind(editor.activator, 'quit', self.quit)
     
     @EditorSignals.editor_closed(idle=True)
     def on_editor_closed(self, sender, editor):
