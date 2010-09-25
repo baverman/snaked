@@ -94,6 +94,22 @@ class EditorManager(object):
         
         font = pango.FontDescription(prefs['font'])
         editor.view.modify_font(font)
+        
+        editor.view.set_auto_indent(prefs['auto-indent'])
+        editor.view.set_indent_on_tab(prefs['indent-on-tab'])
+        editor.view.set_insert_spaces_instead_of_tabs(not prefs['use-tabs'])
+        editor.view.set_smart_home_end(prefs['smart-home-end'])
+        editor.view.set_highlight_current_line(prefs['highlight-current-line'])
+        editor.view.set_show_line_numbers(prefs['show-line-numbers'])
+        editor.view.set_tab_width(prefs['tab-width'])
+        editor.view.set_draw_spaces(prefs['show-whitespace'])
+        
+        right_margin = prefs['right-margin']
+        if right_margin:
+            editor.view.set_right_margin_position(right_margin)
+            editor.view.set_show_right_margin(True)
+        else:
+            editor.view.set_show_right_margin(False)
     
     @EditorSignals.editor_closed(idle=True)
     def on_editor_closed(self, sender, editor):

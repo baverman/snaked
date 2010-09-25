@@ -6,6 +6,11 @@ default_prefs = {
     'show-line-numbers': True,
     'wrap-text': False,
     'style': 'babymate',
+    'auto-indent': True,
+    'indent-on-tab': True,
+    'smart-home-end': True,
+    'highlight-current-line': True,
+    'show-whitespace': False,
 }
 
 lang_default_prefs = {
