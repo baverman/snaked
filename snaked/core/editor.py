@@ -5,6 +5,7 @@ import pango
 from gsignals import connect_all
 
 from .signals import EditorSignals
+from .prefs import Preferences, LangPreferences
 
 class Editor(object):
     """
@@ -59,7 +60,17 @@ class EditorManager(object):
         self.editors = []
         self.style_manager = gtksourceview2.style_scheme_manager_get_default()
         self.lang_manager = gtksourceview2.language_manager_get_default()
-        
+
+        self.prefs = Preferences()
+        self.lang_prefs = {}
+
+    def get_lang_prefs(self, lang_id):
+        try:
+            return self.lang_prefs[lang_id]
+        except KeyError:
+            self.lang_prefs[lang_id] = LangPreferences(lang_id, self.prefs)
+            return self.lang_prefs[lang_id]
+    
     def open(self, filename):
         editor = Editor()
         self.editors.append(editor)
@@ -76,10 +87,12 @@ class EditorManager(object):
         lang = self.lang_manager.guess_language(filename, None)
         editor.buffer.set_language(lang)
         
-        style_scheme = self.style_manager.get_scheme('babymate')
+        prefs = self.get_lang_prefs(lang.get_id())
+        
+        style_scheme = self.style_manager.get_scheme(prefs['style'])
         editor.buffer.set_style_scheme(style_scheme)
         
-        font = pango.FontDescription('Monospace 11')
+        font = pango.FontDescription(prefs['font'])
         editor.view.modify_font(font)
     
     @EditorSignals.editor_closed(idle=True)
