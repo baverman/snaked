@@ -6,6 +6,7 @@ from gsignals import connect_all
 
 from .signals import EditorSignals
 from .prefs import Preferences, LangPreferences
+from .shortcuts import ShortcutManager
 
 class Editor(object):
     """
@@ -21,6 +22,8 @@ class Editor(object):
         self.window.connect('delete-event', self.on_delete_event)
         self.window.connect('destroy', self.on_destroy)
 
+        self.shortcuts = ShortcutManager(self.window)
+        
         scrolled_window = gtk.ScrolledWindow()
         scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
         self.window.add(scrolled_window)
@@ -33,10 +36,16 @@ class Editor(object):
 
         self.window.show_all()
 
+    def init_shortcuts(self):
+        self.shortcuts.add_shortcut('close-window', '<ctrl>w', 'Window', 'Closes window', self.close)
+
     def load_file(self, filename):
         self.uri = filename
         
+        self.buffer.begin_not_undoable_action()
         self.buffer.set_text(open(filename).read().decode('utf-8'))
+        self.buffer.end_not_undoable_action()
+        
         self.buffer.place_cursor(self.buffer.get_start_iter())
         
         self.window.set_title(filename)
@@ -48,7 +57,7 @@ class Editor(object):
         return False
     
     def close(self):
-        del self.window
+        self.window.destroy()
 
         
 class EditorManager(object):
@@ -77,6 +86,7 @@ class EditorManager(object):
         connect_all(self, editor.signals)
         
         self.set_editor_prefs(editor, filename)
+        self.set_editor_shortcuts(editor)
         
         if filename:
             editor.load_file(filename)
@@ -110,9 +120,16 @@ class EditorManager(object):
             editor.view.set_show_right_margin(True)
         else:
             editor.view.set_show_right_margin(False)
+
+    def set_editor_shortcuts(self, editor):
+        editor.init_shortcuts()
+        editor.shortcuts.add_shortcut('quit', '<ctrl>q', 'Window', 'Quit from editor', self.quit)        
     
     @EditorSignals.editor_closed(idle=True)
     def on_editor_closed(self, sender, editor):
         self.editors.remove(editor)
         if not self.editors:
             gtk.main_quit()
+
+    def quit(self):
+        [e.close() for e in self.editors]
