@@ -6,8 +6,10 @@ from .editor import EditorManager
 def run():
     manager = EditorManager()
 
-    filename = sys.argv[1] if len(sys.argv) > 1 else None
-        
-    manager.open(filename)
+    if len(sys.argv) > 1:
+        for f in sys.argv[1:]:    
+            manager.open(f)
+    else:
+        manager.open(None)
     
     gtk.main()

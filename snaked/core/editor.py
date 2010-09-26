@@ -4,7 +4,7 @@ import pango
 
 from gsignals import connect_all
 
-from ..util import save_file, connect, idle
+from ..util import save_file, connect, idle, get_project_root
 
 from .signals import EditorSignals
 from .prefs import Preferences, LangPreferences
@@ -102,6 +102,10 @@ class Editor(object):
         manager.add('close-window', '<ctrl>w', 'Window', 'Closes window')
         manager.add('save', '<ctrl>s', 'File', 'Saves file')
         manager.add('delete-line', '<ctrl>d', 'Editor', 'Deletes current line')
+
+    @property
+    def project_root(self):
+        return get_project_root(self.uri)
         
         
 class EditorManager(object):
@@ -153,7 +157,10 @@ class EditorManager(object):
         lang = self.lang_manager.guess_language(filename, None)
         editor.buffer.set_language(lang)
         
-        prefs = self.get_lang_prefs(lang.get_id())
+        if lang:
+            prefs = self.get_lang_prefs(lang.get_id())
+        else:
+            prefs = self.prefs
         
         style_scheme = self.style_manager.get_scheme(prefs['style'])
         editor.buffer.set_style_scheme(style_scheme)

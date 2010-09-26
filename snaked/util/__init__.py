@@ -1,6 +1,9 @@
+import os
+from os.path import join, dirname, realpath, abspath, exists
+
 import gobject
 import gtk
-import os, os.path
+
 from gsignals.signals import Handler
 from gsignals import weak_connect
 
@@ -13,7 +16,7 @@ def idle(callable, *args, **kwargs):
     return gobject.idle_add(idle_callback, callable, (args, kwargs))
 
 def save_file(filename, data, encoding):
-    tmpfilename = os.path.realpath(filename) + '.bak'
+    tmpfilename = realpath(filename) + '.bak'
     
     f = open(tmpfilename, 'w')
     f.write(data.encode(encoding))
@@ -26,9 +29,23 @@ def connect(sender, signal, obj, attr, idle=False, after=False):
         sender, signal, obj, attr, idle=idle, after=after), sender, None, None)
 
 def join_to_file_dir(filename, *args):
-    return os.path.join(os.path.dirname(filename), *args)
+    return join(dirname(filename), *args)
 
-
+def get_project_root(filename):
+    path = dirname(abspath(filename))
+    magic_pathes = ['.git', '.hg', '.bzr', '.ropeproject', '.snaked_project']
+    
+    while True:
+        if any(exists(join(path, p)) for p in magic_pathes):
+            return path
+    
+        parent = dirname(path)
+        if parent == path:
+            return None
+    
+        path = parent
+    
+    
 class BuilderAware(object):
     def __init__(self, glade_file):
         self.gtk_builder = gtk.Builder()
