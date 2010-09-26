@@ -1,7 +1,11 @@
+import os.path
+from snaked.util import idle
+
 class Plugin(object):
         
     def __init__(self, editor):
         self.editor = editor
+        idle(self.register_project)
     
     @staticmethod
     def register_shortcuts(manager):
@@ -27,3 +31,13 @@ class Plugin(object):
         
     def activate(self):
         self.gui.show(self.editor)
+        
+    def register_project(self):
+        import settings
+        
+        root = self.editor.project_root
+        if not root:
+            root = os.path.dirname(self.editor.uri)
+        
+        if root not in settings.recent_projects:            
+            settings.recent_projects.append(root)                
