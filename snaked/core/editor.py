@@ -4,12 +4,12 @@ import pango
 
 from gsignals import connect_all
 
-from ..util import save_file, connect
+from ..util import save_file, connect, idle
 
 from .signals import EditorSignals
 from .prefs import Preferences, LangPreferences
 from .shortcuts import ShortcutManager, ShortcutActivator
-
+from .plugins import PluginManager
 
 class Editor(object):
     """
@@ -40,8 +40,6 @@ class Editor(object):
         self.view = gtksourceview2.View()
         self.view.set_buffer(self.buffer)
         scrolled_window.add(self.view)
-
-        self.window.show_all()
 
     def init_shortcuts(self, manager):
         manager.bind(self.activator, 'close-window', self.close)
@@ -115,6 +113,7 @@ class EditorManager(object):
         self.editors = []
         self.style_manager = gtksourceview2.style_scheme_manager_get_default()
         self.lang_manager = gtksourceview2.language_manager_get_default()
+        self.plugin_manager = PluginManager()
         
         self.init_shortcut_manager()
         
@@ -132,17 +131,21 @@ class EditorManager(object):
         self.shortcuts = ShortcutManager()
         self.shortcuts.add('quit', '<ctrl>q', 'Application', 'Quit')        
         Editor.register_shortcuts(self.shortcuts)
+        self.plugin_manager.register_shortcuts(self.shortcuts)
         
     def open(self, filename):
         editor = Editor()
         self.editors.append(editor)
         connect_all(self, editor.signals)
         
-        self.set_editor_prefs(editor, filename)
-        self.set_editor_shortcuts(editor)
+        idle(self.set_editor_prefs, editor, filename)
+        idle(self.set_editor_shortcuts, editor)
+        idle(self.load_editor_plugins, editor)
+        
+        editor.window.show_all()
         
         if filename:
-            editor.load_file(filename)
+            idle(editor.load_file, filename)
         
         return editor
     
@@ -177,6 +180,13 @@ class EditorManager(object):
     def set_editor_shortcuts(self, editor):
         editor.init_shortcuts(self.shortcuts)
         self.shortcuts.bind(editor.activator, 'quit', self.quit)
+
+    def load_editor_plugins(self, editor):
+        editor.plugins = []
+        for pcls in self.plugin_manager.plugins:
+            plugin = pcls(editor)
+            plugin.init_shortcuts(self.shortcuts)
+            editor.plugins.append(plugin)
     
     @EditorSignals.editor_closed(idle=True)
     def on_editor_closed(self, sender, editor):
