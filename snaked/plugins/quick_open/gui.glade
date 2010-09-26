@@ -32,7 +32,8 @@
           <object class="GtkScrolledWindow" id="scrolledwindow1">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="hscrollbar_policy">automatic</property>
+            <property name="border_width">2</property>
+            <property name="hscrollbar_policy">never</property>
             <property name="vscrollbar_policy">automatic</property>
             <child>
               <object class="GtkTreeView" id="filelist_tree">
