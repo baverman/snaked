@@ -4,12 +4,10 @@ import gobject
 
 
 class RopeCompletionProvider(gobject.GObject, CompletionProvider):
-    __gtype_name__ = 'RopeCompletionProvider'
-    
     def __init__(self, editor):
         gobject.GObject.__init__(self)
         self.editor = editor
-
+    
     def do_get_name(self):
         return 'python'
                 
