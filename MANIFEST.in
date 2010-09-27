@@ -1,0 +1,2 @@
+recursive-include snaked *.glade
+include README.rst
