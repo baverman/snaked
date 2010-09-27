@@ -1,8 +1,20 @@
-from gtksourceview2 import CompletionProvider, CompletionItem, completion_item_new_from_stock
+from gtksourceview2 import CompletionProvider, CompletionProposal
 from gtksourceview2 import COMPLETION_ACTIVATION_USER_REQUESTED
 import gobject
 
 
+class Proposal(gobject.GObject, CompletionProposal):
+    def __init__(self, proposal):
+        gobject.GObject.__init__(self)
+        self.proposal = proposal
+        
+    def do_get_markup(self):
+        return self.proposal.name
+
+    def do_get_info(self):
+        return ''
+                
+                
 class RopeCompletionProvider(gobject.GObject, CompletionProvider):
     def __init__(self, editor):
         gobject.GObject.__init__(self)
@@ -17,8 +29,8 @@ class RopeCompletionProvider(gobject.GObject, CompletionProvider):
     def do_set_priority(self):
         pass
 
-    def do_match(self, context):
-        return context.get_activation() == COMPLETION_ACTIVATION_USER_REQUESTED 
+    def do_get_activation(self):
+        return COMPLETION_ACTIVATION_USER_REQUESTED 
 
     def do_populate(self, context):
         project = self.editor.project
@@ -35,10 +47,7 @@ class RopeCompletionProvider(gobject.GObject, CompletionProvider):
             traceback.print_exc() 
             return
 
-        props = []
-        for p in proposals:
-            props.append(completion_item_new_from_stock(p.name, p.name, 'About', ''))
-        
-        context.add_proposals(self, props, True)
+        context.add_proposals(self, [Proposal(p) for p in proposals], True)
         
 gobject.type_register(RopeCompletionProvider)
+gobject.type_register(Proposal)
