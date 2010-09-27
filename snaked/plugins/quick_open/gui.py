@@ -66,16 +66,20 @@ class QuickOpenDialog(BuilderAware):
         current_search = object()
         self.current_search = current_search
         
+        already_matched = {}
         i = 0
-        for p in searcher.search(self.get_current_root(), '', search):
-            if self.current_search is not current_search:
-                return
-            
-            self.filelist.append(p)
-            
-            if i % 10 == 0:
-                refresh_gui()
         
+        for m in (searcher.name_match, searcher.path_match, searcher.fuzzy_match):
+            for p in searcher.search(self.get_current_root(), '', m(search), already_matched):
+                if self.current_search is not current_search:
+                    return
+                    
+                already_matched[p] = True            
+                self.filelist.append(p)
+                
+                if i % 10 == 0:
+                    refresh_gui()
+
         self.filelist_tree.columns_autosize()
 
     def on_search_entry_changed(self, *args):
