@@ -8,11 +8,11 @@ class Proposal(gobject.GObject, CompletionProposal):
         gobject.GObject.__init__(self)
         self.proposal = proposal
         
-    def do_get_markup(self):
+    def do_get_label(self):
         return self.proposal.name
 
-    def do_get_info(self):
-        return ''
+    def do_get_text(self):
+        return self.proposal.name
                 
                 
 class RopeCompletionProvider(gobject.GObject, CompletionProvider):
