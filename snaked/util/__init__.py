@@ -45,6 +45,10 @@ def get_project_root(filename):
     
         path = parent
     
+def open_mime(filename):
+    import subprocess
+    subprocess.Popen(['/usr/bin/env', 'xdg-open', filename]).poll()
+
     
 class BuilderAware(object):
     def __init__(self, glade_file):

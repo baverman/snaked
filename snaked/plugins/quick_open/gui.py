@@ -1,9 +1,11 @@
 import os.path
+import weakref
 
-from snaked.util import join_to_file_dir, BuilderAware
+from snaked.util import join_to_file_dir, BuilderAware, open_mime
 from snaked.core.shortcuts import ShortcutActivator
 
 import settings
+import searcher
 
 class QuickOpenDialog(BuilderAware):
     def __init__(self):
@@ -12,8 +14,12 @@ class QuickOpenDialog(BuilderAware):
         self.shortcuts.bind('Escape', self.hide)
         self.shortcuts.bind('<alt>Up', self.project_up)
         self.shortcuts.bind('<alt>Down', self.project_down)
+        self.shortcuts.bind('Return', self.open_file)
+        self.shortcuts.bind('<ctrl>Return', self.open_mime)
         
     def show(self, editor):
+        self.editor = weakref.ref(editor)
+        
         root = editor.project_root
         if not root:
             root = os.path.dirname(editor.uri)
@@ -50,3 +56,34 @@ class QuickOpenDialog(BuilderAware):
         
     def project_down(self):
         pass
+
+    def get_current_root(self):
+        return self.projectlist[self.projects_cbox.get_active()][0]
+    
+    def fill_filelist(self, search):
+        self.filelist.clear()
+        
+        for p in searcher.search(self.get_current_root(), '', search):
+            self.filelist.append(p)
+
+    def on_search_entry_changed(self, *args):
+        self.fill_filelist(self.search_entry.get_text())
+        
+    def get_selected_file(self):
+        (model, iter) = self.filelist_tree.get_selection().get_selected()
+        if iter:
+            return os.path.join(self.get_current_root(), *self.filelist.get(iter, 1, 0))
+        else:
+            return None
+    
+    def open_file(self):
+        fname = self.get_selected_file()
+        if fname:
+            self.hide()
+            print self.editor().request_to_open_file(fname)
+        
+    def open_mime(self):
+        fname = self.get_selected_file()
+        if fname:
+            self.hide()
+            open_mime(fname)

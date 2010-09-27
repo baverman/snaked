@@ -106,7 +106,9 @@ class Editor(object):
     @property
     def project_root(self):
         return get_project_root(self.uri)
-        
+
+    def request_to_open_file(self, filename):        
+        return self.signals.request_to_open_file.emit(filename)
         
 class EditorManager(object):
     """
@@ -201,5 +203,10 @@ class EditorManager(object):
         if not self.editors:
             gtk.main_quit()
 
+    @EditorSignals.request_to_open_file
+    def on_request_to_open_file(self, sender, filename):
+        e = self.open(filename)
+        return e        
+        
     def quit(self):
         [e.close() for e in self.editors]
