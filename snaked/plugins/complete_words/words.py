@@ -14,7 +14,8 @@ def process(filename, data):
         except KeyError:
             result[w] = 1
 
-    words[filename] = result
+    for w, c in result.iteritems():
+        words.setdefault(w, {})[filename] = c
     
 def add_job(filename, data):
     if filename in current_jobs:

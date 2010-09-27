@@ -93,10 +93,9 @@ class Plugin(object):
             return None
         
         result = []
-        for f, word_list in words.words.iteritems():
-            for word, count in word_list.iteritems():
-                if word != string and word.startswith(string):
-                    result.append((word, count))
+        for word, files in words.words.iteritems():
+            if word != string and word.startswith(string):
+                result.append((word, sum(files.values())))
                 
         result.sort(key=lambda r: r[1], reverse=True)
         
