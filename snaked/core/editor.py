@@ -121,6 +121,11 @@ class Editor(object):
     @property
     def cursor(self):
         return self.buffer.get_iter_at_mark(self.buffer.get_insert())
+
+    @property
+    def text(self):
+        return self.buffer.get_text(*self.buffer.get_bounds())
+        
         
 class EditorManager(object):
     """
