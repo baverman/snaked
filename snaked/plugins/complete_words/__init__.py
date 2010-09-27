@@ -9,9 +9,11 @@ class Plugin(object):
         self.editor = editor
         connect_all(self, buffer=editor.buffer)
         
-        self.update_words = True
+        self.update_words = False
         self.update_words_source_id = timeout_add(3000, self.do_update_words)
-
+        
+        idle(self.add_update_job)
+        
         self.start_word = None
         self.start_offset = None
     
@@ -21,13 +23,16 @@ class Plugin(object):
         
     def init_shortcuts(self, manager):
         manager.bind(self.editor.activator, 'complete-word', self.cycle)
+    
+    def add_update_job(self):
+        import words
+        words.add_job(self.editor.uri,
+            self.editor.buffer.get_text(*self.editor.buffer.get_bounds()))
         
     def do_update_words(self):
         if self.update_words:
             self.update_words = False
-            import words
-            idle(words.add_job, self.editor.uri,
-                self.editor.buffer.get_text(*self.editor.buffer.get_bounds()))
+            self.add_update_job()
         
         return True
         
