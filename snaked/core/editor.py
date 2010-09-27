@@ -48,7 +48,15 @@ class Editor(object):
 
     def update_title(self):
         modified = '*' if self.buffer.get_modified() else ''
-        title = self.uri if self.uri else 'Unknown'
+        
+        if self.uri:
+            title = self.signals.update_title.emit()
+
+            if not title:
+                title = self.uri
+        else:
+            title = 'Unknown'
+                        
         self.window.set_title(modified + title)
 
     def load_file(self, filename):
@@ -194,7 +202,10 @@ class EditorManager(object):
         editor.plugins = []
         for pcls in self.plugin_manager.plugins:
             plugin = pcls(editor)
-            plugin.init_shortcuts(self.shortcuts)
+            
+            if hasattr(plugin, 'init_shortcuts'):
+                plugin.init_shortcuts(self.shortcuts)
+            
             editor.plugins.append(plugin)
     
     @EditorSignals.editor_closed(idle=True)

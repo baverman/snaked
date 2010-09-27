@@ -92,7 +92,7 @@ class QuickOpenDialog(BuilderAware):
         fname = self.get_selected_file()
         if fname:
             self.hide()
-            print self.editor().request_to_open_file(fname)
+            self.editor().request_to_open_file(fname)
         
     def open_mime(self):
         fname = self.get_selected_file()

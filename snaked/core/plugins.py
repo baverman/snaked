@@ -27,7 +27,7 @@ def get_plugin(plugin):
 
 class PluginManager(object):
     def __init__(self):
-        self.enabled_plugins = ['quick_open']
+        self.enabled_plugins = ['quick_open', 'python']
         self.registered_plugins = {}
         
     def get_plugin(self, name):
@@ -44,4 +44,5 @@ class PluginManager(object):
     
     def register_shortcuts(self, manager):
         for p in self.plugins:
-            p.register_shortcuts(manager)
+            if hasattr(p, 'register_shortcuts'):
+                p.register_shortcuts(manager)
