@@ -28,4 +28,24 @@ Goals
 
 - Flexible plugin system based on standard python packaging practices.
 
-- Handling all shortcuts in native (Russian for example) keyboard layouts. 
+
+Current status
+--------------
+
+I use Snaked for all my python development tasks. Following features are implemented.
+
+- Quick open on ``<ctrl><alt>r``.
+- Goto python definition on ``F3``.
+- Complete words on ``<alt>slash``.
+- Pretty title for python modules.
+
+
+Todo
+----
+
+Features to implement in nearest time (day or two):
+
+- Python code completion.
+- Smart select (word -> quotes -> line -> block) with one key.
+- Sessions.
+- Tabs!
