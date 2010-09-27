@@ -117,6 +117,10 @@ class Editor(object):
 
     def request_to_open_file(self, filename):        
         return self.signals.request_to_open_file.emit(filename)
+
+    @property
+    def cursor(self):
+        return self.buffer.get_iter_at_mark(self.buffer.get_insert())
         
 class EditorManager(object):
     """

@@ -1,5 +1,8 @@
 import gtk
+import gobject
 import sys
+
+gobject.threads_init()
 
 from .editor import EditorManager
 

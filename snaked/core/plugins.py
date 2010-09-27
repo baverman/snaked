@@ -27,7 +27,7 @@ def get_plugin(plugin):
 
 class PluginManager(object):
     def __init__(self):
-        self.enabled_plugins = ['quick_open', 'python']
+        self.enabled_plugins = ['quick_open', 'python', 'complete_words']
         self.registered_plugins = {}
         
     def get_plugin(self, name):
