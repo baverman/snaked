@@ -44,7 +44,6 @@ class Editor(object):
     def init_shortcuts(self, manager):
         manager.bind(self.activator, 'close-window', self.close)
         manager.bind(self.activator, 'save', self.save)
-        manager.bind(self.activator, 'delete-line', self.delete_line)
 
     def update_title(self):
         modified = '*' if self.buffer.get_modified() else ''
@@ -92,24 +91,10 @@ class Editor(object):
             save_file(self.uri, self.buffer.get_text(*self.buffer.get_bounds()), 'utf-8')
             self.buffer.set_modified(False)
 
-    def delete_line(self):
-        end = self.buffer.get_iter_at_mark(self.buffer.get_insert())
-        start = self.buffer.get_iter_at_line(end.get_line())
-        
-        if not end.ends_line():
-            end.forward_to_line_end()
-    
-        end.forward_char()    
-        
-        self.buffer.begin_user_action()
-        self.buffer.delete(start, end)
-        self.buffer.end_user_action()
-        
     @staticmethod
     def register_shortcuts(manager):
         manager.add('close-window', '<ctrl>w', 'Window', 'Closes window')
         manager.add('save', '<ctrl>s', 'File', 'Saves file')
-        manager.add('delete-line', '<ctrl>d', 'Editor', 'Deletes current line')
 
     @property
     def project_root(self):
