@@ -38,6 +38,7 @@ I use Snaked for all my python development tasks. Following features are impleme
 - Goto python definition on ``F3``.
 - Complete words on ``<alt>slash``.
 - Pretty title for python modules.
+- Python code completion on ``<ctrl>space``
 
 
 Todo
@@ -45,7 +46,6 @@ Todo
 
 Features to implement in nearest time (day or two):
 
-- Python code completion.
 - Smart select (word -> quotes -> line -> block) with one key.
 - Sessions.
 - Tabs!
