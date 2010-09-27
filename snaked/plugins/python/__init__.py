@@ -32,7 +32,8 @@ class Plugin(object):
     def __init__(self, editor):
         self.editor = editor
         idle(connect_all, self, self.editor.signals)
-        idle(self.editor.update_title) 
+        idle(self.editor.update_title)
+        idle(self.init_completion) 
     
     @staticmethod
     def register_shortcuts(manager):
@@ -61,6 +62,15 @@ class Plugin(object):
                 self.__project = None
                 
             return self.__project
+    
+    @property
+    def completion_provider(self):
+        try:
+            return self.__completion_provider
+        except AttributeError:
+            import complete
+            self.__completion_provider = complete.RopeCompletionProvider(self)
+            return self.__completion_provider
 
     def get_rope_resource(self, project, uri=None):
         from rope.base import libutils    
@@ -119,3 +129,8 @@ class Plugin(object):
                 self.goto_line(self.editor, line)
             else:
                 print "Unknown definition"
+
+    def init_completion(self):
+        provider = self.completion_provider
+        provider.get_name()
+        self.editor.view.get_completion().add_provider(provider)
