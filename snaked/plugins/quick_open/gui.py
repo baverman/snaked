@@ -1,7 +1,7 @@
 import os.path
 import weakref
 
-from snaked.util import join_to_file_dir, BuilderAware, open_mime
+from snaked.util import idle, join_to_file_dir, BuilderAware, open_mime, refresh_gui
 from snaked.core.shortcuts import ShortcutActivator
 
 import settings
@@ -63,11 +63,23 @@ class QuickOpenDialog(BuilderAware):
     def fill_filelist(self, search):
         self.filelist.clear()
         
+        current_search = object()
+        self.current_search = current_search
+        
+        i = 0
         for p in searcher.search(self.get_current_root(), '', search):
+            if self.current_search is not current_search:
+                return
+            
             self.filelist.append(p)
+            
+            if i % 10 == 0:
+                refresh_gui()
+        
+        self.filelist_tree.columns_autosize()
 
     def on_search_entry_changed(self, *args):
-        self.fill_filelist(self.search_entry.get_text())
+        idle(self.fill_filelist, self.search_entry.get_text())
         
     def get_selected_file(self):
         (model, iter) = self.filelist_tree.get_selection().get_selected()

@@ -49,7 +49,12 @@ def open_mime(filename):
     import subprocess
     subprocess.Popen(['/usr/bin/env', 'xdg-open', filename]).poll()
 
-    
+
+def refresh_gui():
+    while gtk.events_pending():
+        gtk.main_iteration_do(block=False)
+
+
 class BuilderAware(object):
     def __init__(self, glade_file):
         self.gtk_builder = gtk.Builder()
