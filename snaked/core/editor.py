@@ -169,8 +169,10 @@ class EditorManager(object):
         editor.buffer.set_language(lang)
         
         if lang:
+            editor.lang = lang.get_id()
             prefs = self.get_lang_prefs(lang.get_id())
         else:
+            editor.lang = None
             prefs = self.prefs
         
         style_scheme = self.style_manager.get_scheme(prefs['style'])
@@ -202,12 +204,13 @@ class EditorManager(object):
     def load_editor_plugins(self, editor):
         editor.plugins = []
         for pcls in self.plugin_manager.plugins:
-            plugin = pcls(editor)
-            
-            if hasattr(plugin, 'init_shortcuts'):
-                plugin.init_shortcuts(self.shortcuts)
-            
-            editor.plugins.append(plugin)
+            if not hasattr(pcls, 'langs') or editor.lang in pcls.langs:
+                plugin = pcls(editor)
+                
+                if hasattr(plugin, 'init_shortcuts'):
+                    plugin.init_shortcuts(self.shortcuts)
+                
+                editor.plugins.append(plugin)
     
     @EditorSignals.editor_closed(idle=True)
     def on_editor_closed(self, sender, editor):
