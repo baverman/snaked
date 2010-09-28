@@ -151,6 +151,8 @@ class Plugin(object):
         
             if self.cursor_on_start_or_end_whitespace(cursor):
                 return self.get_line_bounds()
+                
+            return cursor, cursor
     
     def smart_select(self):
         self.select_range(*self.get_smart_select())
