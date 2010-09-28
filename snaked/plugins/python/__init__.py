@@ -1,4 +1,6 @@
-from gsignals import connect_all
+import gtk
+
+from gsignals import connect_all, connect_external
 
 from snaked.util import idle, refresh_gui
 from snaked.core.signals import EditorSignals
@@ -29,9 +31,11 @@ def get_python_title(uri):
         return None
 
 class Plugin(object):
+    langs = ['python']
+    
     def __init__(self, editor):
         self.editor = editor
-        idle(connect_all, self, self.editor.signals)
+        idle(connect_all, self, self.editor.signals, view=editor.view)
         idle(self.editor.update_title)
         idle(self.init_completion) 
     
@@ -134,3 +138,65 @@ class Plugin(object):
         provider = self.completion_provider
         provider.get_name()
         self.editor.view.get_completion().add_provider(provider)
+
+
+    @connect_external('view', 'key-press-event')
+    def on_textview_key_press_event(self, sender, event):
+        if event.keyval != gtk.keysyms.Return:
+            return False
+            
+        cursor = self.editor.cursor
+        line_start = cursor.copy()
+        line_start.set_line(line_start.get_line())
+        
+        text = line_start.get_text(cursor).strip()
+        if text and text[-1] == ':':
+            end = line_start.copy()
+            end.forward_word_end()
+            end.backward_word_start()
+            ws = line_start.get_text(end)
+
+            if self.editor.view.get_insert_spaces_instead_of_tabs():
+                tab = u' ' * self.editor.view.get_tab_width()
+            else:
+                tab = u'\t'
+                
+            self.editor.buffer.begin_user_action()
+            self.editor.buffer.insert(cursor, u'\n' + ws + tab)
+            self.editor.buffer.end_user_action()
+            return True
+        
+        return False
+
+    @connect_external('view', 'backspace')
+    def on_textview_backspace(self, *args):
+        cursor = self.editor.cursor
+        
+        if cursor.starts_line():
+            return False
+        
+        start = cursor.copy()
+        start.set_line(start.get_line())
+            
+        text = start.get_text(cursor)
+        
+        if text.strip():
+            return False
+            
+        delete_from = cursor.copy()
+        if text[-1] == u'\t': 
+            delete_from.backward_char()
+        else:
+            delete_from.backward_chars(self.editor.view.get_tab_width() - 1)
+        
+        if delete_from.get_line() != start.get_line():
+            delete_from = start
+
+        if delete_from.equal(start):
+            delete_from.forward_char()
+
+        self.editor.buffer.begin_user_action()
+        self.editor.buffer.delete(delete_from, cursor)
+        self.editor.buffer.end_user_action()
+
+        return True
