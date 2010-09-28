@@ -1,3 +1,7 @@
+import anydbm
+import os.path
+import os
+
 default_prefs = {
     'font': 'Monospace 11',
     'use-tabs': True,
@@ -38,3 +42,24 @@ class LangPreferences(object):
             return self.lang_prefs[key]
         except KeyError:
             return self.prefs[key]
+
+class KVSettings(object):
+    def __init__(self, name):
+        path = os.path.join(os.path.expanduser("~"), '.local', 'snaked')
+        if not os.path.exists(path):
+            os.makedirs(path, mode=0755)
+            
+        dbname = os.path.join(path, name)
+        self.db = anydbm.open(dbname, 'c')
+    
+    def __getitem__(self, key):
+        return self.db[key]
+    
+    def __contains__(self, key):
+        return key in self.db
+    
+    def __setitem__(self, key, value):
+        self.db[key] = value
+    
+    def __del__(self):
+        self.db.close()

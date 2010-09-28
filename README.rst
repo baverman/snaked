@@ -40,6 +40,7 @@ I use Snaked for all my python development tasks. Following features are impleme
 - Pretty title for python modules.
 - Python code completion on ``<ctrl>space``
 - Smart block selection on ``<alt>w``
+- Storing last edit position for every file.
 
 
 Todo
@@ -47,7 +48,6 @@ Todo
 
 Features to implement in nearest time (day or two):
 
-- Storing last edit position for every file.
 - Python smart indent.
 - Smart select (word -> quotes) with one key. Block selection done.
 - Tabs!

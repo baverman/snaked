@@ -1,3 +1,5 @@
+import os.path
+
 import gtk
 import gtksourceview2
 import pango
@@ -59,8 +61,9 @@ class Editor(object):
         self.window.set_title(modified + title)
 
     def load_file(self, filename):
-        self.uri = filename
+        self.uri = os.path.abspath(filename)
         
+        self.view.window.freeze_updates()        
         self.on_modified_changed_handler.block()
         self.buffer.begin_not_undoable_action()
         
@@ -71,10 +74,14 @@ class Editor(object):
         self.on_modified_changed_handler.unblock()
         
         self.buffer.place_cursor(self.buffer.get_start_iter())
-        
+        self.view.window.thaw_updates()
+
+        self.signals.file_loaded.emit(self)
+                
         self.update_title()
         
     def on_destroy(self, *args):
+        self.signals.before_close.emit(self)
         self.signals.editor_closed.emit(self)
     
     def on_delete_event(self, *args):
@@ -204,10 +211,11 @@ class EditorManager(object):
     
     @EditorSignals.editor_closed(idle=True)
     def on_editor_closed(self, sender, editor):
+        editor.plugins[:] = []
         self.editors.remove(editor)
         if not self.editors:
             gtk.main_quit()
-
+            
     @EditorSignals.request_to_open_file
     def on_request_to_open_file(self, sender, filename):
         e = self.open(filename)
