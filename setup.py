@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name     = 'snaked',
-    version  = '0.2.dev6',
+    version  = '0.2.dev7',
     author   = 'Anton Bobrov',
     author_email = 'bobrov@vl.ru',
     description = 'Very light and minimalist editor inspired by Scribes',
