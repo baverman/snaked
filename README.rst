@@ -38,11 +38,14 @@ I use Snaked for all my python development tasks. Following features are impleme
 - Goto python definition on ``F3``.
 - Complete words on ``<alt>slash``.
 - Pretty title for python modules.
-- Python code completion on ``<ctrl>space``
-- Smart block selection on ``<alt>w``
+- Python code completion on ``<ctrl>space``.
+- Smart block selection on ``<alt>w``.
 - Storing last edit position for every file.
 - Python smart indent.
+- Saving quick open project history and switch between them on ``<alt>Up``/``<alt>Down``.
 
+Core cloc's - 376
+Plugins cloc's - 620
 
 Todo
 ----
