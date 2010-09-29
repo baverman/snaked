@@ -20,23 +20,15 @@ class Editor(object):
     Editor can be both standalone window and embedded into tab. 
     """
     
-    def __init__(self):    
+    def __init__(self, activator):    
         self.signals = EditorSignals()
         
         self.uri = None
         
-        self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-        self.window.connect('delete-event', self.on_delete_event)
-        self.window.connect('destroy', self.on_destroy)
-
-        self.window.set_property('default-width', 800)
-        self.window.set_property('default-height', 500)
-    
-        self.activator = ShortcutActivator(self.window)
+        self.activator = activator
         
-        scrolled_window = gtk.ScrolledWindow()
-        scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
-        self.window.add(scrolled_window)
+        self.widget = gtk.ScrolledWindow()
+        self.widget.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
                 
         self.buffer = gtksourceview2.Buffer()
         self.on_modified_changed_handler = connect(
@@ -44,10 +36,12 @@ class Editor(object):
         
         self.view = gtksourceview2.View()
         self.view.set_buffer(self.buffer)
-        scrolled_window.add(self.view)
+        self.widget.add(self.view)
+
+        self.widget.show_all()
 
     def init_shortcuts(self, manager):
-        manager.bind(self.activator, 'close-window', self.close)
+        #manager.bind(self.activator, 'close-window', self.close)
         manager.bind(self.activator, 'save', self.save)
 
     def update_title(self):
@@ -60,8 +54,8 @@ class Editor(object):
                 title = self.uri
         else:
             title = 'Unknown'
-                        
-        self.window.set_title(modified + title)
+        
+        self.signals.change_title.emit(self, modified + title)          
 
     def load_file(self, filename):
         self.uri = os.path.abspath(filename)
@@ -83,19 +77,9 @@ class Editor(object):
                 
         self.update_title()
         
-    def on_destroy(self, *args):
-        self.signals.before_close.emit(self)
-        self.signals.editor_closed.emit(self)
-    
-    def on_delete_event(self, *args):
-        return False
-    
     def on_modified_changed(self, *args):
         self.update_title()
             
-    def close(self):
-        self.window.destroy()
-        
     def save(self):
         if self.uri:
             save_file(self.uri, self.buffer.get_text(*self.buffer.get_bounds()), 'utf-8')
@@ -161,15 +145,18 @@ class EditorManager(object):
         self.plugin_manager.register_shortcuts(self.shortcuts)
         
     def open(self, filename):
-        editor = Editor()
+        editor = self.create_editor()
         self.editors.append(editor)
-        connect_all(self, editor.signals)
         
+        connect(editor.signals.sender, 'editor-closed', self, 'on_editor_closed', idle=True)
+        connect(editor.signals.sender, 'change-title', self, 'on_editor_change_title')
+        connect(editor.signals.sender, 'request-to-open-file', self, 'on_request_to_open_file')
+
         idle(self.set_editor_prefs, editor, filename)
         idle(self.set_editor_shortcuts, editor)
         idle(self.load_editor_plugins, editor)
         
-        editor.window.show_all()
+        self.manage_editor(editor)
         
         if filename:
             idle(editor.load_file, filename)
@@ -227,17 +214,15 @@ class EditorManager(object):
                 
                 editor.plugins.append(plugin)
     
-    @EditorSignals.editor_closed(idle=True)
     def on_editor_closed(self, sender, editor):
         editor.plugins[:] = []
         self.editors.remove(editor)
         if not self.editors:
             gtk.main_quit()
-    
-    def focus_editor(self, editor):
-        editor.window.present()
-    
-    @EditorSignals.request_to_open_file
+
+    def on_editor_change_title(self, sender, editor, title):
+        self.set_editor_title(editor, title)
+        
     def on_request_to_open_file(self, sender, filename):
         for e in self.editors:
             if e.uri == filename:
@@ -249,4 +234,49 @@ class EditorManager(object):
         return e        
         
     def quit(self):
-        [e.close() for e in self.editors]
+        [self.close_editor(e) for e in self.editors]
+
+
+class TabbedEditorManager(EditorManager):
+    def __init__(self):
+        super(TabbedEditorManager, self).__init__()
+
+        self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+        self.window.connect('delete-event', self.on_delete_event)
+
+        self.window.set_property('default-width', 800)
+        self.window.set_property('default-height', 500)
+    
+        self.activator = ShortcutActivator(self.window)
+        
+        self.note = gtk.Notebook()
+        self.window.add(self.note)
+        
+        self.window.show_all()
+
+    def manage_editor(self, editor):
+        self.note.append_page(editor.widget)
+        editor.view.grab_focus()
+       
+    def create_editor(self):
+        return Editor(self.activator)
+
+    def focus_editor(self, editor):
+        pass
+
+    def update_top_level_title(self):
+        idx = self.note.get_current_page()
+        self.window.set_title(self.note.get_tab_label_text(self.note.get_nth_page(idx)))        
+                
+    def set_editor_title(self, editor, title):
+        self.note.set_tab_label_text(editor.widget, title)
+        if self.note.get_current_page() == self.note.page_num(editor.widget):
+            self.update_top_level_title()
+
+    def on_delete_event(self, *args):
+        self.quit()
+
+    def close_editor(self, editor):
+        idx = self.note.page_num(editor.widget)
+        self.note.remove_page(idx)
+        editor.signals.editor_closed.emit(editor)

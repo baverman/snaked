@@ -6,3 +6,4 @@ class EditorSignals(SignalManager):
     update_title = Signal(return_type=str)
     before_close = Signal(object)
     file_loaded = Signal(object)
+    change_title = Signal(object, str)

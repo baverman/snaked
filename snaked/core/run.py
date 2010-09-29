@@ -4,10 +4,10 @@ import sys
 
 gobject.threads_init()
 
-from .editor import EditorManager
+from .editor import TabbedEditorManager
 
 def run():
-    manager = EditorManager()
+    manager = TabbedEditorManager()
 
     if len(sys.argv) > 1:
         for f in sys.argv[1:]:    
