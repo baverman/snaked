@@ -6,6 +6,12 @@ def get_pattern(what):
     p = re.compile(rexp)
     return p
 
+def name_start_match(what):
+    def inner(name, path):
+        return name.startswith(what)
+
+    return inner
+
 def name_match(what):
     def inner(name, path):
         return what in name

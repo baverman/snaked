@@ -89,7 +89,8 @@ class QuickOpenDialog(BuilderAware):
         already_matched = {}
         i = 0
         
-        for m in (searcher.name_match, searcher.path_match, searcher.fuzzy_match):
+        for m in (searcher.name_start_match, searcher.name_match,
+                searcher.path_match, searcher.fuzzy_match):
             for p in searcher.search(self.get_current_root(), '', m(search), already_matched):
                 if self.current_search is not current_search:
                     return
@@ -121,10 +122,12 @@ class QuickOpenDialog(BuilderAware):
         fname = self.get_selected_file()
         if fname:
             self.hide()
+            refresh_gui()
             self.editor().request_to_open_file(fname)
         
     def open_mime(self):
         fname = self.get_selected_file()
         if fname:
             self.hide()
+            refresh_gui()
             open_mime(fname)
