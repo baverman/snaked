@@ -6,7 +6,7 @@ import pango
 
 from gsignals import connect_all
 
-from ..util import save_file, connect, idle, get_project_root
+from ..util import save_file, connect, idle, get_project_root, refresh_gui
 
 from .signals import EditorSignals
 from .prefs import Preferences, LangPreferences
@@ -29,6 +29,8 @@ class Editor(object):
         self.window.connect('delete-event', self.on_delete_event)
         self.window.connect('destroy', self.on_destroy)
 
+        self.window.set_property('can-focus', True)
+    
         self.activator = ShortcutActivator(self.window)
         
         scrolled_window = gtk.ScrolledWindow()
@@ -115,7 +117,9 @@ class Editor(object):
         return None
 
     def request_to_open_file(self, filename):        
-        return self.signals.request_to_open_file.emit(filename)
+        editor = self.signals.request_to_open_file.emit(filename)
+        if not self.buffer.get_modified() and self.text == u'':
+            self.close()
 
     @property
     def cursor(self):
@@ -172,8 +176,11 @@ class EditorManager(object):
         return editor
     
     def set_editor_prefs(self, editor, filename):
-        lang = self.lang_manager.guess_language(filename, None)
-        editor.buffer.set_language(lang)
+        if filename:
+            lang = self.lang_manager.guess_language(filename, None)
+            editor.buffer.set_language(lang)
+        else:
+            lang = None
         
         if lang:
             editor.lang = lang.get_id()
@@ -207,7 +214,7 @@ class EditorManager(object):
     def set_editor_shortcuts(self, editor):
         editor.init_shortcuts(self.shortcuts)
         self.shortcuts.bind(editor.activator, 'quit', self.quit)
-
+        
     def load_editor_plugins(self, editor):
         editor.plugins = []
         for pcls in self.plugin_manager.plugins:
@@ -225,10 +232,19 @@ class EditorManager(object):
         self.editors.remove(editor)
         if not self.editors:
             gtk.main_quit()
-            
+    
+    def focus_editor(self, editor):
+        editor.window.present()
+    
     @EditorSignals.request_to_open_file
     def on_request_to_open_file(self, sender, filename):
-        e = self.open(filename)
+        for e in self.editors:
+            if e.uri == filename:
+                self.focus_editor(e)
+                break
+        else:
+            e = self.open(filename)
+        
         return e        
         
     def quit(self):

@@ -55,7 +55,7 @@ class Plugin(object):
         if not iter.starts_line():
             iter = iter.copy()
             iter.set_line(iter.get_line())
-            
+
         end = iter.copy()
         if not end.ends_line():
             end.forward_to_line_end()

@@ -7,8 +7,8 @@ class ShortcutManager(object):
     def add(self, name, accel, category, desc):
         self.shortcuts[name] = Shortcut(name, accel, category, desc)
 
-    def bind(self, activator, name, callback):
-        activator.bind(self.shortcuts[name].accel, callback)
+    def bind(self, activator, name, callback, *args):
+        activator.bind(self.shortcuts[name].accel, callback, *args)
                 
 
 class Shortcut(object):
@@ -27,12 +27,13 @@ class ShortcutActivator(object):
         
         self.shortcuts = {}
         
-    def bind(self, accel, callback):
+    def bind(self, accel, callback, *args):
         key, modifier = gtk.accelerator_parse(accel)
-        self.shortcuts[(key, modifier)] = callback
+        self.shortcuts[(key, modifier)] = (callback, args)
         
         self.accel_group.connect_group(key, modifier, gtk.ACCEL_VISIBLE, self.activate)
         
     def activate(self, group, window, key, modifier):
-        self.shortcuts[(key, modifier)]()
+        cb, args = self.shortcuts[(key, modifier)]
+        cb(*args)
         return True

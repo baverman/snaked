@@ -31,7 +31,8 @@ class QuickOpenDialog(BuilderAware):
         self.search_entry.grab_focus()
         
         self.window.set_transient_for(editor.window)
-        self.window.show()
+#        self.window.show()
+        self.window.present()
     
     def update_recent_projects(self):
         saved_projects = self.prefs.load()
