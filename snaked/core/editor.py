@@ -105,7 +105,14 @@ class Editor(object):
 
     @property
     def project_root(self):
-        return get_project_root(self.uri)
+        if self.uri:
+            root = get_project_root(self.uri)
+            if not root:
+                root = os.path.dirname(self.uri)
+          
+            return root 
+            
+        return None
 
     def request_to_open_file(self, filename):        
         return self.signals.request_to_open_file.emit(filename)

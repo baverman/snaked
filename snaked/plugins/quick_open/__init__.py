@@ -26,8 +26,5 @@ class Plugin(object):
         import settings
         
         root = self.editor.project_root
-        if not root:
-            root = os.path.dirname(self.editor.uri)
-        
-        if root not in settings.recent_projects:            
+        if root and root not in settings.recent_projects:            
             settings.recent_projects.append(root)                

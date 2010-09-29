@@ -25,12 +25,8 @@ class QuickOpenDialog(BuilderAware):
     def show(self, editor):
         self.editor = weakref.ref(editor)
         
-        root = editor.project_root
-        if not root:
-            root = os.path.dirname(editor.uri)
-
         self.update_recent_projects()
-        self.update_projects(root)
+        self.update_projects(editor.project_root)
 
         self.search_entry.grab_focus()
         
@@ -55,7 +51,7 @@ class QuickOpenDialog(BuilderAware):
         self.projects_cbox.set_model(None)
         self.projectlist.clear()
         
-        index = -1
+        index = 0
         for i, r in enumerate(settings.recent_projects):
             if r == root:
                 index = i
