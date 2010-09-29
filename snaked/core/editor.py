@@ -29,7 +29,8 @@ class Editor(object):
         self.window.connect('delete-event', self.on_delete_event)
         self.window.connect('destroy', self.on_destroy)
 
-        self.window.set_property('can-focus', True)
+        self.window.set_property('default-width', 800)
+        self.window.set_property('default-height', 500)
     
         self.activator = ShortcutActivator(self.window)
         
