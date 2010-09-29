@@ -4,8 +4,8 @@ import gtk
 import gtksourceview2
 import pango
 
-from ..util import save_file, connect, idle, get_project_root, refresh_gui
-from ..signals import SignalManager, Signal
+from ..util import save_file, idle, get_project_root, refresh_gui
+from ..signals import SignalManager, Signal, connect_all, connect_external
 
 from .prefs import Preferences, LangPreferences
 from .shortcuts import ShortcutManager, ShortcutActivator
@@ -26,34 +26,32 @@ class Editor(SignalManager):
         self.widget.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
                 
         self.buffer = gtksourceview2.Buffer()
-        self.on_modified_changed_handler = connect(
-            self.buffer, 'modified-changed', self, 'on_modified_changed', idle=True) 
-        
+
         self.view = gtksourceview2.View()
         self.view.set_buffer(self.buffer)
         self.widget.add(self.view)
 
         self.widget.show_all()
-
-        import gobject
-        print gobject.signal_list_names(self.__class__)
+        
+        connect_all(self, buffer=self.buffer)
 
     def init_shortcuts(self, manager):
         #manager.bind(self.activator, 'close-window', self.close)
-        manager.bind(self.activator, 'save', self.save)
+        #manager.bind(self.activator, 'save', self.save)
+        pass
 
     def update_title(self):
         modified = '*' if self.buffer.get_modified() else ''
         
         if self.uri:
-            title = self.signals.update_title.emit()
+            title = self.get_title.emit()
 
             if not title:
                 title = self.uri
         else:
             title = 'Unknown'
         
-        self.emit('change-title', modified + title)          
+        self.change_title.emit(modified + title)          
 
     def load_file(self, filename):
         self.uri = os.path.abspath(filename)
@@ -71,10 +69,11 @@ class Editor(SignalManager):
         self.buffer.place_cursor(self.buffer.get_start_iter())
         self.view.window.thaw_updates()
 
-        self.signals.file_loaded.emit(self)
+        self.file_loaded.emit()
                 
         self.update_title()
         
+    @connect_external('buffer', 'modified-changed', idle=True)
     def on_modified_changed(self, *args):
         self.update_title()
             
@@ -100,7 +99,7 @@ class Editor(SignalManager):
         return None
 
     def open_file(self, filename):        
-        editor = self.emit('request-to-open-file', filename)
+        editor = self.request_to_open_file.emit(filename)
         if not self.buffer.get_modified() and self.text == u'':
             self.close()
 
@@ -142,9 +141,9 @@ class EditorManager(object):
         editor = self.create_editor()
         self.editors.append(editor)
         
-        connect(editor, 'editor-closed', self, 'on_editor_closed', idle=True)
-        connect(editor, 'change-title', self, 'on_editor_change_title')
-        connect(editor, 'request-to-open-file', self, 'on_request_to_open_file')
+        editor.editor_closed.connect(self, 'on_editor_closed', idle=True)
+        editor.change_title.connect(self, 'on_editor_change_title')
+        editor.request_to_open_file.connect(self, 'on_request_to_open_file')
 
         idle(self.set_editor_prefs, editor, filename)
         idle(self.set_editor_shortcuts, editor)
