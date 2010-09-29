@@ -8,7 +8,6 @@ setup(
     description = 'Very light and minimalist editor inspired by Scribes',
     long_description = open('README.rst').read(),
     zip_safe   = False,
-    install_requires = ['gsignals>=0.2.1'],
     packages = find_packages(),
     include_package_data = True,
     namespace_packages = ['snaked', 'snaked.plugins'],

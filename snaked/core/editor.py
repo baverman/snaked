@@ -4,28 +4,23 @@ import gtk
 import gtksourceview2
 import pango
 
-from gsignals import connect_all
-
 from ..util import save_file, connect, idle, get_project_root, refresh_gui
+from ..signals import SignalManager, Signal
 
-from .signals import EditorSignals
 from .prefs import Preferences, LangPreferences
 from .shortcuts import ShortcutManager, ShortcutActivator
 from .plugins import PluginManager
 
-class Editor(object):
-    """
-    The main editor window.
-    
-    Editor can be both standalone window and embedded into tab. 
-    """
-    
-    def __init__(self, activator):    
-        self.signals = EditorSignals()
-        
+class Editor(SignalManager):
+    editor_closed = Signal()
+    request_to_open_file = Signal(str, return_type=object)
+    get_title = Signal(return_type=str)
+    before_close = Signal()
+    file_loaded = Signal()
+    change_title = Signal(str) 
+
+    def __init__(self):    
         self.uri = None
-        
-        self.activator = activator
         
         self.widget = gtk.ScrolledWindow()
         self.widget.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
@@ -39,6 +34,9 @@ class Editor(object):
         self.widget.add(self.view)
 
         self.widget.show_all()
+
+        import gobject
+        print gobject.signal_list_names(self.__class__)
 
     def init_shortcuts(self, manager):
         #manager.bind(self.activator, 'close-window', self.close)
@@ -55,7 +53,7 @@ class Editor(object):
         else:
             title = 'Unknown'
         
-        self.signals.change_title.emit(self, modified + title)          
+        self.emit('change-title', modified + title)          
 
     def load_file(self, filename):
         self.uri = os.path.abspath(filename)
@@ -101,8 +99,8 @@ class Editor(object):
             
         return None
 
-    def request_to_open_file(self, filename):        
-        editor = self.signals.request_to_open_file.emit(filename)
+    def open_file(self, filename):        
+        editor = self.emit('request-to-open-file', filename)
         if not self.buffer.get_modified() and self.text == u'':
             self.close()
 
@@ -116,10 +114,6 @@ class Editor(object):
         
         
 class EditorManager(object):
-    """
-    Keeps window editor list
-    """
-    
     def __init__(self):
         self.editors = []
         self.style_manager = gtksourceview2.style_scheme_manager_get_default()
@@ -142,19 +136,19 @@ class EditorManager(object):
         self.shortcuts = ShortcutManager()
         self.shortcuts.add('quit', '<ctrl>q', 'Application', 'Quit')        
         Editor.register_shortcuts(self.shortcuts)
-        self.plugin_manager.register_shortcuts(self.shortcuts)
+        #self.plugin_manager.register_shortcuts(self.shortcuts)
         
     def open(self, filename):
         editor = self.create_editor()
         self.editors.append(editor)
         
-        connect(editor.signals.sender, 'editor-closed', self, 'on_editor_closed', idle=True)
-        connect(editor.signals.sender, 'change-title', self, 'on_editor_change_title')
-        connect(editor.signals.sender, 'request-to-open-file', self, 'on_request_to_open_file')
+        connect(editor, 'editor-closed', self, 'on_editor_closed', idle=True)
+        connect(editor, 'change-title', self, 'on_editor_change_title')
+        connect(editor, 'request-to-open-file', self, 'on_request_to_open_file')
 
         idle(self.set_editor_prefs, editor, filename)
         idle(self.set_editor_shortcuts, editor)
-        idle(self.load_editor_plugins, editor)
+        #idle(self.load_editor_plugins, editor)
         
         self.manage_editor(editor)
         
@@ -214,16 +208,16 @@ class EditorManager(object):
                 
                 editor.plugins.append(plugin)
     
-    def on_editor_closed(self, sender, editor):
+    def on_editor_closed(self, editor):
         editor.plugins[:] = []
         self.editors.remove(editor)
         if not self.editors:
             gtk.main_quit()
 
-    def on_editor_change_title(self, sender, editor, title):
+    def on_editor_change_title(self, editor, title):
         self.set_editor_title(editor, title)
         
-    def on_request_to_open_file(self, sender, filename):
+    def on_request_to_open_file(self, editor, filename):
         for e in self.editors:
             if e.uri == filename:
                 self.focus_editor(e)
@@ -259,7 +253,7 @@ class TabbedEditorManager(EditorManager):
         editor.view.grab_focus()
        
     def create_editor(self):
-        return Editor(self.activator)
+        return Editor()
 
     def focus_editor(self, editor):
         pass
@@ -279,4 +273,4 @@ class TabbedEditorManager(EditorManager):
     def close_editor(self, editor):
         idx = self.note.page_num(editor.widget)
         self.note.remove_page(idx)
-        editor.signals.editor_closed.emit(editor)
+        editor.emit('editor-closed')

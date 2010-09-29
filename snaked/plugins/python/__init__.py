@@ -1,7 +1,5 @@
 import gtk
 
-from gsignals import connect_all, connect_external
-
 from snaked.util import idle, refresh_gui
 from snaked.core.signals import EditorSignals
 

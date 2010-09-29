@@ -1,4 +1,3 @@
-from gsignals import connect_external, connect_all
 from gobject import timeout_add
 from string import whitespace
 
