@@ -1,6 +1,7 @@
 import gobject
 import gobject.constants
 import weakref
+from inspect import getmembers, ismethod
 
 from weak import weak_connect
 from util import append_attr
@@ -165,9 +166,9 @@ class SignalManager(object):
         """
         Connects marked object methods
         """
-        for attr, value in obj.__class__.__dict__.iteritems():
+        for attr, value in getmembers(obj, ismethod):
             for signal, connect_params in getattr(value, 'signals_to_connect', ()):
-                id = self.connect(signal, obj, attr, **connect_params)
+                id = self.weak_connect(signal, obj, attr, **connect_params)
                 append_handler_to_object(obj, attr, id, self, signal.name)    
 
     def weak_connect(self, signal, obj, attr, after, idle):
@@ -209,7 +210,7 @@ def connect_external(sender_name, signal_name, after=False, idle=False):
     return inner
 
 def connect_external_signals(obj, **kwargs):
-    for attr, value in obj.__class__.__dict__.iteritems():
+    for attr, value in getmembers(obj, ismethod):
         for (sender_name, signal_name), connect_params in getattr(value, 'external_signals_to_connect', ()):
             sender = kwargs[sender_name]
             id = weak_connect(sender, signal_name, obj, attr, **connect_params)

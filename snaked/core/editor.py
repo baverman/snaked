@@ -141,9 +141,7 @@ class EditorManager(object):
         editor = self.create_editor()
         self.editors.append(editor)
         
-        editor.editor_closed.connect(self, 'on_editor_closed', idle=True)
-        editor.change_title.connect(self, 'on_editor_change_title')
-        editor.request_to_open_file.connect(self, 'on_request_to_open_file')
+        connect_all(self, editor)
 
         idle(self.set_editor_prefs, editor, filename)
         idle(self.set_editor_shortcuts, editor)
@@ -207,15 +205,18 @@ class EditorManager(object):
                 
                 editor.plugins.append(plugin)
     
+    @Editor.editor_closed(idle=True)
     def on_editor_closed(self, editor):
         editor.plugins[:] = []
         self.editors.remove(editor)
         if not self.editors:
             gtk.main_quit()
 
+    @Editor.change_title
     def on_editor_change_title(self, editor, title):
         self.set_editor_title(editor, title)
-        
+    
+    @Editor.request_to_open_file
     def on_request_to_open_file(self, editor, filename):
         for e in self.editors:
             if e.uri == filename:
