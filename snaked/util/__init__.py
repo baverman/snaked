@@ -54,6 +54,27 @@ def refresh_gui():
     while gtk.events_pending():
         gtk.main_iteration_do(block=False)
 
+def single_ref(func):
+    real_name = '__' + func.__name__
+    holder_name = func.__name__ + '_holder'
+    
+    def inner(self):
+        try:
+            return getattr(self, real_name)
+        except AttributeError:
+            pass
+            
+        cls = self.__class__
+        if not hasattr(cls, holder_name) or not getattr(cls, holder_name)():
+            import weakref
+            var = func(self)
+            setattr(cls, holder_name, weakref.ref(var))
+        
+        setattr(self, real_name, getattr(cls, holder_name)())
+        return getattr(self, real_name)
+        
+    return property(inner)
+
 
 class BuilderAware(object):
     def __init__(self, glade_file):

@@ -43,14 +43,17 @@ class LangPreferences(object):
         except KeyError:
             return self.prefs[key]
 
+def get_settings_path(name):
+    path = os.path.join(os.path.expanduser("~"), '.local', 'snaked')
+    if not os.path.exists(path):
+        os.makedirs(path, mode=0755)
+        
+    return os.path.join(path, name)
+    
+
 class KVSettings(object):
     def __init__(self, name):
-        path = os.path.join(os.path.expanduser("~"), '.local', 'snaked')
-        if not os.path.exists(path):
-            os.makedirs(path, mode=0755)
-            
-        dbname = os.path.join(path, name)
-        self.db = anydbm.open(dbname, 'c')
+        self.db = anydbm.open(get_settings_path(name), 'c')
     
     def __getitem__(self, key):
         return self.db[key]
@@ -63,3 +66,16 @@ class KVSettings(object):
     
     def __del__(self):
         self.db.close()
+
+class ListSettings(object):
+    def __init__(self, name):
+        self.path = get_settings_path(name)
+    
+    def load(self):
+        try:
+            return [l.strip() for l in open(self.path)]
+        except IOError:
+            return []
+    
+    def store(self, data):
+        open(self.path, 'w').write('\n'.join(data))

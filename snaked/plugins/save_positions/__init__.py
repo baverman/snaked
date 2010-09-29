@@ -1,4 +1,5 @@
 from snaked.core.signals import EditorSignals
+from snaked.util import single_ref
 
 class Plugin(object):
     def __init__(self, editor):
@@ -18,17 +19,7 @@ class Plugin(object):
     def on_editor_before_close(self, *args):
         self.prefs[self.editor.uri] = str(self.editor.cursor.get_line())
                 
-    @property
+    @single_ref
     def prefs(self):
-        try:
-            return self.__prefs
-        except AttributeError:
-            pass
-        
-        if not hasattr(Plugin, 'prefs_holder') or not Plugin.prefs_holder():
-            import snaked.core.prefs, weakref
-            var = snaked.core.prefs.KVSettings('positions.db')
-            Plugin.prefs_holder = weakref.ref(var)
-        
-        self.__prefs = Plugin.prefs_holder()
-        return self.__prefs
+        from snaked.core.prefs import KVSettings
+        return KVSettings('positions.db')

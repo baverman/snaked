@@ -1,8 +1,9 @@
 import os.path
 import weakref
 
-from snaked.util import idle, join_to_file_dir, BuilderAware, open_mime, refresh_gui
+from snaked.util import idle, join_to_file_dir, BuilderAware, open_mime, refresh_gui, single_ref
 from snaked.core.shortcuts import ShortcutActivator
+from snaked.core.prefs import ListSettings
 
 import settings
 import searcher
@@ -16,6 +17,10 @@ class QuickOpenDialog(BuilderAware):
         self.shortcuts.bind('<alt>Down', self.project_down)
         self.shortcuts.bind('Return', self.open_file)
         self.shortcuts.bind('<ctrl>Return', self.open_mime)
+
+    @single_ref
+    def prefs(self):
+        return ListSettings('project-roots.db')
         
     def show(self, editor):
         self.editor = weakref.ref(editor)
@@ -24,12 +29,27 @@ class QuickOpenDialog(BuilderAware):
         if not root:
             root = os.path.dirname(editor.uri)
 
+        self.update_recent_projects()
         self.update_projects(root)
 
         self.search_entry.grab_focus()
         
         self.window.set_transient_for(editor.window)
         self.window.show()
+    
+    def update_recent_projects(self):
+        saved_projects = self.prefs.load()
+                
+        if any(p not in saved_projects for p in settings.recent_projects):
+            [saved_projects.append(p) for p in settings.recent_projects
+                if p not in saved_projects]
+            self.prefs.store(saved_projects)
+            settings.recent_projects = saved_projects
+            return
+            
+        if any(p not in settings.recent_projects for p in saved_projects):
+            [settings.recent_projects.append(p) for p in saved_projects
+                if p not in settings.recent_projects]
     
     def update_projects(self, root):
         self.projects_cbox.set_model(None)
@@ -52,10 +72,14 @@ class QuickOpenDialog(BuilderAware):
         return True
     
     def project_up(self):
-        pass
+        idx = self.projects_cbox.get_active()
+        idx = ( idx - 1 ) % len(self.projectlist)
+        self.projects_cbox.set_active(idx)
         
     def project_down(self):
-        pass
+        idx = self.projects_cbox.get_active()
+        idx = ( idx + 1 ) % len(self.projectlist)
+        self.projects_cbox.set_active(idx)
 
     def get_current_root(self):
         return self.projectlist[self.projects_cbox.get_active()][0]
@@ -83,8 +107,13 @@ class QuickOpenDialog(BuilderAware):
         self.filelist_tree.columns_autosize()
 
     def on_search_entry_changed(self, *args):
-        idle(self.fill_filelist, self.search_entry.get_text())
+        search = self.search_entry.get_text().strip()
+        if search:
+            idle(self.fill_filelist, search)
         
+    def on_projects_cbox_changed(self, *args):
+        self.on_search_entry_changed()
+
     def get_selected_file(self):
         (model, iter) = self.filelist_tree.get_selection().get_selected()
         if iter:

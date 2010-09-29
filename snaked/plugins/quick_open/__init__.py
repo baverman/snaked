@@ -1,5 +1,5 @@
 import os.path
-from snaked.util import idle
+from snaked.util import idle, single_ref
 
 class Plugin(object):
         
@@ -14,20 +14,10 @@ class Plugin(object):
     def init_shortcuts(self, manager):
         manager.bind(self.editor.activator, 'quick-open', self.activate)
     
-    @property
+    @single_ref
     def gui(self):
-        try:
-            return self.__gui
-        except AttributeError:
-            pass
-        
-        if not hasattr(Plugin, 'gui_holder') or not Plugin.gui_holder():
-            import gui, weakref
-            var = gui.QuickOpenDialog()
-            Plugin.gui_holder = weakref.ref(var)
-        
-        self.__gui = Plugin.gui_holder()
-        return self.__gui
+        import gui
+        return gui.QuickOpenDialog()
         
     def activate(self):
         self.gui.show(self.editor)

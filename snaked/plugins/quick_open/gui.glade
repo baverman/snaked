@@ -91,6 +91,7 @@
           <object class="GtkComboBox" id="projects_cbox">
             <property name="visible">True</property>
             <property name="model">projectlist</property>
+            <signal name="changed" handler="on_projects_cbox_changed"/>
             <child>
               <object class="GtkCellRendererText" id="cellrenderertext3"/>
               <attributes>
