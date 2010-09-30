@@ -2,6 +2,7 @@ import os
 import sys
 from os.path import join, isdir, exists
 from .shortcuts import Shortcut
+import traceback
 
 def discover_plugins():
     import snaked.plugins
@@ -88,14 +89,23 @@ class PluginManager(object):
     def editor_opened(self, editor):
         for p in self.plugins_for(editor):
             if hasattr(p, 'editor_opened'):
-                p.editor_opened(editor)
+                try:
+                    p.editor_opened(editor)
+                except:
+                    traceback.print_exc()
 
     def editor_closed(self, editor):
         for p in self.plugins_for(editor):
             if hasattr(p, 'editor_closed'):
-                p.editor_closed(editor)
+                try:
+                    p.editor_closed(editor)
+                except:
+                    traceback.print_exc()
 
     def quit(self):
         for p in self.loaded_plugins.values():
             if hasattr(p, 'quit'):
-                p.quit()
+                try:
+                    p.quit()
+                except:
+                    traceback.print_exc()
