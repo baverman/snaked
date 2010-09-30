@@ -245,13 +245,15 @@ class TabbedEditorManager(EditorManager):
 
     def manage_editor(self, editor):
         self.note.append_page(editor.widget)
+        self.focus_editor(editor)
         editor.view.grab_focus()
        
     def create_editor(self):
         return Editor()
 
     def focus_editor(self, editor):
-        pass
+        idx = self.note.page_num(editor.widget)
+        self.note.set_current_page(idx)
 
     def update_top_level_title(self):
         idx = self.note.get_current_page()

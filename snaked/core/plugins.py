@@ -36,8 +36,8 @@ class ShortcutsHolder(object):
 
 class PluginManager(object):
     def __init__(self):
-        self.enabled_plugins = ['quick_open'] #, 'python', 'complete_words',
-        #    'edit_and_select', 'save_positions']
+        self.enabled_plugins = ['quick_open', 'save_positions'] #, 'python', 'complete_words',
+        #    'edit_and_select']
         self.loaded_plugins = {}
 
         self.plugin_by_keys = {}
@@ -49,9 +49,10 @@ class PluginManager(object):
             return self.loaded_plugins[name]
         except KeyError:
             plugin = get_plugin(name)
-            holder = ShortcutsHolder()
-            plugin.init(holder)
-            self.add_shortcuts(plugin, holder)
+            if hasattr(plugin, 'init'):
+                holder = ShortcutsHolder()
+                plugin.init(holder)
+                self.add_shortcuts(plugin, holder)
             self.loaded_plugins[name] = plugin
             return plugin
 
@@ -65,7 +66,7 @@ class PluginManager(object):
 
     def bind_shortcuts(self, activator, editor):
         for p in self.plugins_for(editor):
-            for s in self.shortcuts_by_plugins[p]:
+            for s in self.shortcuts_by_plugins.get(p, []):
                 try:
                     self.binded_shortcuts[activator][s.name]
                 except KeyError:

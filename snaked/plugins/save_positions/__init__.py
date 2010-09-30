@@ -1,25 +1,28 @@
-from snaked.core.signals import EditorSignals
-from snaked.util import single_ref
+prefs = None
 
-class Plugin(object):
-    def __init__(self, editor):
-        self.editor = editor
-        self.editor.signals.connect_signals(self)
-        
-    @EditorSignals.file_loaded
-    def on_file_loaded(self, *args):
-        if self.editor.uri in self.prefs:
-            from snaked.util import refresh_gui
-            refresh_gui()
-            iterator = self.editor.buffer.get_iter_at_line(int(self.prefs[self.editor.uri]))
-            self.editor.buffer.place_cursor(iterator)
-            self.editor.view.scroll_to_iter(iterator, 0.001, use_align=True, xalign=1.0)
-    
-    @EditorSignals.before_close
-    def on_editor_before_close(self, *args):
-        self.prefs[self.editor.uri] = str(self.editor.cursor.get_line())
-                
-    @single_ref
-    def prefs(self):
+def get_prefs():
+    global prefs
+    if not prefs:
         from snaked.core.prefs import KVSettings
-        return KVSettings('positions.db')
+        prefs = KVSettings('positions.db')
+    
+    return prefs
+
+def editor_opened(editor):
+    prefs = get_prefs()
+    
+    if editor.uri in prefs:
+        from snaked.util import refresh_gui
+        refresh_gui()
+        iterator = editor.buffer.get_iter_at_line(int(prefs[editor.uri]))
+        editor.buffer.place_cursor(iterator)
+        editor.view.scroll_to_iter(iterator, 0.001, use_align=True, xalign=1.0)
+
+def editor_closed(editor):
+    prefs = get_prefs()
+    prefs[editor.uri] = str(editor.cursor.get_line())
+
+def quit():
+    global prefs
+    if prefs:
+        del prefs
