@@ -44,10 +44,8 @@ I use Snaked for all my python development tasks. Following features are impleme
 - Python smart indent.
 - Saving quick open project history and switch between them on ``<alt>Up``/``<alt>Down``.
 - Tabs. Switching on ``<alt>Left/<alt>Right``
+- Python outline navigator on ``<ctrl>o``
 
-Core cloc's - 716
-
-Plugins cloc's - 640
 
 Todo
 ----
