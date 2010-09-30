@@ -1,43 +1,65 @@
-from gobject import timeout_add
+from gobject import timeout_add, source_remove
 from string import whitespace
 
 from snaked.util import idle, refresh_gui
+from snaked.signals import connect_all, connect_external
+
+editors_to_update = []
+timer_source_id = None
+handlers = {}
+
+def init(manager):
+    manager.add_shortcut('complete-word', '<alt>slash', 'Edit',
+        'Cycle through word completions', complete_word)
+    
+    global timer_source_id
+    timer_source_id = timeout_add(3000, update_words_timer)
+
+def complete_word(editor):
+    try:
+        h = handlers[editor]
+    except KeyError:
+        return
+        
+    h.cycle()
+
+def editor_opened(editor):
+    idle(add_update_job, editor)
+    h = Plugin(editor)
+    handlers[editor] = h
+    
+def editor_closed(editor):
+    del handlers[editor]
+    
+def quit():
+    source_remove(timer_source_id)
+
+def add_update_job(editor):
+    import words
+    words.add_job(editor.uri, editor.text)
+
+def update_words_timer():
+    if editors_to_update:
+        for e in editors_to_update:
+            add_update_job(e)
+        
+        editors_to_update[:] = []
+    
+    return True
+
 
 class Plugin(object):
     def __init__(self, editor):
         self.editor = editor
         connect_all(self, buffer=editor.buffer)
-        
-        self.update_words = False
-        self.update_words_source_id = timeout_add(3000, self.do_update_words)
-        
-        idle(self.add_update_job)
-        
         self.start_word = None
         self.start_offset = None
     
-    @staticmethod
-    def register_shortcuts(manager):
-        manager.add('complete-word', '<alt>slash', 'Edit', 'Cycle through word completions')
-        
-    def init_shortcuts(self, manager):
-        manager.bind(self.editor.activator, 'complete-word', self.cycle)
-    
-    def add_update_job(self):
-        import words
-        words.add_job(self.editor.uri,
-            self.editor.buffer.get_text(*self.editor.buffer.get_bounds()))
-        
-    def do_update_words(self):
-        if self.update_words:
-            self.update_words = False
-            self.add_update_job()
-        
-        return True
-        
     @connect_external('buffer', 'changed', idle=True)    
     def on_buffer_changed(self, *args):
-        self.update_words = True
+        if not self.editor in editors_to_update:
+            editors_to_update.append(self.editor)
+            
         self.start_word = None
         self.start_iter = None
 

@@ -19,11 +19,8 @@ def editor_opened(editor):
     handlers[editor] = h
 
 def editor_closed(editor):
-    try:
-        handlers[editor].close()
-        del handlers[editor]
-    except KeyError:
-        pass
+    handlers[editor].close()
+    del handlers[editor]
 
 def goto_definition(editor):
     try:
