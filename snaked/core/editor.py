@@ -227,6 +227,9 @@ class TabbedEditorManager(EditorManager):
         self.activator = ContextShortcutActivator(self.window, self.get_context, self.shortcut_validator)
         
         self.note = gtk.Notebook()
+        self.note.set_property('tab-hborder', 5)
+#        self.note.set_show_border(True)
+        
         self.window.add(self.note)
         
         self.window.show_all()
