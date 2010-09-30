@@ -43,15 +43,17 @@ I use Snaked for all my python development tasks. Following features are impleme
 - Storing last edit position for every file.
 - Python smart indent.
 - Saving quick open project history and switch between them on ``<alt>Up``/``<alt>Down``.
+- Tabs. Switching on ``<alt>Left/<alt>Right``
 
-Core cloc's - 376
-Plugins cloc's - 620
+Core cloc's - 716
+
+Plugins cloc's - 640
 
 Todo
 ----
 
 Features to implement in nearest time (day or two):
 
+- Search
 - Sessions!
 - Smart select (word -> quotes) with one key. Block selection done.
-- Tabs!
