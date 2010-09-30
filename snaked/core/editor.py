@@ -14,6 +14,7 @@ from .plugins import PluginManager
 class Editor(SignalManager):
     editor_closed = Signal()
     request_to_open_file = Signal(str, return_type=object)
+    request_close = Signal()
     get_title = Signal(return_type=str)
     before_close = Signal()
     file_loaded = Signal()
@@ -92,7 +93,7 @@ class Editor(SignalManager):
     def open_file(self, filename):        
         editor = self.request_to_open_file.emit(filename)
         if not self.buffer.get_modified() and self.text == u'':
-            self.close()
+            self.request_close.emit()
             
         return editor
 
@@ -199,6 +200,10 @@ class EditorManager(object):
     @Editor.change_title
     def on_editor_change_title(self, editor, title):
         self.set_editor_title(editor, title)
+
+    @Editor.request_close
+    def on_editor_close_request(self, editor):
+        self.close_editor(editor)
     
     @Editor.request_to_open_file
     def on_request_to_open_file(self, editor, filename):
