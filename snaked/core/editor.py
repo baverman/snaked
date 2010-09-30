@@ -129,6 +129,8 @@ class EditorManager(object):
         shortcuts.add('quit', '<ctrl>q', 'Application', 'Quit')        
         shortcuts.add('close-window', '<ctrl>w', 'Window', 'Closes window')
         shortcuts.add('save', '<ctrl>s', 'File', 'Saves file')
+        shortcuts.add('next-editor', '<alt>Right', 'Window', 'Switches to next editor')
+        shortcuts.add('prev-editor', '<alt>Left', 'Window', 'Switches to previous editor')
 
         return shortcuts
         
@@ -231,6 +233,8 @@ class TabbedEditorManager(EditorManager):
         
         self.note = gtk.Notebook()
         self.note.set_property('tab-hborder', 5)
+        self.note.set_property('homogeneous', True)
+        self.note.connect_after('switch-page', self.on_switch_page)
         
         self.window.add(self.note)
         
@@ -262,7 +266,12 @@ class TabbedEditorManager(EditorManager):
 
     def update_top_level_title(self):
         idx = self.note.get_current_page()
-        self.window.set_title(self.note.get_tab_label_text(self.note.get_nth_page(idx)))        
+        if idx < 0:
+            return
+        
+        title = self.note.get_tab_label_text(self.note.get_nth_page(idx))
+        if title is not None:
+            self.window.set_title(title)        
                 
     def set_editor_title(self, editor, title):
         self.note.set_tab_label_text(editor.widget, title)
@@ -288,6 +297,8 @@ class TabbedEditorManager(EditorManager):
         self.shortcuts.bind(self.activator, 'quit', self.quit)
         self.shortcuts.bind(self.activator, 'close-window', self.close_editor)
         self.shortcuts.bind(self.activator, 'save', self.save)
+        self.shortcuts.bind(self.activator, 'next-editor', self.switch_to, 1)
+        self.shortcuts.bind(self.activator, 'prev-editor', self.switch_to, -1)
 
     def quit(self, *args):
         self.window.hide()
@@ -298,3 +309,10 @@ class TabbedEditorManager(EditorManager):
 
     def set_transient_for(self, editor, window):
         window.set_transient_for(self.window)
+
+    def on_switch_page(self, *args):
+        self.update_top_level_title()
+        
+    def switch_to(self, editor, dir):
+        idx = ( self.note.get_current_page() + dir ) % self.note.get_n_pages()
+        self.note.set_current_page(idx)
