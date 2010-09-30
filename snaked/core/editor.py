@@ -8,7 +8,7 @@ from ..util import save_file, idle, get_project_root, refresh_gui
 from ..signals import SignalManager, Signal, connect_all, connect_external
 
 from .prefs import Preferences, LangPreferences
-from .shortcuts import ShortcutManager, ShortcutActivator
+from .shortcuts import ShortcutManager, ShortcutActivator, ContextShortcutActivator
 from .plugins import PluginManager
 
 class Editor(SignalManager):
@@ -18,6 +18,7 @@ class Editor(SignalManager):
     before_close = Signal()
     file_loaded = Signal()
     change_title = Signal(str) 
+    request_transient_for = Signal(object)
 
     def __init__(self):    
         self.uri = None
@@ -34,11 +35,6 @@ class Editor(SignalManager):
         self.widget.show_all()
         
         connect_all(self, buffer=self.buffer)
-
-    def init_shortcuts(self, manager):
-        #manager.bind(self.activator, 'close-window', self.close)
-        #manager.bind(self.activator, 'save', self.save)
-        pass
 
     def update_title(self):
         modified = '*' if self.buffer.get_modified() else ''
@@ -82,11 +78,6 @@ class Editor(SignalManager):
             save_file(self.uri, self.buffer.get_text(*self.buffer.get_bounds()), 'utf-8')
             self.buffer.set_modified(False)
 
-    @staticmethod
-    def register_shortcuts(manager):
-        manager.add('close-window', '<ctrl>w', 'Window', 'Closes window')
-        manager.add('save', '<ctrl>s', 'File', 'Saves file')
-
     @property
     def project_root(self):
         if self.uri:
@@ -117,9 +108,9 @@ class EditorManager(object):
         self.editors = []
         self.style_manager = gtksourceview2.style_scheme_manager_get_default()
         self.lang_manager = gtksourceview2.language_manager_get_default()
-        self.plugin_manager = PluginManager()
         
-        self.init_shortcut_manager()
+        self.shortcuts = self.get_shortcut_manager()
+        self.plugin_manager = PluginManager()
         
         self.prefs = Preferences()
         self.lang_prefs = {}
@@ -131,11 +122,13 @@ class EditorManager(object):
             self.lang_prefs[lang_id] = LangPreferences(lang_id, self.prefs)
             return self.lang_prefs[lang_id]
     
-    def init_shortcut_manager(self):
-        self.shortcuts = ShortcutManager()
-        self.shortcuts.add('quit', '<ctrl>q', 'Application', 'Quit')        
-        Editor.register_shortcuts(self.shortcuts)
-        #self.plugin_manager.register_shortcuts(self.shortcuts)
+    def get_shortcut_manager(self):
+        shortcuts = ShortcutManager()
+        shortcuts.add('quit', '<ctrl>q', 'Application', 'Quit')        
+        shortcuts.add('close-window', '<ctrl>w', 'Window', 'Closes window')
+        shortcuts.add('save', '<ctrl>s', 'File', 'Saves file')
+
+        return shortcuts
         
     def open(self, filename):
         editor = self.create_editor()
@@ -145,7 +138,7 @@ class EditorManager(object):
 
         idle(self.set_editor_prefs, editor, filename)
         idle(self.set_editor_shortcuts, editor)
-        #idle(self.load_editor_plugins, editor)
+        idle(self.plugin_manager.editor_opened, editor)
         
         self.manage_editor(editor)
         
@@ -190,26 +183,12 @@ class EditorManager(object):
         else:
             editor.view.set_show_right_margin(False)
 
-    def set_editor_shortcuts(self, editor):
-        editor.init_shortcuts(self.shortcuts)
-        self.shortcuts.bind(editor.activator, 'quit', self.quit)
-        
-    def load_editor_plugins(self, editor):
-        editor.plugins = []
-        for pcls in self.plugin_manager.plugins:
-            if not hasattr(pcls, 'langs') or editor.lang in pcls.langs:
-                plugin = pcls(editor)
-                
-                if hasattr(plugin, 'init_shortcuts'):
-                    plugin.init_shortcuts(self.shortcuts)
-                
-                editor.plugins.append(plugin)
-    
     @Editor.editor_closed(idle=True)
     def on_editor_closed(self, editor):
-        editor.plugins[:] = []
+        self.plugin_manager.editor_closed(editor)
         self.editors.remove(editor)
         if not self.editors:
+            self.plugin_manager.quit()
             gtk.main_quit()
 
     @Editor.change_title
@@ -226,8 +205,12 @@ class EditorManager(object):
             e = self.open(filename)
         
         return e        
+
+    @Editor.request_transient_for
+    def on_request_transient_for(self, editor, window):
+        self.set_transient_for(editor, window)
         
-    def quit(self):
+    def quit(self, *args):
         [self.close_editor(e) for e in self.editors]
 
 
@@ -241,12 +224,24 @@ class TabbedEditorManager(EditorManager):
         self.window.set_property('default-width', 800)
         self.window.set_property('default-height', 500)
     
-        self.activator = ShortcutActivator(self.window)
+        self.activator = ContextShortcutActivator(self.window, self.get_context, self.shortcut_validator)
         
         self.note = gtk.Notebook()
         self.window.add(self.note)
         
         self.window.show_all()
+    
+    def get_context(self):
+        widget = self.note.get_nth_page(self.note.get_current_page())
+        for e in self.editors:
+            if e.widget is widget:
+                return (e,)
+
+        raise Exception('Editor not found')
+    
+    def shortcut_validator(self, ctx, key, modifier):
+        plugin = self.plugin_manager.get_plugin_by_key(key, modifier)
+        return not plugin or self.plugin_manager.plugin_is_for_editor(plugin, ctx[0])
 
     def manage_editor(self, editor):
         self.note.append_page(editor.widget)
@@ -273,4 +268,22 @@ class TabbedEditorManager(EditorManager):
     def close_editor(self, editor):
         idx = self.note.page_num(editor.widget)
         self.note.remove_page(idx)
-        editor.emit('editor-closed')
+        editor.editor_closed.emit()
+
+    def set_editor_shortcuts(self, editor):
+        self.plugin_manager.bind_shortcuts(self.activator, editor)
+
+        if hasattr(self, 'editor_shortcuts_binded'):
+            return
+        
+        self.editor_shortcuts_binded = True
+
+        self.shortcuts.bind(self.activator, 'quit', self.quit)
+        self.shortcuts.bind(self.activator, 'close-window', self.close_editor)
+        self.shortcuts.bind(self.activator, 'save', self.save)
+
+    def save(self, editor):
+        editor.save()
+
+    def set_transient_for(self, editor, window):
+        window.set_transient_for(self.window)

@@ -30,8 +30,7 @@ class QuickOpenDialog(BuilderAware):
 
         self.search_entry.grab_focus()
         
-        self.window.set_transient_for(editor.window)
-#        self.window.show()
+        editor.request_transient_for.emit(self.window)
         self.window.present()
     
     def update_recent_projects(self):
@@ -124,7 +123,7 @@ class QuickOpenDialog(BuilderAware):
         if fname:
             self.hide()
             refresh_gui()
-            self.editor().request_to_open_file(fname)
+            self.editor().open_file(fname)
         
     def open_mime(self):
         fname = self.get_selected_file()

@@ -1,30 +1,25 @@
 import os.path
-from snaked.util import idle, single_ref
+from snaked.util import idle
 
-class Plugin(object):
+dialog = None
         
-    def __init__(self, editor):
-        self.editor = editor
-        idle(self.register_project)
+def init(manager):
+    manager.add_shortcut('quick-open', '<ctrl><alt>r', 'File', "Shows quick open dialog", activate)
+
+def editor_opened(editor):
+    import settings
+    root = editor.project_root
+    if root and root not in settings.recent_projects:            
+        settings.recent_projects.append(root)                
     
-    @staticmethod
-    def register_shortcuts(manager):
-        manager.add('quick-open', '<ctrl><alt>r', 'File', "Shows quick open dialog")
-    
-    def init_shortcuts(self, manager):
-        manager.bind(self.editor.activator, 'quick-open', self.activate)
-    
-    @single_ref
-    def gui(self):
-        import gui
-        return gui.QuickOpenDialog()
+def activate(editor):
+    global dialog
+    if not dialog:
+        from gui import QuickOpenDialog
+        dialog = QuickOpenDialog()
+
+    dialog.show(editor)
         
-    def activate(self):
-        self.gui.show(self.editor)
-        
-    def register_project(self):
-        import settings
-        
-        root = self.editor.project_root
-        if root and root not in settings.recent_projects:            
-            settings.recent_projects.append(root)                
+def quit():
+    global gui
+    gui = None

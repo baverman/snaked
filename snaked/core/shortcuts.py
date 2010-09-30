@@ -18,6 +18,14 @@ class Shortcut(object):
         self.category = category
         self.desc = desc
 
+    @property
+    def keymod(self):
+        try:
+            return self.__keymod
+        except AttributeError:
+            self.__keymod = gtk.accelerator_parse(self.accel)
+            return self.__keymod
+
 
 class ShortcutActivator(object):
     def __init__(self, window):
@@ -37,3 +45,19 @@ class ShortcutActivator(object):
         cb, args = self.shortcuts[(key, modifier)]
         cb(*args)
         return True
+
+
+class ContextShortcutActivator(ShortcutActivator):
+    def __init__(self, window, context, validator):
+        super(ContextShortcutActivator, self).__init__(window)
+        self.context = context
+        self.validator = validator
+
+    def activate(self, group, window, key, modifier):
+        ctx = self.context()
+        if self.validator(ctx, key, modifier):
+            cb, args = self.shortcuts[(key, modifier)]
+            cb(*(ctx + args))
+            return True
+
+        return False
