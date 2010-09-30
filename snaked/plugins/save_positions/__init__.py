@@ -10,10 +10,10 @@ def get_prefs():
 
 def editor_opened(editor):
     prefs = get_prefs()
+    from snaked.util import refresh_gui
+    refresh_gui()
     
     if editor.uri in prefs:
-        from snaked.util import refresh_gui
-        refresh_gui()
         iterator = editor.buffer.get_iter_at_line(int(prefs[editor.uri]))
         editor.buffer.place_cursor(iterator)
         editor.view.scroll_to_iter(iterator, 0.001, use_align=True, xalign=1.0)

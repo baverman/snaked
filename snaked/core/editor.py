@@ -43,7 +43,7 @@ class Editor(SignalManager):
             title = self.get_title.emit()
 
             if not title:
-                title = self.uri
+                title = os.path.basename(self.uri)
         else:
             title = 'Unknown'
         
@@ -140,12 +140,13 @@ class EditorManager(object):
 
         idle(self.set_editor_prefs, editor, filename)
         idle(self.set_editor_shortcuts, editor)
-        idle(self.plugin_manager.editor_opened, editor)
         
         self.manage_editor(editor)
         
         if filename:
             idle(editor.load_file, filename)
+
+        idle(self.plugin_manager.editor_opened, editor)
         
         return editor
     
@@ -287,6 +288,10 @@ class TabbedEditorManager(EditorManager):
         self.shortcuts.bind(self.activator, 'quit', self.quit)
         self.shortcuts.bind(self.activator, 'close-window', self.close_editor)
         self.shortcuts.bind(self.activator, 'save', self.save)
+
+    def quit(self, *args):
+        self.window.hide()
+        super(TabbedEditorManager, self).quit()
 
     def save(self, editor):
         editor.save()

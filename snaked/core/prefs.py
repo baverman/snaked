@@ -59,7 +59,7 @@ class KVSettings(object):
         return self.db[key]
     
     def __contains__(self, key):
-        return key in self.db
+        return self.db.has_key(key)
     
     def __setitem__(self, key, value):
         self.db[key] = value
