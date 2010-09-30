@@ -32,7 +32,7 @@ Goals
 Current status
 --------------
 
-I use Snaked for all my python development tasks. Following features are implemented.
+I use Snaked for all my python development tasks. Following features are implemented:
 
 - Quick open on ``<ctrl><alt>r``.
 - Goto python definition on ``F3``.
@@ -45,6 +45,8 @@ I use Snaked for all my python development tasks. Following features are impleme
 - Saving quick open project history and switch between them on ``<alt>Up``/``<alt>Down``.
 - Tabs. Switching on ``<alt>Left/<alt>Right``
 - Python outline navigator on ``<ctrl>o``
+
+Current progress may be seen in `@a_bobrov <http://twitter.com/a_bobrov>`_.
 
 
 Todo
