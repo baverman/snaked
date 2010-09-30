@@ -36,7 +36,8 @@ class ShortcutsHolder(object):
 
 class PluginManager(object):
     def __init__(self):
-        self.enabled_plugins = ['quick_open', 'save_positions', 'edit_and_select']
+        self.enabled_plugins = ['quick_open', 'save_positions', 'edit_and_select',
+            'python']
         #, 'python', 'complete_words',
         self.loaded_plugins = {}
 

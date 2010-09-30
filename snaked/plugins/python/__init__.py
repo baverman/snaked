@@ -1,56 +1,59 @@
+langs = ['python']
+
 import gtk
 
 from snaked.util import idle, refresh_gui
-from snaked.core.signals import EditorSignals
+from snaked.signals import connect_external, connect_all
 
-def get_python_title(uri):
-    from os.path import dirname, basename, exists, join
-    
-    title = basename(uri)
-    packages = []
-    while True:
-        path = dirname(uri)
-        if path == uri:
-            break
-        
-        uri = path
-        
-        if exists(join(uri, '__init__.py')):
-            packages.append(basename(uri))
-        else:
-            break
-            
-    if packages:
-        if title != '__init__.py':
-            packages.insert(0, title.partition('.py')[0])
-            
-        return '.'.join(reversed(packages))
-    else:
-        return None
+handlers = {}
 
-class Plugin(object):
-    langs = ['python']
+def init(manager):
+    manager.add_shortcut('python-goto-definition', 'F3', 'Python',
+        'Navigates to python definition', goto_definition)
+
+def editor_opened(editor):
+    editor.connect('get-title', on_editor_get_title)
+    idle(editor.update_title)
     
+    h = EditorHandler(editor)
+    handlers[editor] = h
+
+def editor_closed(editor):
+    try:
+        handlers[editor].close()
+        del handlers[editor]
+    except KeyError:
+        pass
+
+def goto_definition(editor):
+    try:
+        h = handlers[editor]
+    except KeyError:
+        return
+        
+    h.goto_definition()
+
+def on_editor_get_title(editor):
+    if editor.uri.endswith('.py'):
+        return get_python_title(editor.uri)
+    
+    return None
+
+    
+class EditorHandler(object):
     def __init__(self, editor):
         self.editor = editor
-        idle(connect_all, self, self.editor.signals, view=editor.view)
-        idle(self.editor.update_title)
+        idle(connect_all, self, view=editor.view)
         idle(self.init_completion) 
-    
-    @staticmethod
-    def register_shortcuts(manager):
-        manager.add('python-goto-definition', 'F3', 'Python', 'Navigates to python definition')
-    
-    def init_shortcuts(self, manager):
-        manager.bind(self.editor.activator, 'python-goto-definition', self.goto_definition)
-        
-    @EditorSignals.update_title
-    def update_title(self, sender):
-        if self.editor.uri.endswith('.py'):
-            return get_python_title(self.editor.uri)
-        
-        return None
 
+    def init_completion(self):
+        provider = self.completion_provider
+        self.editor.view.get_completion().add_provider(provider)
+        
+    def close(self):
+        if hasattr(self, '__project'):
+            self.__project.close()
+        
     @property
     def project(self):
         try:
@@ -123,7 +126,7 @@ class Plugin(object):
             
         if resource:
             uri = resource.real_path
-            editor = self.editor.request_to_open_file(uri)
+            editor = self.editor.open_file(uri)
             editor.ropeproject = project 
             self.goto_line(editor, line)
         else:
@@ -131,11 +134,6 @@ class Plugin(object):
                 self.goto_line(self.editor, line)
             else:
                 print "Unknown definition"
-
-    def init_completion(self):
-        provider = self.completion_provider
-        provider.get_name()
-        self.editor.view.get_completion().add_provider(provider)
 
 
     @connect_external('view', 'key-press-event')
@@ -198,3 +196,28 @@ class Plugin(object):
         self.editor.buffer.end_user_action()
 
         return True
+
+def get_python_title(uri):
+    from os.path import dirname, basename, exists, join
+    
+    title = basename(uri)
+    packages = []
+    while True:
+        path = dirname(uri)
+        if path == uri:
+            break
+        
+        uri = path
+        
+        if exists(join(uri, '__init__.py')):
+            packages.append(basename(uri))
+        else:
+            break
+            
+    if packages:
+        if title != '__init__.py':
+            packages.insert(0, title.partition('.py')[0])
+            
+        return '.'.join(reversed(packages))
+    else:
+        return None

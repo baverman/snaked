@@ -93,6 +93,8 @@ class Editor(SignalManager):
         editor = self.request_to_open_file.emit(filename)
         if not self.buffer.get_modified() and self.text == u'':
             self.close()
+            
+        return editor
 
     @property
     def cursor(self):
@@ -228,7 +230,6 @@ class TabbedEditorManager(EditorManager):
         
         self.note = gtk.Notebook()
         self.note.set_property('tab-hborder', 5)
-#        self.note.set_show_border(True)
         
         self.window.add(self.note)
         
