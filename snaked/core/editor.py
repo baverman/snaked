@@ -238,7 +238,7 @@ class TabbedEditorManager(EditorManager):
         
         self.note = gtk.Notebook()
         self.note.set_property('tab-hborder', 5)
-        self.note.set_property('homogeneous', True)
+        self.note.set_property('homogeneous', False)
         self.note.connect_after('switch-page', self.on_switch_page)
         
         self.window.add(self.note)
@@ -258,7 +258,8 @@ class TabbedEditorManager(EditorManager):
         return not plugin or self.plugin_manager.plugin_is_for_editor(plugin, ctx[0])
 
     def manage_editor(self, editor):
-        self.note.append_page(editor.widget)
+        label = gtk.Label('Unknown')
+        self.note.append_page(editor.widget, label)
         self.focus_editor(editor)
         editor.view.grab_focus()
        
