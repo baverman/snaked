@@ -100,6 +100,8 @@ class QuickOpenDialog(BuilderAware):
                 
                 if i % 10 == 0:
                     refresh_gui()
+                    
+                i += 1
 
         self.filelist_tree.columns_autosize()
 

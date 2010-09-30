@@ -104,6 +104,11 @@ class Editor(SignalManager):
     @property
     def text(self):
         return self.buffer.get_text(*self.buffer.get_bounds())
+
+    def goto_line(self, line):
+        iterator = self.buffer.get_iter_at_line(line - 1)
+        self.buffer.place_cursor(iterator)
+        self.view.scroll_to_iter(iterator, 0.001, use_align=True, xalign=1.0)
         
         
 class EditorManager(object):
@@ -240,7 +245,6 @@ class TabbedEditorManager(EditorManager):
         self.note.set_property('tab-hborder', 5)
         self.note.set_property('homogeneous', False)
         self.note.connect_after('switch-page', self.on_switch_page)
-        
         self.window.add(self.note)
         
         self.window.show_all()
