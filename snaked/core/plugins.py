@@ -37,7 +37,7 @@ class ShortcutsHolder(object):
 class PluginManager(object):
     def __init__(self):
         self.enabled_plugins = ['quick_open', 'save_positions', 'edit_and_select',
-            'python', 'complete_words']
+            'python', 'complete_words', 'hash_comment']
 
         self.loaded_plugins = {}
 
@@ -81,7 +81,14 @@ class PluginManager(object):
 
     def plugins_for(self, editor):
         for name in self.enabled_plugins:
-            plugin = self.get_plugin(name)
+            try:
+                plugin = self.get_plugin(name)
+            except Exception, e:
+                editor.message("Can't load %s plugin" % name, 5000)
+                self.enabled_plugins.remove(name)
+                traceback.print_exc()
+                continue
+
             if self.plugin_is_for_editor(plugin, editor):
                 yield plugin
 
