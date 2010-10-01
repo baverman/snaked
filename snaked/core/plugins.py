@@ -8,7 +8,6 @@ def discover_plugins():
     import snaked.plugins
     result = {}
     for p in snaked.plugins.__path__:
-        print p
         for n in os.listdir(p):         
             if isdir(join(p, n)) and exists(join(p, n, '__init__.py')):
                 result[n] = True

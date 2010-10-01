@@ -66,7 +66,7 @@ class Plugin(object):
         if not project:
             project = getattr(self.editor, 'ropeproject', None)
             if not project:
-                print "Can't find project path"
+                self.editor.message("Can't find project path")
                 return
         
         project.validate()
@@ -82,6 +82,7 @@ class Plugin(object):
         except Exception, e:
             import traceback
             traceback.print_exc()
+            self.editor.message(str(e), 5000)
             return
         
         if resource and resource.real_path == current_resource.real_path:
@@ -96,7 +97,7 @@ class Plugin(object):
             if line:
                 self.goto_line(self.editor, line)
             else:
-                print "Unknown definition"
+                self.editor.message("Unknown definition")
 
 
     @connect_external('view', 'key-press-event')

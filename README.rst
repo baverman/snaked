@@ -45,6 +45,7 @@ I use Snaked for all my python development tasks. Following features are impleme
 - Saving quick open project history and switch between them on ``<alt>Up``/``<alt>Down``.
 - Tabs. Switching on ``<alt>Left/<alt>Right``
 - Python outline navigator on ``<ctrl>o``
+- Feedback messages api. For example syntax errors on python autocomplete and so on.
 
 Current progress may be seen in `@a_bobrov <http://twitter.com/a_bobrov>`_.
 

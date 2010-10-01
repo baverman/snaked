@@ -142,7 +142,7 @@ class Plugin(object):
                 pass
 
             if matches[idx] == word_to_complete:
-                print "Word completed already"
+                self.editor.message("Word completed already")
                 return False
                 
             self.on_buffer_changed_handler.block()             
@@ -154,4 +154,4 @@ class Plugin(object):
             refresh_gui()
             self.on_buffer_changed_handler.unblock()             
         else:
-            print "No word to complete"
+            self.editor.message("No word to complete")

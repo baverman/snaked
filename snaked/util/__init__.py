@@ -75,6 +75,21 @@ def single_ref(func):
         
     return property(inner)
 
+def lazy_property(func):
+    real_name = '__' + func.__name__
+    
+    def inner(self):
+        try:
+            return getattr(self, real_name)
+        except AttributeError:
+            pass
+        
+        var = func(self)
+        setattr(self, real_name, var)
+        return var
+        
+    return property(inner)
+
 
 class BuilderAware(object):
     def __init__(self, glade_file):

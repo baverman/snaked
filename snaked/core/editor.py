@@ -4,7 +4,7 @@ import gtk
 import gtksourceview2
 import pango
 
-from ..util import save_file, idle, get_project_root, refresh_gui
+from ..util import save_file, idle, get_project_root, refresh_gui, lazy_property
 from ..signals import SignalManager, Signal, connect_all, connect_external
 
 from .prefs import Preferences, LangPreferences
@@ -109,7 +109,15 @@ class Editor(SignalManager):
         iterator = self.buffer.get_iter_at_line(line - 1)
         self.buffer.place_cursor(iterator)
         self.view.scroll_to_iter(iterator, 0.001, use_align=True, xalign=1.0)
-        
+
+    @lazy_property
+    def feedback_popup(self):
+        from .feedback import FeedbackPopup
+        return FeedbackPopup(self.view)
+                
+    def message(self, message, timeout=1500):
+        self.feedback_popup.show(message, timeout)
+
         
 class EditorManager(object):
     def __init__(self):
