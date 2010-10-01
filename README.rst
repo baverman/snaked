@@ -47,6 +47,7 @@ I use Snaked for all my python development tasks. Following features are impleme
 - Python outline navigator on ``<ctrl>o``.
 - Feedback messages api. For example syntax errors on python autocomplete and so on.
 - Hash comment plugin for commenting python, ruby, etc... code. Activated on ``<ctrl>slash``.
+- Improved smart block selection algorithm.
 
 Current progress may be seen in `@a_bobrov <http://twitter.com/a_bobrov>`_.
 
