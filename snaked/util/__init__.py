@@ -18,7 +18,14 @@ def idle(callable, *args, **kwargs):
 def save_file(filename, data, encoding):
     tmpfilename = realpath(filename) + '.bak'
     
-    f = open(tmpfilename, 'w')
+    try:
+        f = open(tmpfilename, 'w')
+    except IOError:
+        dname = dirname(tmpfilename)
+        if not exists(dname):
+            os.makedirs(dname, mode=0755)
+            f = open(tmpfilename, 'w')
+                    
     f.write(data.encode(encoding))
     f.close()
     

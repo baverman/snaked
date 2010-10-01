@@ -53,18 +53,19 @@ class Editor(SignalManager):
     def load_file(self, filename):
         self.uri = os.path.abspath(filename)
         
-        self.view.window.freeze_updates()        
-        self.on_modified_changed_handler.block()
-        self.buffer.begin_not_undoable_action()
-        
-        self.buffer.set_text(open(filename).read().decode('utf-8'))
-        self.buffer.set_modified(False)
-        
-        self.buffer.end_not_undoable_action()
-        self.on_modified_changed_handler.unblock()
-        
-        self.buffer.place_cursor(self.buffer.get_start_iter())
-        self.view.window.thaw_updates()
+        if os.path.exists(self.uri):
+            self.view.window.freeze_updates()        
+            self.on_modified_changed_handler.block()
+            self.buffer.begin_not_undoable_action()
+            
+            self.buffer.set_text(open(filename).read().decode('utf-8'))
+            self.buffer.set_modified(False)
+            
+            self.buffer.end_not_undoable_action()
+            self.on_modified_changed_handler.unblock()
+            
+            self.buffer.place_cursor(self.buffer.get_start_iter())
+            self.view.window.thaw_updates()
 
         self.file_loaded.emit()
                 
@@ -76,8 +77,11 @@ class Editor(SignalManager):
             
     def save(self):
         if self.uri:
-            save_file(self.uri, self.buffer.get_text(*self.buffer.get_bounds()), 'utf-8')
-            self.buffer.set_modified(False)
+            try:
+                save_file(self.uri, self.buffer.get_text(*self.buffer.get_bounds()), 'utf-8')
+                self.buffer.set_modified(False)
+            except Exception, e:
+                self.message(str(e), 5000)
 
     @property
     def project_root(self):
@@ -92,7 +96,7 @@ class Editor(SignalManager):
 
     def open_file(self, filename):        
         editor = self.request_to_open_file.emit(filename)
-        if not self.buffer.get_modified() and self.text == u'':
+        if not self.uri and not self.buffer.get_modified() and self.text == u'':
             self.request_close.emit()
             
         return editor
