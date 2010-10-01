@@ -43,9 +43,10 @@ I use Snaked for all my python development tasks. Following features are impleme
 - Storing last edit position for every file.
 - Python smart indent.
 - Saving quick open project history and switch between them on ``<alt>Up``/``<alt>Down``.
-- Tabs. Switching on ``<alt>Left/<alt>Right``
-- Python outline navigator on ``<ctrl>o``
+- Tabs. Switching on ``<alt>Left/<alt>Right``.
+- Python outline navigator on ``<ctrl>o``.
 - Feedback messages api. For example syntax errors on python autocomplete and so on.
+- Hash comment plugin for commenting python, ruby, etc... code. Activated on ``<ctrl>slash``.
 
 Current progress may be seen in `@a_bobrov <http://twitter.com/a_bobrov>`_.
 
