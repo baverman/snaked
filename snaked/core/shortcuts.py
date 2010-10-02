@@ -48,16 +48,16 @@ class ShortcutActivator(object):
 
 
 class ContextShortcutActivator(ShortcutActivator):
-    def __init__(self, window, context, validator):
+    def __init__(self, window, context):
         super(ContextShortcutActivator, self).__init__(window)
         self.context = context
-        self.validator = validator
 
     def activate(self, group, window, key, modifier):
         ctx = self.context()
-        if self.validator(ctx, key, modifier):
-            cb, args = self.shortcuts[(key, modifier)]
+        cb, args = self.shortcuts[(key, modifier)]
+        
+        if hasattr(cb, 'provide_key'):
+            return cb(key, modifier, *(ctx + args))
+        else:
             cb(*(ctx + args))
             return True
-
-        return False

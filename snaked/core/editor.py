@@ -251,7 +251,7 @@ class TabbedEditorManager(EditorManager):
         self.window.set_property('default-width', 800)
         self.window.set_property('default-height', 500)
     
-        self.activator = ContextShortcutActivator(self.window, self.get_context, self.shortcut_validator)
+        self.activator = ContextShortcutActivator(self.window, self.get_context)
         
         self.note = gtk.Notebook()
         self.note.set_property('tab-hborder', 5)
@@ -268,10 +268,6 @@ class TabbedEditorManager(EditorManager):
                 return (e,)
 
         raise Exception('Editor not found')
-    
-    def shortcut_validator(self, ctx, key, modifier):
-        plugin = self.plugin_manager.get_plugin_by_key(key, modifier)
-        return not plugin or self.plugin_manager.plugin_is_for_editor(plugin, ctx[0])
 
     def manage_editor(self, editor):
         label = gtk.Label('Unknown')

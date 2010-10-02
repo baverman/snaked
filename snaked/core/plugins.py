@@ -62,7 +62,7 @@ class PluginManager(object):
             shortcut = Shortcut(name, accel, category, desc)
             shortcut.callback = callback
 
-            self.plugin_by_keys[shortcut.keymod] = plugin
+            self.plugin_by_keys[shortcut.keymod] = (plugin, shortcut)
             self.shortcuts_by_plugins.setdefault(plugin, []).append(shortcut)
 
     def bind_shortcuts(self, activator, editor):
@@ -71,10 +71,16 @@ class PluginManager(object):
                 try:
                     self.binded_shortcuts[activator][s.name]
                 except KeyError:
-                    activator.bind(s.accel, s.callback)
+                    activator.bind(s.accel, self.activate_plugin_shortcut)
 
-    def get_plugin_by_key(self, key, modifier):
-        return self.plugin_by_keys.get((key, modifier), None)
+    def activate_plugin_shortcut(self, key, modifier, editor, *args):
+        plugin, shortcut = self.plugin_by_keys[(key, modifier)]
+        if self.plugin_is_for_editor(plugin, editor):
+            shortcut.callback(editor, *args)
+            return True
+        
+        return False
+    activate_plugin_shortcut.provide_key = True
 
     def plugin_is_for_editor(self, plugin, editor):
         return not hasattr(plugin, 'langs') or editor.lang in plugin.langs
