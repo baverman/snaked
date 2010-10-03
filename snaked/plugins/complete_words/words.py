@@ -17,6 +17,9 @@ def process(filename, data):
     for w, c in result.iteritems():
         words.setdefault(w, {})[filename] = c
     
+    for w in [w for w, files in words.iteritems() if w not in result and filename in files]:
+        del words[w][filename]
+
 def add_job(filename, data):
     if filename in current_jobs:
         current_jobs[filename].join()

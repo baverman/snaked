@@ -241,7 +241,11 @@ class EditorManager(object):
     def new_file_action(self, editor):
         dialog = gtk.FileChooserDialog('Create file', None, gtk.FILE_CHOOSER_ACTION_SAVE,
             (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
-        dialog.set_current_folder(editor.project_root)
+        
+        root = editor.project_root
+        if root:
+            dialog.set_current_folder(root)
+
         dialog.set_do_overwrite_confirmation(True)
         self.set_transient_for(editor, dialog)
         
