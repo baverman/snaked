@@ -49,6 +49,7 @@ I use Snaked for all my python development tasks. Following features are impleme
 - Hash comment plugin for commenting python, ruby, etc... code. Activated on ``<ctrl>slash``.
 - Improved smart block selection algorithm.
 - pyflakes integration (very basic now)
+- goto line on ``<ctrl>l``
 
 Current progress may be seen in `@a_bobrov <http://twitter.com/a_bobrov>`_.
 

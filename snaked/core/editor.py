@@ -25,14 +25,18 @@ class Editor(SignalManager):
     def __init__(self):    
         self.uri = None
         
-        self.widget = gtk.ScrolledWindow()
-        self.widget.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
+        sw = gtk.ScrolledWindow()
+        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
                 
         self.buffer = gtksourceview2.Buffer()
 
         self.view = gtksourceview2.View()
         self.view.set_buffer(self.buffer)
-        self.widget.add(self.view)
+        sw.add(self.view)
+
+
+        self.widget = gtk.VBox(False, 0)
+        self.widget.pack_start(sw)
 
         self.widget.show_all()
         
