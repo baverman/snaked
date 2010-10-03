@@ -4,7 +4,7 @@ import sys
 
 gobject.threads_init()
 
-from .editor import TabbedEditorManager
+from .tabbed import TabbedEditorManager
 
 def run():
     manager = TabbedEditorManager()

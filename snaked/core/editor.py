@@ -149,6 +149,7 @@ class EditorManager(object):
         shortcuts.add('save', '<ctrl>s', 'File', 'Saves file')
         shortcuts.add('next-editor', '<alt>Right', 'Window', 'Switches to next editor')
         shortcuts.add('prev-editor', '<alt>Left', 'Window', 'Switches to previous editor')
+        shortcuts.add('new-file', '<ctrl>n', 'File', 'Open dialog to choose new file directory and name')
 
         return shortcuts
         
@@ -237,100 +238,18 @@ class EditorManager(object):
     def on_request_transient_for(self, editor, window):
         self.set_transient_for(editor, window)
         
+    def new_file_action(self, editor):
+        dialog = gtk.FileChooserDialog('Create file', None, gtk.FILE_CHOOSER_ACTION_SAVE,
+            (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
+        dialog.set_current_folder(editor.project_root)
+        dialog.set_do_overwrite_confirmation(True)
+        self.set_transient_for(editor, dialog)
+        
+        response = dialog.run()
+        if response == gtk.RESPONSE_OK:
+            self.open(dialog.get_filename())
+            
+        dialog.destroy()
+        
     def quit(self, *args):
         [self.close_editor(e) for e in self.editors]
-
-
-class TabbedEditorManager(EditorManager):
-    def __init__(self):
-        super(TabbedEditorManager, self).__init__()
-
-        self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-        self.window.connect('delete-event', self.on_delete_event)
-
-        self.window.set_property('default-width', 800)
-        self.window.set_property('default-height', 500)
-    
-        self.activator = ContextShortcutActivator(self.window, self.get_context)
-        
-        self.note = gtk.Notebook()
-        self.note.set_property('tab-hborder', 5)
-        self.note.set_property('homogeneous', False)
-        self.note.connect_after('switch-page', self.on_switch_page)
-        self.window.add(self.note)
-        
-        self.window.show_all()
-    
-    def get_context(self):
-        widget = self.note.get_nth_page(self.note.get_current_page())
-        for e in self.editors:
-            if e.widget is widget:
-                return (e,)
-
-        raise Exception('Editor not found')
-
-    def manage_editor(self, editor):
-        label = gtk.Label('Unknown')
-        self.note.append_page(editor.widget, label)
-        self.focus_editor(editor)
-        editor.view.grab_focus()
-       
-    def create_editor(self):
-        return Editor()
-
-    def focus_editor(self, editor):
-        idx = self.note.page_num(editor.widget)
-        self.note.set_current_page(idx)
-
-    def update_top_level_title(self):
-        idx = self.note.get_current_page()
-        if idx < 0:
-            return
-        
-        title = self.note.get_tab_label_text(self.note.get_nth_page(idx))
-        if title is not None:
-            self.window.set_title(title)        
-                
-    def set_editor_title(self, editor, title):
-        self.note.set_tab_label_text(editor.widget, title)
-        if self.note.get_current_page() == self.note.page_num(editor.widget):
-            self.update_top_level_title()
-
-    def on_delete_event(self, *args):
-        self.quit()
-
-    def close_editor(self, editor):
-        idx = self.note.page_num(editor.widget)
-        self.note.remove_page(idx)
-        editor.editor_closed.emit()
-
-    def set_editor_shortcuts(self, editor):
-        self.plugin_manager.bind_shortcuts(self.activator, editor)
-
-        if hasattr(self, 'editor_shortcuts_binded'):
-            return
-        
-        self.editor_shortcuts_binded = True
-
-        self.shortcuts.bind(self.activator, 'quit', self.quit)
-        self.shortcuts.bind(self.activator, 'close-window', self.close_editor)
-        self.shortcuts.bind(self.activator, 'save', self.save)
-        self.shortcuts.bind(self.activator, 'next-editor', self.switch_to, 1)
-        self.shortcuts.bind(self.activator, 'prev-editor', self.switch_to, -1)
-
-    def quit(self, *args):
-        self.window.hide()
-        super(TabbedEditorManager, self).quit()
-
-    def save(self, editor):
-        editor.save()
-
-    def set_transient_for(self, editor, window):
-        window.set_transient_for(self.window)
-
-    def on_switch_page(self, *args):
-        self.update_top_level_title()
-        
-    def switch_to(self, editor, dir):
-        idx = ( self.note.get_current_page() + dir ) % self.note.get_n_pages()
-        self.note.set_current_page(idx)
