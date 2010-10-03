@@ -4,11 +4,11 @@ import gtk
 import gtksourceview2
 import pango
 
-from ..util import save_file, idle, get_project_root, refresh_gui, lazy_property
+from ..util import save_file, idle, get_project_root, lazy_property
 from ..signals import SignalManager, Signal, connect_all, connect_external
 
 from .prefs import Preferences, LangPreferences
-from .shortcuts import ShortcutManager, ShortcutActivator, ContextShortcutActivator
+from .shortcuts import ShortcutManager
 from .plugins import PluginManager
 
 class Editor(SignalManager):
@@ -232,7 +232,7 @@ class EditorManager(object):
         else:
             e = self.open(filename)
         
-        return e        
+        return e
 
     @Editor.request_transient_for
     def on_request_transient_for(self, editor, window):

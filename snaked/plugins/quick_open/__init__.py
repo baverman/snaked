@@ -1,6 +1,3 @@
-import os.path
-from snaked.util import idle
-
 dialog = None
         
 def init(manager):
