@@ -20,6 +20,7 @@ class Editor(SignalManager):
     file_loaded = Signal()
     change_title = Signal(str) 
     request_transient_for = Signal(object)
+    file_saved = Signal()
 
     def __init__(self):    
         self.uri = None
@@ -80,6 +81,7 @@ class Editor(SignalManager):
             try:
                 save_file(self.uri, self.buffer.get_text(*self.buffer.get_bounds()), 'utf-8')
                 self.buffer.set_modified(False)
+                self.file_saved.emit()
             except Exception, e:
                 self.message(str(e), 5000)
 
