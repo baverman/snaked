@@ -1,18 +1,25 @@
-import gtk
-import gobject
-import sys
-
-gobject.threads_init()
-
-from .tabbed import TabbedEditorManager
-
 def run():
+    from optparse import OptionParser
+
+    parser = OptionParser()
+    parser.add_option('-s', '--session', dest='session', help="Open snaked with specified session")
+    options, args = parser.parse_args()
+
+    import gtk
+    import gobject
+    gobject.threads_init()
+    
+    from .tabbed import TabbedEditorManager
+
     manager = TabbedEditorManager()
 
-    if len(sys.argv) > 1:
-        for f in sys.argv[1:]:    
-            manager.open(f)
+    if options.session:
+        manager.open_session(options.session)
     else:
-        manager.open(None)
+        if len(args):
+            for f in args:    
+                manager.open(f)
+        else:
+            manager.open(None)
     
     gtk.main()

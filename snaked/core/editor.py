@@ -140,6 +140,8 @@ class EditorManager(object):
         
         self.prefs = Preferences()
         self.lang_prefs = {}
+        
+        self.session = None
 
     def get_lang_prefs(self, lang_id):
         try:
@@ -262,4 +264,24 @@ class EditorManager(object):
         dialog.destroy()
         
     def quit(self, *args):
+        if self.session:
+            self.save_session(self.session)
+            
         [self.close_editor(e) for e in self.editors]
+
+    def open_session(self, session):
+        self.session = session
+        from .prefs import ListSettings
+        settings = ListSettings('session-%s.db' % session)
+        files = settings.load()
+
+        if files:        
+            for f in files:
+                self.open(f)
+        else:
+            self.open(None)
+                    
+    def save_session(self, session):
+        from .prefs import ListSettings
+        settings = ListSettings('session-%s.db' % session)
+        settings.store(e.uri for e in self.editors if e.uri)
