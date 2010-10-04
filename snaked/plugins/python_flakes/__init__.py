@@ -5,20 +5,11 @@ import os.path
 def editor_opened(editor):
     editor.connect('file-saved', on_file_saved)
     if os.path.exists(editor.uri):    
-        on_file_saved(editor)
-    
-def editor_closed(editor):
-    pass
+        add_job(editor)
     
 def on_file_saved(editor):
-    try:
-        problems = get_problem_list(editor.uri)
-    except Exception, e:
-        editor.message(str(e), 5000)
-        return
-
-    mark_problems(editor, problems)
-
+    add_job(editor)
+    
 def get_tag(editor):
     table = editor.buffer.get_tag_table()
     tag = table.lookup('flakes')
@@ -59,3 +50,18 @@ def get_problem_list(filename):
         result.append((int(line), name.group(1), message))
         
     return result
+
+def add_job(editor):
+    from threading import Thread
+    from snaked.util import idle
+    
+    def job():
+        try:
+            problems = get_problem_list(editor.uri)
+        except Exception, e:
+            idle(editor.message, str(e), 5000)
+            return
+
+        idle(mark_problems, editor, problems)
+        
+    Thread(target=job).start()
