@@ -1,9 +1,11 @@
 import gtk
 import pango
+import os.path
 
 def editor_opened(editor):
     editor.connect('file-saved', on_file_saved)
-    on_file_saved(editor)
+    if os.path.exists(editor.uri):    
+        on_file_saved(editor)
     
 def editor_closed(editor):
     pass
