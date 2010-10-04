@@ -4,7 +4,7 @@ import os.path
 
 def editor_opened(editor):
     editor.connect('file-saved', on_file_saved)
-    if os.path.exists(editor.uri):    
+    if editor.uri and os.path.exists(editor.uri):    
         add_job(editor)
     
 def on_file_saved(editor):
