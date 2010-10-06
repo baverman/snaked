@@ -10,6 +10,9 @@ def delete_line(editor):
     editor.buffer.delete(*get_line_bounds(editor.cursor))
     editor.buffer.end_user_action()
 
+def smart_select(editor):
+    select_range(editor.buffer, *get_smart_select(editor))
+
 def get_line_bounds(cursor):
     end = cursor.copy()
     start = end.copy()
@@ -203,6 +206,3 @@ def get_smart_select(editor):
             return smart_extend_selection(False, *get_line_bounds(cursor))
             
         return cursor, cursor
-    
-def smart_select(editor):
-    select_range(editor.buffer, *get_smart_select(editor))

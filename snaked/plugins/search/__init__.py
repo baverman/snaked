@@ -42,16 +42,21 @@ def do_find(editor, search_func, dir, start_from=None):
         editor.view.scroll_to_iter(bounds[0], 0.001, use_align=True, xalign=1.0)
         if start_from:
             editor.message('Wrap search', 800)
+        
+        return True
     elif not start_from:
-        do_find(editor, search_func, dir, editor.buffer.get_bounds()[dir])
+        return do_find(editor, search_func, dir, editor.buffer.get_bounds()[dir])
     else:
         editor.message('Text not found')
+    
+    return False
     
 def find_prev(editor):
     do_find(editor, gtksourceview2.iter_backward_search, 1) 
 
-def find_next(editor):
-    do_find(editor, gtksourceview2.iter_forward_search, 0) 
+def find_next(editor, grab_focus=False):
+    if do_find(editor, gtksourceview2.iter_forward_search, 0) and grab_focus:
+        editor.view.grab_focus() 
 
 def create_widget(editor):
     widget = gtk.HBox(False, 10)
@@ -106,9 +111,8 @@ def mark_occurences(editor, search):
 def on_search_activate(sender, editor, widget):
     delete_all_marks(editor)
     idle(mark_occurences, editor, sender.get_text())
-    editor.view.grab_focus()
     editor.push_escape(hide, editor, widget)
-    find_next(editor)
+    find_next(editor, True)
 
 def on_key_press(sender, event, editor, widget):
     if event.keyval == gtk.keysyms.Escape:
