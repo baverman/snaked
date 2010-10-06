@@ -1,4 +1,5 @@
 import os.path
+import weakref
 
 import gtk
 import gtksourceview2
@@ -21,6 +22,7 @@ class Editor(SignalManager):
     change_title = Signal(str) 
     request_transient_for = Signal(object)
     file_saved = Signal()
+    push_escape_callback = Signal(object, object)
 
     def __init__(self):    
         self.uri = None
@@ -128,6 +130,8 @@ class Editor(SignalManager):
     def message(self, message, timeout=1500):
         self.feedback_popup.show(message, timeout)
 
+    def push_escape(self, callback, *args):
+        self.push_escape_callback.emit(callback, args)
         
 class EditorManager(object):
     def __init__(self):
@@ -140,6 +144,9 @@ class EditorManager(object):
         
         self.prefs = Preferences()
         self.lang_prefs = {}
+        
+        self.escape_stack = []
+        self.escape_map = {}
         
         self.session = None
 
@@ -285,3 +292,21 @@ class EditorManager(object):
         from .prefs import ListSettings
         settings = ListSettings('session-%s.db' % session)
         settings.store(e.uri for e in self.editors if e.uri)
+
+    @Editor.push_escape_callback
+    def on_push_escape_callback(self, editor, callback, args):
+        key = (callback,) + tuple(map(id, args))
+        if key in self.escape_map:
+            return
+            
+        self.escape_map[key] = True
+        self.escape_stack.append((key, callback, map(weakref.ref, args)))
+        
+    def process_escape(self, editor):
+        while self.escape_stack:
+            key, cb, args = self.escape_stack.pop()
+            del self.escape_map[key]
+            realargs = [a() for a in args]
+            if not any(a is None for a in realargs):
+                cb(*realargs)
+                return

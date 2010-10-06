@@ -52,6 +52,7 @@ I use Snaked for all my python development tasks. Following features are impleme
 - Goto line on ``<ctrl>l``
 - Goto dir on ``<ctrl><alt>l``
 - Session to store opened editors on application quit.
+- Search on ``<ctrl>f``
 
 Current progress may be seen in `@a_bobrov <http://twitter.com/a_bobrov>`_.
 
@@ -61,5 +62,9 @@ Todo
 
 Features to implement in nearest time (day or two):
 
-- Search
 - Smart select (word -> quotes) with one key. Block selection done.
+- Plugin manager to allow one enable/disable installed plugins
+- Shortcut manager
+- User manual
+- Release announce
+

@@ -38,7 +38,7 @@ class PluginManager(object):
     def __init__(self):
         self.enabled_plugins = ['quick_open', 'save_positions', 'edit_and_select',
             'python', 'complete_words', 'hash_comment', 'python_flakes', 'goto_line',
-            'goto_dir']
+            'goto_dir', 'search']
 
         self.loaded_plugins = {}
 
