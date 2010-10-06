@@ -1,7 +1,7 @@
 import gtk
 import gtksourceview2
 
-from snaked.util import idle, refresh_gui
+from snaked.util import idle
 
 active_widgets = {}
 
@@ -29,7 +29,7 @@ def do_find(editor, search_func, dir, start_from=None):
     
     iter = start_from
     if not iter:
-        if editor.buffer.get_has_selection() and dir==1:
+        if editor.buffer.get_has_selection() and dir == 1:
             iter = editor.buffer.get_iter_at_mark(editor.buffer.get_selection_bound())
         else:
             iter = editor.cursor

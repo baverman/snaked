@@ -23,8 +23,7 @@ def get_line_bounds(cursor):
     return start, end    
     
 def select_range(buffer, start, end):
-    buffer.move_mark_by_name('insert', start)
-    buffer.move_mark_by_name('selection_bound', end)
+    buffer.select_range(end, start)
     
 def cursor_on_start_or_end_whitespace(cursor):
     if cursor.starts_line() or cursor.ends_line():
