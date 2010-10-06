@@ -2,6 +2,8 @@ import gtk
 import pango
 import os.path
 
+langs = ['python']
+
 def editor_opened(editor):
     editor.connect('file-saved', on_file_saved)
     if editor.uri and os.path.exists(editor.uri):    
