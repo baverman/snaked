@@ -43,8 +43,8 @@ class ShortcutActivator(object):
         
     def activate(self, group, window, key, modifier):
         cb, args = self.shortcuts[(key, modifier)]
-        cb(*args)
-        return True
+        result = cb(*args)
+        return result is None or result
 
 
 class ContextShortcutActivator(ShortcutActivator):
@@ -59,5 +59,5 @@ class ContextShortcutActivator(ShortcutActivator):
         if hasattr(cb, 'provide_key'):
             return cb(key, modifier, *(ctx + args))
         else:
-            cb(*(ctx + args))
-            return True
+            result = cb(*(ctx + args))
+            return result is None or result

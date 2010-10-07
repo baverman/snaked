@@ -309,4 +309,6 @@ class EditorManager(object):
             realargs = [a() for a in args]
             if not any(a is None for a in realargs):
                 cb(*realargs)
-                return
+                return False
+                
+        return False
