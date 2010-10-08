@@ -1,3 +1,7 @@
+author = 'Anton Bobrov<bobrov@vl.ru>'
+name = 'Complete words'
+desc = 'Cycle through possible word completions'
+
 from gobject import timeout_add, source_remove
 from string import whitespace
 

@@ -70,6 +70,9 @@ class KVSettings(object):
 class ListSettings(object):
     def __init__(self, name):
         self.path = get_settings_path(name)
+
+    def exists(self):
+        return os.path.exists(self.path)
     
     def load(self):
         try:

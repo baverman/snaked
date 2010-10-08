@@ -1,18 +1,12 @@
-import os
 import sys
-from os.path import join, isdir, exists
-from .shortcuts import Shortcut
 import traceback
 
-def discover_plugins():
-    import snaked.plugins
-    result = {}
-    for p in snaked.plugins.__path__:
-        for n in os.listdir(p):         
-            if isdir(join(p, n)) and exists(join(p, n, '__init__.py')):
-                result[n] = True
-                
-    return result.keys()
+from snaked.core.shortcuts import Shortcut
+from snaked.core.prefs import ListSettings
+
+default_enabled_plugins = ['quick_open', 'save_positions', 'edit_and_select',
+    'python', 'complete_words', 'hash_comment', 'python_flakes', 'goto_line',
+    'goto_dir', 'search']
 
 def get_package(name):
     try:
@@ -36,9 +30,7 @@ class ShortcutsHolder(object):
 
 class PluginManager(object):
     def __init__(self):
-        self.enabled_plugins = ['quick_open', 'save_positions', 'edit_and_select',
-            'python', 'complete_words', 'hash_comment', 'python_flakes', 'goto_line',
-            'goto_dir', 'search']
+        self.restore_enabled_plugins()
 
         self.loaded_plugins = {}
 
@@ -90,7 +82,7 @@ class PluginManager(object):
         for name in self.enabled_plugins:
             try:
                 plugin = self.get_plugin(name)
-            except Exception, e:
+            except Exception:
                 editor.message("Can't load %s plugin" % name, 5000)
                 self.enabled_plugins.remove(name)
                 traceback.print_exc()
@@ -122,3 +114,27 @@ class PluginManager(object):
                     p.quit()
                 except:
                     traceback.print_exc()
+    
+    def set_plugin_list(self, plugin_list):
+        self.enabled_plugins = plugin_list
+        self.save_enabled_plugins()
+        
+    @property
+    def prefs(self):
+        return ListSettings('enabled-plugins.db')
+        
+    def save_enabled_plugins(self):
+        self.prefs.store(self.enabled_plugins)
+            
+    def restore_enabled_plugins(self):
+        prefs = self.prefs
+        if prefs.exists():
+            self.enabled_plugins = prefs.load()
+        else:
+            self.enabled_plugins = default_enabled_plugins
+        
+    def show_plugins_prefs(self, editor):
+        from gui import PluginDialog
+        dialog = PluginDialog()
+        editor.request_transient_for.emit(dialog.window)
+        dialog.show(self.enabled_plugins, self.set_plugin_list)

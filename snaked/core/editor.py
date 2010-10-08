@@ -165,6 +165,7 @@ class EditorManager(object):
         shortcuts.add('next-editor', '<alt>Right', 'Window', 'Switches to next editor')
         shortcuts.add('prev-editor', '<alt>Left', 'Window', 'Switches to previous editor')
         shortcuts.add('new-file', '<ctrl>n', 'File', 'Open dialog to choose new file directory and name')
+        shortcuts.add('show-preferences', '<ctrl>p', 'Window', 'Open preferences dialog')
 
         return shortcuts
         

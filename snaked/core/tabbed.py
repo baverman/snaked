@@ -81,6 +81,8 @@ class TabbedEditorManager(snaked.core.editor.EditorManager):
         self.shortcuts.bind(self.activator, 'prev-editor', self.switch_to, -1)
         self.shortcuts.bind(self.activator, 'new-file', self.new_file_action)
 
+        self.shortcuts.bind(self.activator, 'show-preferences', self.plugin_manager.show_plugins_prefs)
+
         self.activator.bind('Escape', self.process_escape)
 
     def quit(self, *args):
