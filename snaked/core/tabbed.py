@@ -81,7 +81,7 @@ class TabbedEditorManager(snaked.core.editor.EditorManager):
         self.activator.bind_to_name('prev-editor', self.switch_to, -1)
         self.activator.bind_to_name('new-file', self.new_file_action)
 
-        self.activator.bind_to_name('show-preferences', self.plugin_manager.show_plugins_prefs)
+        self.activator.bind_to_name('show-preferences', self.show_key_preferences)
 
         self.activator.bind('Escape', self.process_escape)
 

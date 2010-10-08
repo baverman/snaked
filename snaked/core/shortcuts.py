@@ -1,16 +1,28 @@
 import gtk
+import os.path
+
+from snaked.core.prefs import get_settings_path
 
 registered_shortcuts = {}
 names_by_key = {}
+default_shortcuts = {}
 
 def get_path_by_name(name):
     return "<Snaked-Editor>/%s/%s" % (registered_shortcuts[name][0], name)
 
-def add_to_names(path, key, mod, changed):
-    names_by_key[(key, mod)] = path
+def get_registered_shortcuts():
+    result = []
+    
+    def func(path, key, mod, changed):
+        result.append((path, key, mod))
+        
+    gtk.accel_map_foreach_unfiltered(func)
+    
+    return result
     
 def refresh_names_by_key():
-    gtk.accel_map_foreach_unfiltered(add_to_names)
+    for path, key, mod in get_registered_shortcuts():
+        names_by_key[(key, mod)] = path
 
 def get_path_by_key(key, mod):
     try:
@@ -22,8 +34,19 @@ def get_path_by_key(key, mod):
 def register_shortcut(name, accel, category, desc):
     registered_shortcuts[name] = category, desc
     key, modifier = gtk.accelerator_parse(accel)
-    gtk.accel_map_add_entry(get_path_by_name(name), key, modifier)    
+    path = get_path_by_name(name)
+    default_shortcuts[path] = (key, modifier)
+    gtk.accel_map_add_entry(path, key, modifier)    
+    
+    return path
 
+def save_shortcuts():
+    gtk.accel_map_save(get_settings_path('keys.conf'))
+    
+def load_shortcuts():
+    config = get_settings_path('keys.conf')
+    if os.path.exists(config):
+        gtk.accel_map_load(config)
 
 class Shortcut(object):
     def __init__(self, name, accel, category, desc):

@@ -8,7 +8,7 @@ import pango
 from ..util import save_file, idle, get_project_root, lazy_property
 from ..signals import SignalManager, Signal, connect_all, connect_external
 
-from .shortcuts import register_shortcut
+from .shortcuts import register_shortcut, load_shortcuts
 from .prefs import Preferences, LangPreferences
 from .plugins import PluginManager
 
@@ -149,6 +149,7 @@ class EditorManager(object):
         
         self.session = None
 
+        load_shortcuts()
         self.register_app_shortcuts()
 
     def get_lang_prefs(self, lang_id):
@@ -312,3 +313,9 @@ class EditorManager(object):
                 return False
                 
         return False
+
+    def show_key_preferences(self, editor):
+        from snaked.core.shortcuts_gui import ShortcutsDialog
+        dialog = ShortcutsDialog()
+        self.set_transient_for(editor, dialog.window)
+        dialog.show()
