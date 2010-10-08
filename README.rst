@@ -39,7 +39,6 @@ I use Snaked for all my python development tasks. Following features are impleme
 - Complete words on ``<alt>slash``.
 - Pretty title for python modules.
 - Python code completion on ``<ctrl>space``.
-- Smart block selection on ``<alt>w``.
 - Storing last edit position for every file.
 - Python smart indent.
 - Saving quick open project history and switch between them on ``<alt>Up``/``<alt>Down``.
@@ -53,6 +52,7 @@ I use Snaked for all my python development tasks. Following features are impleme
 - Goto dir on ``<ctrl><alt>l``
 - Session to store opened editors on application quit.
 - Search on ``<ctrl>f``
+- Smart anything selection on ``<alt>w``. Just try it!
 
 Current progress may be seen in `@a_bobrov <http://twitter.com/a_bobrov>`_.
 
@@ -62,7 +62,6 @@ Todo
 
 Features to implement in nearest time (day or two):
 
-- Smart select (word -> quotes) with one key. Block selection done.
 - Plugin manager to allow one enable/disable installed plugins
 - Shortcut manager
 - User manual
