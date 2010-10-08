@@ -317,5 +317,4 @@ class EditorManager(object):
     def show_key_preferences(self, editor):
         from snaked.core.shortcuts_gui import ShortcutsDialog
         dialog = ShortcutsDialog()
-        self.set_transient_for(editor, dialog.window)
-        dialog.show()
+        dialog.show(editor)

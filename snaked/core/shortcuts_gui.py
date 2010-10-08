@@ -1,3 +1,5 @@
+import weakref
+
 from gtk import accelerator_name, accel_map_change_entry
 from pango import WEIGHT_BOLD, WEIGHT_NORMAL
 
@@ -10,14 +12,18 @@ class ShortcutsDialog(BuilderAware):
         self.activator = shortcuts.ShortcutActivator(self.window)
         self.activator.bind('Escape', self.hide)
         
-    def show(self):
+    def show(self, editor):
+        self.editor = weakref.ref(editor)        
         self.fill_actions()
+        editor.request_transient_for.emit(self.window)
         self.window.present()
     
     def get_weight(self, path, key, mod):
         return WEIGHT_BOLD if shortcuts.default_shortcuts[path] != (key, mod) else WEIGHT_NORMAL
         
     def fill_actions(self):
+        self.actions_view.set_model(None)
+
         categories = {}
         sortkey = lambda v: v[0]
         
@@ -39,6 +45,7 @@ class ShortcutsDialog(BuilderAware):
         
     def hide(self):
         shortcuts.save_shortcuts()
+        self.editor().message('Key configuration saved')
         self.window.destroy()
 
     def on_delete_event(self, *args):
