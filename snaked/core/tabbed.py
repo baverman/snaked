@@ -74,14 +74,14 @@ class TabbedEditorManager(snaked.core.editor.EditorManager):
         
         self.editor_shortcuts_binded = True
 
-        self.shortcuts.bind(self.activator, 'quit', self.quit)
-        self.shortcuts.bind(self.activator, 'close-window', self.close_editor)
-        self.shortcuts.bind(self.activator, 'save', self.save)
-        self.shortcuts.bind(self.activator, 'next-editor', self.switch_to, 1)
-        self.shortcuts.bind(self.activator, 'prev-editor', self.switch_to, -1)
-        self.shortcuts.bind(self.activator, 'new-file', self.new_file_action)
+        self.activator.bind_to_name('quit', self.quit)
+        self.activator.bind_to_name('close-window', self.close_editor)
+        self.activator.bind_to_name('save', self.save)
+        self.activator.bind_to_name('next-editor', self.switch_to, 1)
+        self.activator.bind_to_name('prev-editor', self.switch_to, -1)
+        self.activator.bind_to_name('new-file', self.new_file_action)
 
-        self.shortcuts.bind(self.activator, 'show-preferences', self.plugin_manager.show_plugins_prefs)
+        self.activator.bind_to_name('show-preferences', self.plugin_manager.show_plugins_prefs)
 
         self.activator.bind('Escape', self.process_escape)
 

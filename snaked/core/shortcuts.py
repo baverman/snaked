@@ -1,15 +1,29 @@
 import gtk
 
-class ShortcutManager(object):
-    def __init__(self):
-        self.shortcuts = {}
-        
-    def add(self, name, accel, category, desc):
-        self.shortcuts[name] = Shortcut(name, accel, category, desc)
+registered_shortcuts = {}
+names_by_key = {}
 
-    def bind(self, activator, name, callback, *args):
-        activator.bind(self.shortcuts[name].accel, callback, *args)
-                
+def get_path_by_name(name):
+    return "<Snaked-Editor>/%s/%s" % (registered_shortcuts[name][0], name)
+
+def add_to_names(path, key, mod, changed):
+    names_by_key[(key, mod)] = path
+    
+def refresh_names_by_key():
+    gtk.accel_map_foreach_unfiltered(add_to_names)
+
+def get_path_by_key(key, mod):
+    try:
+        return names_by_key[(key, mod)]
+    except KeyError:
+        refresh_names_by_key()
+        return names_by_key[(key, mod)]
+
+def register_shortcut(name, accel, category, desc):
+    registered_shortcuts[name] = category, desc
+    key, modifier = gtk.accelerator_parse(accel)
+    gtk.accel_map_add_entry(get_path_by_name(name), key, modifier)    
+
 
 class Shortcut(object):
     def __init__(self, name, accel, category, desc):
@@ -34,15 +48,27 @@ class ShortcutActivator(object):
         self.window.add_accel_group(self.accel_group)
         
         self.shortcuts = {}
+        self.pathes = {}
         
     def bind(self, accel, callback, *args):
         key, modifier = gtk.accelerator_parse(accel)
-        self.shortcuts[(key, modifier)] = (callback, args)
+        self.shortcuts[(key, modifier)] = callback, args
         
         self.accel_group.connect_group(key, modifier, gtk.ACCEL_VISIBLE, self.activate)
-        
+    
+    def bind_to_name(self, name, callback, *args):
+        path = get_path_by_name(name)
+        self.pathes[path] = callback, args
+        self.accel_group.connect_by_path(path, self.activate)
+    
+    def get_callback_and_args(self, *key):
+        try:
+            return self.shortcuts[key]
+        except KeyError:
+            return self.pathes[get_path_by_key(*key)]
+    
     def activate(self, group, window, key, modifier):
-        cb, args = self.shortcuts[(key, modifier)]
+        cb, args = self.get_callback_and_args(key, modifier)
         result = cb(*args)
         return result is None or result
 
@@ -54,7 +80,7 @@ class ContextShortcutActivator(ShortcutActivator):
 
     def activate(self, group, window, key, modifier):
         ctx = self.context()
-        cb, args = self.shortcuts[(key, modifier)]
+        cb, args = self.get_callback_and_args(key, modifier)
         
         if hasattr(cb, 'provide_key'):
             return cb(key, modifier, *(ctx + args))

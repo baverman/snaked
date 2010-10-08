@@ -1,7 +1,7 @@
 import sys
 import traceback
 
-from snaked.core.shortcuts import Shortcut
+from snaked.core.shortcuts import Shortcut, register_shortcut
 from snaked.core.prefs import ListSettings
 
 default_enabled_plugins = ['quick_open', 'save_positions', 'edit_and_select',
@@ -55,6 +55,8 @@ class PluginManager(object):
             shortcut = Shortcut(name, accel, category, desc)
             shortcut.callback = callback
 
+            register_shortcut(name, accel, category, desc)
+
             self.plugin_by_keys[shortcut.keymod] = (plugin, shortcut)
             self.shortcuts_by_plugins.setdefault(plugin, []).append(shortcut)
 
@@ -64,7 +66,8 @@ class PluginManager(object):
                 try:
                     self.binded_shortcuts[activator][s.name]
                 except KeyError:
-                    activator.bind(s.accel, self.activate_plugin_shortcut)
+                    self.binded_shortcuts.setdefault(activator, {})[s.name] = True
+                    activator.bind_to_name(s.name, self.activate_plugin_shortcut)
 
     def activate_plugin_shortcut(self, key, modifier, editor, *args):
         plugin, shortcut = self.plugin_by_keys[(key, modifier)]

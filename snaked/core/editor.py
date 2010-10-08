@@ -8,8 +8,8 @@ import pango
 from ..util import save_file, idle, get_project_root, lazy_property
 from ..signals import SignalManager, Signal, connect_all, connect_external
 
+from .shortcuts import register_shortcut
 from .prefs import Preferences, LangPreferences
-from .shortcuts import ShortcutManager
 from .plugins import PluginManager
 
 class Editor(SignalManager):
@@ -139,7 +139,6 @@ class EditorManager(object):
         self.style_manager = gtksourceview2.style_scheme_manager_get_default()
         self.lang_manager = gtksourceview2.language_manager_get_default()
         
-        self.shortcuts = self.get_shortcut_manager()
         self.plugin_manager = PluginManager()
         
         self.prefs = Preferences()
@@ -150,6 +149,8 @@ class EditorManager(object):
         
         self.session = None
 
+        self.register_app_shortcuts()
+
     def get_lang_prefs(self, lang_id):
         try:
             return self.lang_prefs[lang_id]
@@ -157,17 +158,15 @@ class EditorManager(object):
             self.lang_prefs[lang_id] = LangPreferences(lang_id, self.prefs)
             return self.lang_prefs[lang_id]
     
-    def get_shortcut_manager(self):
-        shortcuts = ShortcutManager()
-        shortcuts.add('quit', '<ctrl>q', 'Application', 'Quit')        
-        shortcuts.add('close-window', '<ctrl>w', 'Window', 'Closes window')
-        shortcuts.add('save', '<ctrl>s', 'File', 'Saves file')
-        shortcuts.add('next-editor', '<alt>Right', 'Window', 'Switches to next editor')
-        shortcuts.add('prev-editor', '<alt>Left', 'Window', 'Switches to previous editor')
-        shortcuts.add('new-file', '<ctrl>n', 'File', 'Open dialog to choose new file directory and name')
-        shortcuts.add('show-preferences', '<ctrl>p', 'Window', 'Open preferences dialog')
-
-        return shortcuts
+    def register_app_shortcuts(self):
+        register_shortcut('quit', '<ctrl>q', 'Application', 'Quit')        
+        register_shortcut('close-window', '<ctrl>w', 'Window', 'Closes window')
+        register_shortcut('save', '<ctrl>s', 'File', 'Saves file')
+        register_shortcut('next-editor', '<alt>Right', 'Window', 'Switches to next editor')
+        register_shortcut('prev-editor', '<alt>Left', 'Window', 'Switches to previous editor')
+        register_shortcut('new-file', '<ctrl>n', 'File',
+            'Open dialog to choose new file directory and name')
+        register_shortcut('show-preferences', '<ctrl>p', 'Window', 'Open preferences dialog')
         
     def open(self, filename):
         editor = self.create_editor()
