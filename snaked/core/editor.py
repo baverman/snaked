@@ -8,8 +8,8 @@ import pango
 from ..util import save_file, idle, get_project_root, lazy_property
 from ..signals import SignalManager, Signal, connect_all, connect_external
 
+import prefs
 from .shortcuts import register_shortcut, load_shortcuts
-from .prefs import Preferences, LangPreferences, register_dialog
 from .plugins import PluginManager
 
 class Editor(SignalManager):
@@ -140,13 +140,10 @@ class EditorManager(object):
         self.lang_manager = gtksourceview2.language_manager_get_default()
         
         self.plugin_manager = PluginManager()
-        register_dialog('Plugins', self.plugin_manager.show_plugins_prefs, 'plugin',
+        prefs.register_dialog('Plugins', self.plugin_manager.show_plugins_prefs, 'plugin',
             'extension')
             
-        register_dialog('Key configuration', self.show_key_preferences, 'key', 'bind', 'shortcut')
-        
-        self.prefs = Preferences()
-        self.lang_prefs = {}
+        prefs.register_dialog('Key configuration', self.show_key_preferences, 'key', 'bind', 'shortcut')
         
         self.escape_stack = []
         self.escape_map = {}
@@ -156,13 +153,6 @@ class EditorManager(object):
         load_shortcuts()
         self.register_app_shortcuts()
 
-    def get_lang_prefs(self, lang_id):
-        try:
-            return self.lang_prefs[lang_id]
-        except KeyError:
-            self.lang_prefs[lang_id] = LangPreferences(lang_id, self.prefs)
-            return self.lang_prefs[lang_id]
-    
     def register_app_shortcuts(self):
         register_shortcut('quit', '<ctrl>q', 'Application', 'Quit')        
         register_shortcut('close-window', '<ctrl>w', 'Window', 'Closes window')
@@ -200,27 +190,28 @@ class EditorManager(object):
         
         if lang:
             editor.lang = lang.get_id()
-            prefs = self.get_lang_prefs(lang.get_id())
+            pref = prefs.CompositePreferences(prefs.default_prefs,
+                prefs.lang_default_prefs.get(lang.get_id(), {}))
         else:
             editor.lang = None
-            prefs = self.prefs
+            pref = prefs.default_prefs
         
-        style_scheme = self.style_manager.get_scheme(prefs['style'])
+        style_scheme = self.style_manager.get_scheme(pref['style'])
         editor.buffer.set_style_scheme(style_scheme)
         
-        font = pango.FontDescription(prefs['font'])
+        font = pango.FontDescription(pref['font'])
         editor.view.modify_font(font)
         
-        editor.view.set_auto_indent(prefs['auto-indent'])
-        editor.view.set_indent_on_tab(prefs['indent-on-tab'])
-        editor.view.set_insert_spaces_instead_of_tabs(not prefs['use-tabs'])
-        editor.view.set_smart_home_end(prefs['smart-home-end'])
-        editor.view.set_highlight_current_line(prefs['highlight-current-line'])
-        editor.view.set_show_line_numbers(prefs['show-line-numbers'])
-        editor.view.set_tab_width(prefs['tab-width'])
-        editor.view.set_draw_spaces(prefs['show-whitespace'])
+        editor.view.set_auto_indent(pref['auto-indent'])
+        editor.view.set_indent_on_tab(pref['indent-on-tab'])
+        editor.view.set_insert_spaces_instead_of_tabs(not pref['use-tabs'])
+        editor.view.set_smart_home_end(pref['smart-home-end'])
+        editor.view.set_highlight_current_line(pref['highlight-current-line'])
+        editor.view.set_show_line_numbers(pref['show-line-numbers'])
+        editor.view.set_tab_width(pref['tab-width'])
+        editor.view.set_draw_spaces(pref['show-whitespace'])
         
-        right_margin = prefs['right-margin']
+        right_margin = pref['right-margin']
         if right_margin:
             editor.view.set_right_margin_position(right_margin)
             editor.view.set_show_right_margin(True)

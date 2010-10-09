@@ -33,24 +33,18 @@ def register_dialog(name, callback, *keywords):
     registered_dialogs[name] = keywords, callback
 
 
-class Preferences(object):
-    def __init__(self):
-        pass
-        
-    def __getitem__(self, key):
-        return default_prefs[key]
-
-    
-class LangPreferences(object):
-    def __init__(self, lang_id, prefs):
+class CompositePreferences(object):
+    def __init__(self, *prefs):
         self.prefs = prefs
-        self.lang_prefs = lang_default_prefs.get(lang_id, {})
     
     def __getitem__(self, key):
-        try:
-            return self.lang_prefs[key]
-        except KeyError:
-            return self.prefs[key]
+        for p in self.prefs:
+            try:
+                return p[key]
+            except KeyError:
+                pass
+                
+        raise KeyError('There is no %s in preferences' % key)
 
 def get_settings_path(name):
     path = os.path.join(os.path.expanduser("~"), '.local', 'snaked')
