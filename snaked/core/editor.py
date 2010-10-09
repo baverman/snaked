@@ -9,7 +9,7 @@ from ..util import save_file, idle, get_project_root, lazy_property
 from ..signals import SignalManager, Signal, connect_all, connect_external
 
 from .shortcuts import register_shortcut, load_shortcuts
-from .prefs import Preferences, LangPreferences
+from .prefs import Preferences, LangPreferences, register_dialog
 from .plugins import PluginManager
 
 class Editor(SignalManager):
@@ -140,6 +140,10 @@ class EditorManager(object):
         self.lang_manager = gtksourceview2.language_manager_get_default()
         
         self.plugin_manager = PluginManager()
+        register_dialog('Plugins', self.plugin_manager.show_plugins_prefs, 'plugin',
+            'extension')
+            
+        register_dialog('Key configuration', self.show_key_preferences, 'key', 'bind', 'shortcut')
         
         self.prefs = Preferences()
         self.lang_prefs = {}
@@ -317,4 +321,9 @@ class EditorManager(object):
     def show_key_preferences(self, editor):
         from snaked.core.shortcuts_gui import ShortcutsDialog
         dialog = ShortcutsDialog()
+        dialog.show(editor)
+        
+    def show_preferences(self, editor):
+        from snaked.core.prefs import PreferencesDialog
+        dialog = PreferencesDialog()
         dialog.show(editor)
