@@ -16,5 +16,15 @@ setup(
             'snaked = snaked.core.run:run',
         ]
     },
-    url = 'http://github.com/baverman/snaked',    
+    url = 'http://github.com/baverman/snaked',
+    classifiers = [
+        "Programming Language :: Python",
+        "License :: OSI Approved :: MIT License",
+        "Development Status :: 4 - Beta",
+        "Environment :: X11 Applications :: GTK",
+        "Intended Audience :: Developers",
+        "Intended Audience :: End Users/Desktop",
+        "Natural Language :: English",
+        "Topic :: Text Editors"
+    ],    
 )
