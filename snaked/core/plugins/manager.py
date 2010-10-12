@@ -110,6 +110,14 @@ class PluginManager(object):
                 except:
                     traceback.print_exc()
 
+    def editor_created(self, editor):
+        for p in self.plugins_for(editor):
+            if hasattr(p, 'editor_created'):
+                try:
+                    p.editor_created(editor)
+                except:
+                    traceback.print_exc()
+
     def quit(self):
         for p in self.loaded_plugins.values():
             if hasattr(p, 'quit'):

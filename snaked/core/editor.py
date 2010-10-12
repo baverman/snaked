@@ -5,7 +5,7 @@ import gtk
 import gtksourceview2
 import pango
 
-from ..util import save_file, idle, get_project_root, lazy_property
+from ..util import save_file, idle, get_project_root, lazy_property, refresh_gui
 from ..signals import SignalManager, Signal, connect_all, connect_external
 
 import prefs
@@ -17,6 +17,7 @@ class Editor(SignalManager):
     request_to_open_file = Signal(str, return_type=object)
     request_close = Signal()
     get_title = Signal(return_type=str)
+    get_file_position = Signal(return_type=int)
     before_close = Signal()
     file_loaded = Signal()
     change_title = Signal(str) 
@@ -70,10 +71,15 @@ class Editor(SignalManager):
             
             self.buffer.end_not_undoable_action()
             self.on_modified_changed_handler.unblock()
-            
-            self.buffer.place_cursor(self.buffer.get_start_iter())
             self.view.window.thaw_updates()
-
+            
+            pos = self.get_file_position.emit()
+            if pos:
+                self.buffer.place_cursor(self.buffer.get_iter_at_line(pos))
+                self.view.scroll_to_mark(self.buffer.get_insert(), 0.001, use_align=True, xalign=1.0)
+            else:
+                self.buffer.place_cursor(self.buffer.get_start_iter())
+                
         self.file_loaded.emit()
                 
         self.update_title()
@@ -144,6 +150,9 @@ class EditorManager(object):
             'extension')
             
         prefs.register_dialog('Key configuration', self.show_key_preferences, 'key', 'bind', 'shortcut')
+
+        prefs.register_dialog('Editor settings', self.show_editor_preferences,
+            'editor', 'font', 'style', 'margin', 'line', 'tab', 'whitespace')
         
         self.escape_stack = []
         self.escape_map = {}
@@ -171,6 +180,7 @@ class EditorManager(object):
 
         idle(self.set_editor_prefs, editor, filename)
         idle(self.set_editor_shortcuts, editor)
+        idle(self.plugin_manager.editor_created, editor)
         
         self.manage_editor(editor)
         
@@ -190,8 +200,8 @@ class EditorManager(object):
         
         if lang:
             editor.lang = lang.get_id()
-            pref = prefs.CompositePreferences(prefs.default_prefs,
-                prefs.lang_default_prefs.get(lang.get_id(), {}))
+            pref = prefs.CompositePreferences(prefs.default_prefs.get(lang.get_id(), {}),
+            	prefs.default_prefs['default'])
         else:
             editor.lang = None
             pref = prefs.default_prefs
@@ -316,5 +326,10 @@ class EditorManager(object):
         
     def show_preferences(self, editor):
         from snaked.core.prefs import PreferencesDialog
+        dialog = PreferencesDialog()
+        dialog.show(editor)
+        
+    def show_editor_preferences(self, editor):
+        from snaked.core.editor_prefs import PreferencesDialog
         dialog = PreferencesDialog()
         dialog.show(editor)

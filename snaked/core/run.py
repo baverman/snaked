@@ -1,11 +1,10 @@
-def run():
+def profiled():
     from optparse import OptionParser
 
     parser = OptionParser()
     parser.add_option('-s', '--session', dest='session', help="Open snaked with specified session")
     options, args = parser.parse_args()
 
-    import gtk
     import gobject
     gobject.threads_init()
     
@@ -22,4 +21,13 @@ def run():
         else:
             manager.open(None)
     
+def run():
+
+    #import cProfile
+    
+    #cProfile.runctx('profiled()', {'profiled':profiled}, None, '/tmp/wow.prof')
+    
+    profiled()
+
+    import gtk    
     gtk.main()

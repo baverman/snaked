@@ -4,24 +4,23 @@ import os
 
 import weakref
 
-from snaked.util import BuilderAware, join_to_file_dir, idle, refresh_gui
+from snaked.util import BuilderAware, join_to_file_dir, idle
 
 default_prefs = {
-    'font': 'Monospace 11',
-    'use-tabs': True,
-    'tab-width': 4,
-    'right-margin': 100,
-    'show-line-numbers': True,
-    'wrap-text': False,
-    'style': 'babymate',
-    'auto-indent': True,
-    'indent-on-tab': True,
-    'smart-home-end': True,
-    'highlight-current-line': True,
-    'show-whitespace': False,
-}
-
-lang_default_prefs = {
+    'default': {
+        'font': 'Monospace 11',
+        'use-tabs': True,
+        'tab-width': 4,
+        'right-margin': 100,
+        'show-line-numbers': True,
+        'wrap-text': False,
+        'style': 'babymate',
+        'auto-indent': True,
+        'indent-on-tab': True,
+        'smart-home-end': True,
+        'highlight-current-line': True,
+        'show-whitespace': False,
+    },
     'python': {
         'use-tabs': False,
     }
@@ -123,5 +122,4 @@ class PreferencesDialog(BuilderAware):
         (model, iter) = self.dialogs_view.get_selection().get_selected()
         name = model.get_value(iter, 0)
         registered_dialogs[name][1](self.editor())
-        refresh_gui()
         idle(self.hide)

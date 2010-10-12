@@ -8,15 +8,13 @@ def get_prefs():
     
     return prefs
 
-def editor_opened(editor):
+def editor_created(editor):
+    editor.connect('get-file-position', on_editor_get_file_position)
+
+def on_editor_get_file_position(editor):
     prefs = get_prefs()
-    from snaked.util import refresh_gui
-    refresh_gui()
-    
     if editor.uri in prefs:
-        iterator = editor.buffer.get_iter_at_line(int(prefs[editor.uri]))
-        editor.buffer.place_cursor(iterator)
-        editor.view.scroll_to_iter(iterator, 0.001, use_align=True, xalign=1.0)
+        return int(prefs[editor.uri])
 
 def editor_closed(editor):
     prefs = get_prefs()

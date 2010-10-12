@@ -1,7 +1,5 @@
 langs = ['python']
 
-from snaked.util import idle
-
 handlers = {}
 outline_dialog = None
 
@@ -12,10 +10,10 @@ def init(manager):
     manager.add_shortcut('python-outline', '<ctrl>o', 'Python',
         'Opens outline dialog', open_outline)
 
-def editor_opened(editor):
+def editor_created(editor):
     editor.connect('get-title', on_editor_get_title)
-    idle(editor.update_title)
     
+def editor_opened(editor):
     from plugin import Plugin    
     h = Plugin(editor)
     handlers[editor] = h
