@@ -16,6 +16,7 @@ class WindowedEditorManager(snaked.core.editor.EditorManager):
 
     def manage_editor(self, editor):
         window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+        window.set_default_size(800, 550)
         window.add(editor.widget)
         
         editor.view.grab_focus()
@@ -29,7 +30,7 @@ class WindowedEditorManager(snaked.core.editor.EditorManager):
         self.activators[editor] = activator
 
         window.connect('destroy', self.on_window_destroy, weak_editor)
-        window.show()
+        window.show_all()
        
     def focus_editor(self, editor):
         self.windows[editor].present()
