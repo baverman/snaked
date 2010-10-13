@@ -173,7 +173,7 @@ class EditorManager(object):
         register_shortcut('show-preferences', '<ctrl>p', 'Window', 'Open preferences dialog')
         
     def open(self, filename):
-        editor = self.create_editor()
+        editor = Editor()
         self.editors.append(editor)
         
         connect_all(self, editor)

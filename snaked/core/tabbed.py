@@ -37,9 +37,6 @@ class TabbedEditorManager(snaked.core.editor.EditorManager):
         self.focus_editor(editor)
         editor.view.grab_focus()
        
-    def create_editor(self):
-        return snaked.core.editor.Editor()
-
     def focus_editor(self, editor):
         idx = self.note.page_num(editor.widget)
         self.note.set_current_page(idx)
