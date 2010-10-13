@@ -33,4 +33,4 @@ def test_triple_quotes_matcher():
 
 def test_close_quote():
     assert find_closing_quote_pos("'", "sss '' ddd '", 5) == 6
-    
+    assert find_closing_quote_pos("'", "sss '\dfg' ddd '", 5) == 10

@@ -43,17 +43,13 @@ class PluginDialog(BuilderAware):
         return True        
         
     def get_aviable_plugins(self):
-        fg = self.plugins_tree.get_column(1).get_cell_renderers()[0].props.foreground_gdk
-        newvalue = fg.value + ( -0.3 if fg.value > 0.5 else 0.3 )
-        markup_fg = gtk.gdk.color_from_hsv(fg.hue, fg.saturation, newvalue)
-        
         for pname in discover_plugins():
             package = get_plugin(pname)
             author = getattr(package, 'author', 'Somebody')
             name = getattr(package, 'name', pname)
             desc = getattr(package, 'desc', 'Some weird plugin')
-            markup = "<b>%s</b> by <i>%s</i>\n<span size='smaller' foreground='%s'>%s</span>" % tuple(
-                map(markup_escape_text, (name, author, markup_fg.to_string(), desc)))
+            markup = "<b>%s</b> by <i>%s</i>\n<small>%s</small>" % tuple(
+                map(markup_escape_text, (name, author, desc)))
             
             yield (pname, markup, name)
     

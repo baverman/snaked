@@ -157,7 +157,8 @@ def line_smart_extend(has_selection, start, end):
     text = start.get_buffer().get_text(*start.get_buffer().get_bounds())
     br, spos, epos = pairs_parser.get_brackets(text, start.get_offset())
     in_quotes = br in ('"', "'", '"""', "'''")
-
+    #print br, spos, epos, start.get_offset()
+    
     if not in_quotes and rchars[0] in (u'(', u'[', "'", '"'):
         br, spos, epos = pairs_parser.get_brackets(text, end.get_offset() + 1)
         if not br: return ahtung()

@@ -4,8 +4,8 @@ match_start = re.compile(r'"""|\'\'\'|"|\'|\(|\[|\{|\)|\]|\}')
 match_quote_end = {
     '"""': re.compile(r'.*?"""'),
     "'''": re.compile(r".*?'''"),
-    "'": re.compile(r"'|[^\\]+?'"),
-    '"': re.compile(r'"|[^\\]+?"'),
+    "'": re.compile(r"'|.*?[^\\]'"),
+    '"': re.compile(r'"|.*?[^\\]"'),
 }
 
 inverted = {
