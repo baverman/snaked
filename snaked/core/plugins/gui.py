@@ -30,9 +30,8 @@ class PluginDialog(BuilderAware):
 
     def show(self, enabled_plugins, callback):
         self.callback = callback
-        self.window.present()
-        
         self.fill_plugin_list(enabled_plugins)
+        self.window.present()
         
     def hide(self):
         enabled_plugins = [p[1] for p in self.plugins if p[0]]

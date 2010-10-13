@@ -102,9 +102,10 @@ class PreferencesDialog(BuilderAware):
         
     def show(self, editor):
         self.editor = weakref.ref(editor)
-        editor.request_transient_for.emit(self.window)
         self.fill_dialogs(None)
-        self.window.present()
+        self.window.size_request()
+        editor.request_transient_for.emit(self.window)
+        self.window.show_all()
         
     def fill_dialogs(self, search):
         self.dialogs.clear()
