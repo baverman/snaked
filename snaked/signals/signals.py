@@ -166,7 +166,7 @@ class SignalManager(object):
         """
         Connects marked object methods
         """
-        for attr, value in getmembers(obj, ismethod):
+        for attr, value in getmembers(obj.__class__, ismethod):
             for signal, connect_params in getattr(value, 'signals_to_connect', ()):
                 id = self.weak_connect(signal, obj, attr, **connect_params)
                 append_handler_to_object(obj, attr, id, self, signal.name)    
@@ -210,7 +210,7 @@ def connect_external(sender_name, signal_name, after=False, idle=False):
     return inner
 
 def connect_external_signals(obj, **kwargs):
-    for attr, value in getmembers(obj, ismethod):
+    for attr, value in getmembers(obj.__class__, ismethod):
         for (sender_name, signal_name), connect_params in getattr(value, 'external_signals_to_connect', ()):
             sender = kwargs[sender_name]
             id = weak_connect(sender, signal_name, obj, attr, **connect_params)
