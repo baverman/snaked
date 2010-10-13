@@ -2,10 +2,10 @@ import re
 
 match_start = re.compile(r'"""|\'\'\'|"|\'|\(|\[|\{|\)|\]|\}')
 match_quote_end = {
-    '"""': re.compile(r'"""'),
-    "'''": re.compile(r"'''"),
-    "'": re.compile(r"^'|[^\\]'"),
-    '"': re.compile(r'^"|[^\\]"'),
+    '"""': re.compile(r'.*?"""'),
+    "'''": re.compile(r".*?'''"),
+    "'": re.compile(r"'|[^\\]+?'"),
+    '"': re.compile(r'"|[^\\]+?"'),
 }
 
 inverted = {
@@ -15,7 +15,7 @@ inverted = {
 }
 
 def find_closing_quote_pos(quote, text, start):
-    m = match_quote_end[quote].search(text, start)
+    m = match_quote_end[quote].match(text, start)
     if m:
         return m.end()
         

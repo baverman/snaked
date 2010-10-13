@@ -16,7 +16,7 @@ class TabbedEditorManager(snaked.core.editor.EditorManager):
         self.activator = ContextShortcutActivator(self.window, self.get_context)
         
         self.note = gtk.Notebook()
-        self.note.set_property('tab-hborder', 5)
+        self.note.set_property('tab-hborder', 10)
         self.note.set_property('homogeneous', False)
         self.note.connect_after('switch-page', self.on_switch_page)
         self.window.add(self.note)
