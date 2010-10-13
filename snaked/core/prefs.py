@@ -4,6 +4,8 @@ import os
 
 import weakref
 
+import gtk
+
 from snaked.util import BuilderAware, join_to_file_dir, idle
 
 default_prefs = {
@@ -106,10 +108,17 @@ class PreferencesDialog(BuilderAware):
         
     def fill_dialogs(self, search):
         self.dialogs.clear()
+
+        fg = self.dialogs_view.get_column(0).get_cell_renderers()[0].props.foreground_gdk
         
+        newvalue = fg.value + ( -0.3 if fg.value > 0.5 else 0.3 )
+        markup_fg = gtk.gdk.color_from_hsv(fg.hue, fg.saturation, newvalue)
+                
         for name, (keywords, show_func) in registered_dialogs.iteritems():
             if not search or any(w.startswith(search) for w in keywords):
-                self.dialogs.append((name, ))
+                markup = '<b>%s</b>\n<span size="smaller" foreground="%s">%s</span>' % (
+                    name, markup_fg.to_string(), u' \u2022 '.join(keywords))
+                self.dialogs.append((name, markup))
         
     def on_delete_event(self, *args):
         return False
