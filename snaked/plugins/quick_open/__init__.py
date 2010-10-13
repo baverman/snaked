@@ -1,3 +1,7 @@
+author = 'Anton Bobrov<bobrov@vl.ru>'
+name = 'Quick open'
+desc = 'Allows one to open files in project very fast and easy'
+
 dialog = None
         
 def init(manager):

@@ -1,3 +1,7 @@
+author = 'Anton Bobrov<bobrov@vl.ru>'
+name = 'Save positions'
+desc = 'Remembers last edit position for every edited file'
+
 prefs = None
 
 def get_prefs():

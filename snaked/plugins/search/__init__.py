@@ -1,3 +1,7 @@
+author = 'Anton Bobrov<bobrov@vl.ru>'
+name = 'Search'
+desc = 'Searches words in document'
+
 import gtk
 import gtksourceview2
 

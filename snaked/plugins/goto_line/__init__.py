@@ -1,3 +1,7 @@
+author = 'Anton Bobrov<bobrov@vl.ru>'
+name = 'Goto line'
+desc = 'Navigates to specified line'
+
 import gtk
 
 from snaked.util import idle

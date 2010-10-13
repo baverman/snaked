@@ -1,3 +1,7 @@
+author = 'Anton Bobrov<bobrov@vl.ru>'
+name = 'Python support'
+desc = 'Autocompletion, definitions navigation and smart ident'
+
 langs = ['python']
 
 handlers = {}

@@ -1,3 +1,7 @@
+author = 'Anton Bobrov<bobrov@vl.ru>'
+name = 'Hash comment'
+desc = '(Un)Comments line or selection with hashes'
+
 import gtk
 
 langs = ['python', 'sh', 'ruby', 'perl']

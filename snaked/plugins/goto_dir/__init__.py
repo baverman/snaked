@@ -1,3 +1,7 @@
+author = 'Anton Bobrov<bobrov@vl.ru>'
+name = 'Goto dir'
+desc = "Opens file's directory"
+
 def init(manager):
     manager.add_shortcut('goto-dir', '<ctrl><alt>l', 'File', "Opens file's directory", goto_dir)
     

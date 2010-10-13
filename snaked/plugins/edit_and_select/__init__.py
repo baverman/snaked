@@ -1,3 +1,7 @@
+author = 'Anton Bobrov<bobrov@vl.ru>'
+name = 'Edit and Select'
+desc = 'Various edit shortcuts'
+
 def init(manager):
     manager.add_shortcut('delete-line', '<ctrl>d', 'Edit', 'Deletes current line', delete_line)
     manager.add_shortcut('smart-select', '<alt>w', 'Selection', 'Smart anything selection', smart_select)

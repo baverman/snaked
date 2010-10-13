@@ -1,3 +1,7 @@
+author = 'Anton Bobrov<bobrov@vl.ru>'
+name = 'Python flakes'
+desc = 'Basic python linter'
+
 import gtk
 import pango
 import os.path
