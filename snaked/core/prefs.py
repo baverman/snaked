@@ -110,7 +110,6 @@ class PreferencesDialog(BuilderAware):
         self.dialogs.clear()
 
         fg = self.dialogs_view.get_column(0).get_cell_renderers()[0].props.foreground_gdk
-        
         newvalue = fg.value + ( -0.3 if fg.value > 0.5 else 0.3 )
         markup_fg = gtk.gdk.color_from_hsv(fg.hue, fg.saturation, newvalue)
                 
