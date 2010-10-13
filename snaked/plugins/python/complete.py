@@ -51,6 +51,7 @@ class RopeCompletionProvider(gobject.GObject, CompletionProvider):
         if proposals:
             context.add_proposals(self, [Proposal(p) for p in proposals], True)
         else:
+            context.add_proposals(self, [], True)
             self.plugin.editor.message("Can't assist")
         
 gobject.type_register(RopeCompletionProvider)
