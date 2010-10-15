@@ -40,6 +40,7 @@
                 <property name="can_focus">True</property>
                 <property name="model">langs</property>
                 <property name="headers_visible">False</property>
+                <signal name="cursor_changed" handler="refresh_lang_settings"/>
                 <child>
                   <object class="GtkTreeViewColumn" id="treeviewcolumn1">
                     <property name="title">column</property>
@@ -67,6 +68,7 @@
               <object class="GtkComboBox" id="style_cb">
                 <property name="visible">True</property>
                 <property name="model">styles</property>
+                <signal name="changed" handler="on_style_cb_changed"/>
                 <child>
                   <object class="GtkCellRendererText" id="cellrenderertext2"/>
                   <attributes>
@@ -99,10 +101,11 @@
                 <property name="spacing">20</property>
                 <child>
                   <object class="GtkCheckButton" id="use_tabs">
-                    <property name="label" translatable="yes">Use tabs</property>
+                    <property name="label" translatable="yes">Use _tabs</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">False</property>
+                    <property name="use_underline">True</property>
                     <property name="draw_indicator">True</property>
                   </object>
                   <packing>
@@ -117,7 +120,9 @@
                     <child>
                       <object class="GtkLabel" id="label1">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Tab width:</property>
+                        <property name="label" translatable="yes">Tab _width:</property>
+                        <property name="use_underline">True</property>
+                        <property name="mnemonic_widget">tab_width</property>
                         <property name="single_line_mode">True</property>
                       </object>
                       <packing>
@@ -130,6 +135,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="invisible_char">&#x25CF;</property>
+                        <property name="adjustment">tab_width_adj</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -150,10 +156,11 @@
             </child>
             <child>
               <object class="GtkCheckButton" id="show_line_numbers">
-                <property name="label" translatable="yes">Show line numbers</property>
+                <property name="label" translatable="yes">Show _line numbers</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">False</property>
+                <property name="use_underline">True</property>
                 <property name="draw_indicator">True</property>
               </object>
               <packing>
@@ -163,10 +170,11 @@
             </child>
             <child>
               <object class="GtkCheckButton" id="show_whitespace">
-                <property name="label" translatable="yes">Show whitespace</property>
+                <property name="label" translatable="yes">Show white_space</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">False</property>
+                <property name="use_underline">True</property>
                 <property name="draw_indicator">True</property>
               </object>
               <packing>
@@ -176,10 +184,11 @@
             </child>
             <child>
               <object class="GtkCheckButton" id="highligh_line">
-                <property name="label" translatable="yes">Highlight current line</property>
+                <property name="label" translatable="yes">_Highlight current line</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">False</property>
+                <property name="use_underline">True</property>
                 <property name="draw_indicator">True</property>
               </object>
               <packing>
@@ -193,10 +202,11 @@
                 <property name="spacing">20</property>
                 <child>
                   <object class="GtkCheckButton" id="show_right_margin">
-                    <property name="label" translatable="yes">Show right margin</property>
+                    <property name="label" translatable="yes">Show _right margin</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">False</property>
+                    <property name="use_underline">True</property>
                     <property name="draw_indicator">True</property>
                   </object>
                   <packing>
@@ -211,7 +221,9 @@
                     <child>
                       <object class="GtkLabel" id="label2">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Margin width:</property>
+                        <property name="label" translatable="yes">_Margin width:</property>
+                        <property name="use_underline">True</property>
+                        <property name="mnemonic_widget">spinbutton1</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -223,6 +235,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="invisible_char">&#x25CF;</property>
+                        <property name="adjustment">margin_adj</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -241,6 +254,31 @@
                 <property name="position">6</property>
               </packing>
             </child>
+            <child>
+              <object class="GtkHButtonBox" id="hbuttonbox1">
+                <property name="visible">True</property>
+                <property name="layout_style">end</property>
+                <child>
+                  <object class="GtkButton" id="reset_to_default">
+                    <property name="label" translatable="yes">Reset to default</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="image">image1</property>
+                    <signal name="clicked" handler="on_reset_to_default_clicked"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="position">7</property>
+              </packing>
+            </child>
           </object>
           <packing>
             <property name="position">1</property>
@@ -248,5 +286,21 @@
         </child>
       </object>
     </child>
+  </object>
+  <object class="GtkAdjustment" id="tab_width_adj">
+    <property name="lower">1</property>
+    <property name="upper">8</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="margin_adj">
+    <property name="lower">60</property>
+    <property name="upper">200</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkImage" id="image1">
+    <property name="visible">True</property>
+    <property name="stock">gtk-clear</property>
   </object>
 </interface>

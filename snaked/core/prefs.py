@@ -1,6 +1,7 @@
 import anydbm
 import os.path
 import os
+import json
 
 default_prefs = {
     'default': {
@@ -10,7 +11,7 @@ default_prefs = {
         'right-margin': 100,
         'show-line-numbers': True,
         'wrap-text': False,
-        'style': 'babymate',
+        'style': 'classic',
         'auto-indent': True,
         'indent-on-tab': True,
         'smart-home-end': True,
@@ -26,6 +27,24 @@ registered_dialogs = {}
 
 def register_dialog(name, callback, *keywords):
     registered_dialogs[name] = keywords, callback
+
+def load_json_settings(name, default=None):
+    filename = get_settings_path(name)
+    try:
+        with open(filename) as f:
+            try:
+                return json.load(f)
+            except ValueError:
+                pass
+    except IOError:
+        pass
+
+    return default
+
+def save_json_settings(name, value):
+    filename = get_settings_path(name)
+    with open(filename, 'w') as f:
+        json.dump(value, f)
 
 
 class CompositePreferences(object):

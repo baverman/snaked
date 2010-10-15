@@ -16,6 +16,7 @@ class Editor(SignalManager):
     editor_closed = Signal()
     request_to_open_file = Signal(str, return_type=object)
     request_close = Signal()
+    settings_changed = Signal()
     get_title = Signal(return_type=str)
     get_file_position = Signal(return_type=int)
     before_close = Signal()
@@ -190,6 +191,10 @@ class EditorManager(object):
         idle(self.plugin_manager.editor_opened, editor)
         
         return editor
+
+    @lazy_property
+    def lang_prefs(self):
+        return prefs.load_json_settings('langs.conf', {})
     
     def set_editor_prefs(self, editor, filename):
         if filename:
@@ -197,14 +202,12 @@ class EditorManager(object):
             editor.buffer.set_language(lang)
         else:
             lang = None
+            
+        editor.lang = lang.get_id() if lang else 'default'
         
-        if lang:
-            editor.lang = lang.get_id()
-            pref = prefs.CompositePreferences(prefs.default_prefs.get(lang.get_id(), {}),
-            	prefs.default_prefs['default'])
-        else:
-            editor.lang = None
-            pref = prefs.default_prefs
+        pref = prefs.CompositePreferences(self.lang_prefs.get(editor.lang, {}),
+            self.lang_prefs.get('default', {}), prefs.default_prefs.get(editor.lang, {}),
+            prefs.default_prefs['default'])
         
         style_scheme = self.style_manager.get_scheme(pref['style'])
         editor.buffer.set_style_scheme(style_scheme)
@@ -258,6 +261,13 @@ class EditorManager(object):
     @Editor.request_transient_for
     def on_request_transient_for(self, editor, window):
         self.set_transient_for(editor, window)
+
+    @Editor.settings_changed(idle=True)
+    def on_editor_settings_changed(self, editor):
+        self.set_editor_prefs(editor, editor.uri)
+        for e in self.editors:
+            if e is not editor:
+                idle(self.set_editor_prefs, e, e.uri)
         
     def new_file_action(self, editor):
         dialog = gtk.FileChooserDialog('Create file', None, gtk.FILE_CHOOSER_ACTION_SAVE,
@@ -331,5 +341,5 @@ class EditorManager(object):
         
     def show_editor_preferences(self, editor):
         from snaked.core.gui.editor_prefs import PreferencesDialog
-        dialog = PreferencesDialog()
+        dialog = PreferencesDialog(self.lang_prefs)
         dialog.show(editor)
