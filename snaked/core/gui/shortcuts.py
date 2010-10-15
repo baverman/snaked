@@ -8,7 +8,7 @@ from snaked.core import shortcuts
 
 class ShortcutsDialog(BuilderAware):
     def __init__(self):
-        BuilderAware.__init__(self, join_to_file_dir(__file__, 'shortcuts_gui.glade'))
+        BuilderAware.__init__(self, join_to_file_dir(__file__, 'shortcuts.glade'))
         self.activator = shortcuts.ShortcutActivator(self.window)
         self.activator.bind('Escape', self.hide)
         

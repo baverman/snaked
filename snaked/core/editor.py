@@ -320,16 +320,16 @@ class EditorManager(object):
         return False
 
     def show_key_preferences(self, editor):
-        from snaked.core.shortcuts_gui import ShortcutsDialog
+        from snaked.core.gui.shortcuts import ShortcutsDialog
         dialog = ShortcutsDialog()
         dialog.show(editor)
         
     def show_preferences(self, editor):
-        from snaked.core.prefs import PreferencesDialog
+        from snaked.core.gui.prefs import PreferencesDialog
         dialog = PreferencesDialog()
         dialog.show(editor)
         
     def show_editor_preferences(self, editor):
-        from snaked.core.editor_prefs import PreferencesDialog
+        from snaked.core.gui.editor_prefs import PreferencesDialog
         dialog = PreferencesDialog()
         dialog.show(editor)

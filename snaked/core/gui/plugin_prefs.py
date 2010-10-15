@@ -6,7 +6,7 @@ from glib import markup_escape_text
 from snaked.util import BuilderAware, join_to_file_dir, idle 
 from snaked.core.shortcuts import ShortcutActivator
 
-from .manager import get_plugin
+from snaked.core.plugins import get_plugin
 
 def discover_plugins():
     import snaked.plugins
@@ -21,7 +21,7 @@ def discover_plugins():
 
 class PluginDialog(BuilderAware):
     def __init__(self):
-        BuilderAware.__init__(self, join_to_file_dir(__file__, 'plugin-list.glade'))
+        BuilderAware.__init__(self, join_to_file_dir(__file__, 'plugin_prefs.glade'))
         self.activator = ShortcutActivator(self.window)
         self.activator.bind('Escape', self.hide)
         

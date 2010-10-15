@@ -145,7 +145,7 @@ class PluginManager(object):
             self.enabled_plugins = default_enabled_plugins
         
     def show_plugins_prefs(self, editor):
-        from gui import PluginDialog
+        from snaked.core.gui.plugin_prefs import PluginDialog
         dialog = PluginDialog()
         editor.request_transient_for.emit(dialog.window)
         dialog.show(self.enabled_plugins, self.set_plugin_list)
