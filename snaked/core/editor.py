@@ -74,7 +74,7 @@ class Editor(SignalManager):
             self.view.window.thaw_updates()
             
             pos = self.get_file_position.emit()
-            if pos:
+            if pos is not None and pos >= 0:
                 self.buffer.place_cursor(self.buffer.get_iter_at_line(pos))
                 self.view.scroll_to_mark(self.buffer.get_insert(), 0.001, use_align=True, xalign=1.0)
             else:

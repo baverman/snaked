@@ -6,7 +6,7 @@ import weakref
 
 import gtk
 
-from snaked.util import BuilderAware, join_to_file_dir, idle
+from snaked.util import BuilderAware, join_to_file_dir, idle, refresh_gui
 
 default_prefs = {
     'default': {
@@ -103,9 +103,8 @@ class PreferencesDialog(BuilderAware):
     def show(self, editor):
         self.editor = weakref.ref(editor)
         self.fill_dialogs(None)
-        self.window.size_request()
         editor.request_transient_for.emit(self.window)
-        self.window.show_all()
+        self.window.show()
         
     def fill_dialogs(self, search):
         self.dialogs.clear()

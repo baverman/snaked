@@ -1,7 +1,6 @@
 import os
 from os.path import join, isdir, exists
 
-import gtk
 from glib import markup_escape_text
 
 from snaked.util import BuilderAware, join_to_file_dir, idle 

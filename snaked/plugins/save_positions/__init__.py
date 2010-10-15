@@ -19,6 +19,8 @@ def on_editor_get_file_position(editor):
     prefs = get_prefs()
     if editor.uri in prefs:
         return int(prefs[editor.uri])
+    
+    return -1
 
 def editor_closed(editor):
     prefs = get_prefs()
