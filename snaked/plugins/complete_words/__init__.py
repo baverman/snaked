@@ -2,6 +2,8 @@ author = 'Anton Bobrov<bobrov@vl.ru>'
 name = 'Complete words'
 desc = 'Cycle through possible word completions'
 
+import weakref
+
 from gobject import timeout_add, source_remove
 from string import whitespace
 
@@ -10,7 +12,7 @@ from snaked.signals import connect_all, connect_external
 
 editors_to_update = []
 timer_source_id = None
-handlers = {}
+handlers = weakref.WeakKeyDictionary()
 
 def init(manager):
     manager.add_shortcut('complete-word', '<alt>slash', 'Edit',
@@ -31,10 +33,13 @@ def editor_opened(editor):
     idle(add_update_job, editor)
     h = Plugin(editor)
     handlers[editor] = h
-    
+
 def editor_closed(editor):
-    del handlers[editor]
-    
+    try:
+        del handlers[editor]
+    except KeyError:
+        pass
+            
 def quit():
     source_remove(timer_source_id)
 

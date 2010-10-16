@@ -126,10 +126,6 @@ class PluginManager(object):
                 except:
                     traceback.print_exc()
     
-    def set_plugin_list(self, plugin_list):
-        self.enabled_plugins = plugin_list
-        self.save_enabled_plugins()
-        
     @property
     def prefs(self):
         return ListSettings('enabled-plugins.db')
@@ -148,4 +144,10 @@ class PluginManager(object):
         from snaked.core.gui.plugin_prefs import PluginDialog
         dialog = PluginDialog()
         editor.request_transient_for.emit(dialog.window)
-        dialog.show(self.enabled_plugins, self.set_plugin_list)
+
+        def set_plugin_list(plugin_list):
+            self.enabled_plugins = plugin_list
+            self.save_enabled_plugins()
+            editor.message('Enabled plugins list saved')
+
+        dialog.show(self.enabled_plugins, set_plugin_list)
