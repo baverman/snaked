@@ -56,6 +56,7 @@ I use Snaked for all my python development tasks. Following features are impleme
 - Plugin manager to allow one enable/disable installed plugins
 - Shortcut manager
 - Preferences dialog
+- Editor preferences. Font, tabs and so on. Activated by ``<ctrl>p``
 
 Current progress may be seen in `@a_bobrov <http://twitter.com/a_bobrov>`_.
 
@@ -65,7 +66,6 @@ Todo
 
 Features to implement in nearest time (day or two):
 
-- Editor preferences. Font, tabs and so on.
 - User manual
 - Release announce
 
