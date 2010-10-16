@@ -34,6 +34,8 @@ class PreferencesDialog(BuilderAware):
 
         self.margin_width.connect('value-changed', self.on_spin_changed, 'right-margin')
         self.tab_width.connect('value-changed', self.on_spin_changed, 'tab-width')
+
+        self.font.connect('font-set', self.on_font_set, 'font')
         
     def show(self, editor):
         self.editor = weakref.ref(editor)        
@@ -86,6 +88,8 @@ class PreferencesDialog(BuilderAware):
         self.margin_width.set_value(pref['right-margin'])
         self.tab_width.set_value(pref['tab-width'])
             
+        self.font.set_font_name(pref['font'])
+        
     def select_style(self, style_id, try_classic=True):
         for i, (name,) in enumerate(self.styles):
             if name == style_id:
@@ -133,6 +137,9 @@ class PreferencesDialog(BuilderAware):
 
     def on_spin_changed(self, widget, name):
         self.update_pref_value(self.get_current_lang_id(), name, widget.get_value_as_int())
+
+    def on_font_set(self, widget, name):
+        self.update_pref_value(self.get_current_lang_id(), name, widget.get_font_name())
 
     def on_reset_to_default_clicked(self, *args):
         try:

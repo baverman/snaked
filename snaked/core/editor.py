@@ -5,7 +5,7 @@ import gtk
 import gtksourceview2
 import pango
 
-from ..util import save_file, idle, get_project_root, lazy_property, refresh_gui
+from ..util import save_file, idle, get_project_root, lazy_property
 from ..signals import SignalManager, Signal, connect_all, connect_external
 
 import prefs
