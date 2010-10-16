@@ -223,13 +223,8 @@ class EditorManager(object):
         editor.view.set_show_line_numbers(pref['show-line-numbers'])
         editor.view.set_tab_width(pref['tab-width'])
         editor.view.set_draw_spaces(pref['show-whitespace'])
-        
-        right_margin = pref['right-margin']
-        if right_margin:
-            editor.view.set_right_margin_position(right_margin)
-            editor.view.set_show_right_margin(True)
-        else:
-            editor.view.set_show_right_margin(False)
+        editor.view.set_right_margin_position(pref['right-margin'])
+        editor.view.set_show_right_margin(pref['show-right-margin'])
 
     @Editor.editor_closed(idle=True)
     def on_editor_closed(self, editor):

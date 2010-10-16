@@ -14,6 +14,7 @@ class PreferencesDialog(BuilderAware):
         self.activator.bind('Escape', self.hide)
 
         self.prefs = prefs
+        self.original_prefs = prefs.copy()
 
         self.langs.append(('default', ))
         lm = gtksourceview2.language_manager_get_default()
@@ -43,19 +44,31 @@ class PreferencesDialog(BuilderAware):
     def get_current_lang_id(self):
         (model, iter) = self.langs_view.get_selection().get_selected()
         return self.langs.get_value(iter, 0)
-        
+    
+    def get_lang_prefs(self, lang_id):
+        if lang_id == 'default':
+            return prefs.CompositePreferences(self.prefs.get('default', {}),
+                prefs.default_prefs.get(lang_id, {}), prefs.default_prefs['default'])
+        else:
+            return prefs.CompositePreferences(self.prefs.get(lang_id, {}),
+                self.prefs.get('default', {}), prefs.default_prefs.get(lang_id, {}),
+                prefs.default_prefs['default'])
+
+    def get_default_lang_prefs(self, lang_id):
+        if lang_id == 'default':
+            return prefs.CompositePreferences(prefs.default_prefs.get(lang_id, {}),
+                prefs.default_prefs['default'])
+        else:
+            return prefs.CompositePreferences(self.prefs.get('default', {}),
+                prefs.default_prefs.get(lang_id, {}), prefs.default_prefs['default'])
+     
     def refresh_lang_settings(self, *args):
-        lang_id = self.get_current_lang_id()
-        
-        pref = prefs.CompositePreferences(self.prefs.get(lang_id, {}),
-            self.prefs.get('default', {}), prefs.default_prefs.get(lang_id, {}),
-            prefs.default_prefs['default'])
+        pref = self.get_lang_prefs(self.get_current_lang_id())
         
         self.use_tabs.set_active(pref['use-tabs'])
         self.select_style(pref['style'])
             
     def select_style(self, style_id, try_classic=True):
-        self.style_cb.old_value = style_id
         for i, (name,) in enumerate(self.styles):
             if name == style_id:
                 self.style_cb.set_active(i)
@@ -67,20 +80,35 @@ class PreferencesDialog(BuilderAware):
         self.style_cb.set_active(0)
 
     def hide(self):
-        prefs.save_json_settings('langs.conf', self.prefs)
+        self.save_settings()
         self.editor().message('Editor settings saved')
         self.window.destroy()
+
+    def save_settings(self):
+        prefs.save_json_settings('langs.conf', self.prefs)
 
     def on_delete_event(self, *args):
         idle(self.hide)
         return True
 
+    def update_pref_value(self, lang_id, name, value):
+        current_value = self.get_lang_prefs(lang_id)[name]
+        if value != current_value:
+            default_value = self.get_default_lang_prefs(lang_id)[name]
+            if value == default_value:
+                try:
+                    del self.prefs[lang_id][name]
+                except KeyError:
+                    pass
+            else:
+                self.prefs.setdefault(lang_id, {})[name] = value
+            
+            self.editor().settings_changed.emit()
+
     def on_style_cb_changed(self, *args):
         (style_id,) = self.styles[self.style_cb.get_active()]
-        if style_id != self.style_cb.old_value:
-            lang_id = self.get_current_lang_id()
-            self.prefs.setdefault(lang_id, {})['style'] = style_id
-            self.editor().settings_changed.emit()
+        lang_id = self.get_current_lang_id()
+        self.update_pref_value(lang_id, 'style', style_id)
         
     def on_reset_to_default_clicked(self, *args):
         try:

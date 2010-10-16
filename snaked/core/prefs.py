@@ -8,6 +8,7 @@ default_prefs = {
         'font': 'Monospace 11',
         'use-tabs': True,
         'tab-width': 4,
+        'show-right-margin': False,
         'right-margin': 100,
         'show-line-numbers': True,
         'wrap-text': False,
@@ -20,6 +21,7 @@ default_prefs = {
     },
     'python': {
         'use-tabs': False,
+        'show-right-margin': True,
     }
 }
 
@@ -44,7 +46,7 @@ def load_json_settings(name, default=None):
 def save_json_settings(name, value):
     filename = get_settings_path(name)
     with open(filename, 'w') as f:
-        json.dump(value, f)
+        json.dump(value, f, sort_keys=True, indent=4)
 
 
 class CompositePreferences(object):

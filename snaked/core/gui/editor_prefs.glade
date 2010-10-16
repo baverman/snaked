@@ -65,30 +65,77 @@
             <property name="orientation">vertical</property>
             <property name="spacing">5</property>
             <child>
-              <object class="GtkComboBox" id="style_cb">
+              <object class="GtkHBox" id="hbox66">
                 <property name="visible">True</property>
-                <property name="model">styles</property>
-                <signal name="changed" handler="on_style_cb_changed"/>
+                <property name="spacing">5</property>
                 <child>
-                  <object class="GtkCellRendererText" id="cellrenderertext2"/>
-                  <attributes>
-                    <attribute name="text">0</attribute>
-                  </attributes>
+                  <object class="GtkLabel" id="label33">
+                    <property name="visible">True</property>
+                    <property name="xalign">0</property>
+                    <property name="label" translatable="yes">_Theme:</property>
+                    <property name="use_underline">True</property>
+                    <property name="mnemonic_widget">style_cb</property>
+                    <property name="width_chars">10</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkComboBox" id="style_cb">
+                    <property name="visible">True</property>
+                    <property name="model">styles</property>
+                    <signal name="changed" handler="on_style_cb_changed"/>
+                    <child>
+                      <object class="GtkCellRendererText" id="cellrenderertext2"/>
+                      <attributes>
+                        <attribute name="text">0</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="pack_type">end</property>
+                    <property name="position">0</property>
+                  </packing>
                 </child>
               </object>
               <packing>
-                <property name="expand">False</property>
                 <property name="position">0</property>
               </packing>
             </child>
             <child>
-              <object class="GtkFontButton" id="font">
+              <object class="GtkHBox" id="hbox6">
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="font_name">Monospace 11</property>
-                <property name="use_font">True</property>
-                <property name="use_size">True</property>
+                <property name="spacing">5</property>
+                <child>
+                  <object class="GtkLabel" id="label3">
+                    <property name="visible">True</property>
+                    <property name="xalign">0</property>
+                    <property name="label" translatable="yes">_Font:</property>
+                    <property name="use_underline">True</property>
+                    <property name="mnemonic_widget">font</property>
+                    <property name="width_chars">10</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkFontButton" id="font">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="font_name">Monospace 11</property>
+                    <property name="use_font">True</property>
+                    <property name="use_size">True</property>
+                  </object>
+                  <packing>
+                    <property name="pack_type">end</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
               </object>
               <packing>
                 <property name="expand">False</property>
