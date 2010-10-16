@@ -230,7 +230,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkCheckButton" id="highligh_line">
+              <object class="GtkCheckButton" id="highlight_current_line">
                 <property name="label" translatable="yes">_Highlight current line</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
@@ -241,6 +241,19 @@
               <packing>
                 <property name="expand">False</property>
                 <property name="position">5</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="wrap_text">
+                <property name="label" translatable="yes">_Wrap text</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">False</property>
+                <property name="use_underline">True</property>
+                <property name="draw_indicator">True</property>
+              </object>
+              <packing>
+                <property name="position">6</property>
               </packing>
             </child>
             <child>
@@ -270,7 +283,7 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Margin width:</property>
                         <property name="use_underline">True</property>
-                        <property name="mnemonic_widget">spinbutton1</property>
+                        <property name="mnemonic_widget">margin_width</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -278,7 +291,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkSpinButton" id="spinbutton1">
+                      <object class="GtkSpinButton" id="margin_width">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="invisible_char">&#x25CF;</property>
@@ -298,7 +311,7 @@
               </object>
               <packing>
                 <property name="expand">False</property>
-                <property name="position">6</property>
+                <property name="position">7</property>
               </packing>
             </child>
             <child>
@@ -323,7 +336,7 @@
               </object>
               <packing>
                 <property name="expand">False</property>
-                <property name="position">7</property>
+                <property name="position">8</property>
               </packing>
             </child>
           </object>

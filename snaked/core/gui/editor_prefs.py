@@ -24,6 +24,16 @@ class PreferencesDialog(BuilderAware):
         sm = gtksourceview2.style_scheme_manager_get_default()
         for style_id in sm.get_scheme_ids():
             self.styles.append((style_id, ))
+            
+        self.checks = ['use-tabs', 'show-right-margin', 'show-line-numbers', 'wrap-text',
+            'highlight-current-line', 'show-whitespace']
+
+        for name in self.checks:
+            getattr(self, name.replace('-', '_')).connect(
+                'toggled', self.on_checkbox_toggled, name)
+
+        self.margin_width.connect('value-changed', self.on_spin_changed, 'right-margin')
+        self.tab_width.connect('value-changed', self.on_spin_changed, 'tab-width')
         
     def show(self, editor):
         self.editor = weakref.ref(editor)        
@@ -62,11 +72,19 @@ class PreferencesDialog(BuilderAware):
             return prefs.CompositePreferences(self.prefs.get('default', {}),
                 prefs.default_prefs.get(lang_id, {}), prefs.default_prefs['default'])
      
+    def set_checkbox(self, pref, name):
+        getattr(self, name.replace('-', '_')).set_active(pref[name])
+        
     def refresh_lang_settings(self, *args):
         pref = self.get_lang_prefs(self.get_current_lang_id())
         
-        self.use_tabs.set_active(pref['use-tabs'])
+        for name in self.checks:
+            self.set_checkbox(pref, name)        
+        
         self.select_style(pref['style'])
+        
+        self.margin_width.set_value(pref['right-margin'])
+        self.tab_width.set_value(pref['tab-width'])
             
     def select_style(self, style_id, try_classic=True):
         for i, (name,) in enumerate(self.styles):
@@ -110,6 +128,12 @@ class PreferencesDialog(BuilderAware):
         lang_id = self.get_current_lang_id()
         self.update_pref_value(lang_id, 'style', style_id)
         
+    def on_checkbox_toggled(self, widget, name):
+        self.update_pref_value(self.get_current_lang_id(), name, widget.get_active())
+
+    def on_spin_changed(self, widget, name):
+        self.update_pref_value(self.get_current_lang_id(), name, widget.get_value_as_int())
+
     def on_reset_to_default_clicked(self, *args):
         try:
             del self.prefs[self.get_current_lang_id()]

@@ -107,7 +107,7 @@ class BuilderAware(object):
     def __getattr__(self, name):
         obj = self.gtk_builder.get_object(name)
         if not obj:
-            raise AttributeError()
+            raise AttributeError('Builder have no %s object' % name)
             
         setattr(self, name, obj)
         return obj
