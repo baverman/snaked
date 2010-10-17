@@ -35,6 +35,7 @@ class OutlineDialog(BuilderAware):
         self.shortcuts = ShortcutActivator(self.window)
         self.shortcuts.bind('Escape', self.hide)
         self.shortcuts.bind('Return', self.goto_name)
+        self.shortcuts.bind('<alt>s', self.focus_search)
 
     def show(self, editor):
         self.editor = weakref.ref(editor)
@@ -130,3 +131,6 @@ class OutlineDialog(BuilderAware):
                 i += 1
 
         self.outline_tree.columns_autosize()
+
+    def focus_search(self):
+        self.search_entry.grab_focus()

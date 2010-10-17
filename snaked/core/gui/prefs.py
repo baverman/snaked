@@ -12,6 +12,7 @@ class PreferencesDialog(BuilderAware):
         self.activator = ShortcutActivator(self.window)
         self.activator.bind('Escape', self.hide)
         self.activator.bind('Return', self.activate)
+        self.activator.bind('<alt>s', self.focus_search)
         
     def hide(self):
         self.window.destroy()
@@ -43,3 +44,6 @@ class PreferencesDialog(BuilderAware):
         name = model.get_value(iter, 0)
         prefs.registered_dialogs[name][1](self.editor())
         idle(self.hide)
+        
+    def focus_search(self):
+        self.search_entry.grab_focus()

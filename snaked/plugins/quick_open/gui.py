@@ -17,6 +17,7 @@ class QuickOpenDialog(BuilderAware):
         self.shortcuts.bind('<alt>Down', self.project_down)
         self.shortcuts.bind('Return', self.open_file)
         self.shortcuts.bind('<ctrl>Return', self.open_mime)
+        self.shortcuts.bind('<alt>s', self.focus_search)
 
     @single_ref
     def prefs(self):
@@ -133,3 +134,6 @@ class QuickOpenDialog(BuilderAware):
             self.hide()
             refresh_gui()
             open_mime(fname)
+
+    def focus_search(self):
+        self.search_entry.grab_focus()
