@@ -79,6 +79,21 @@ Goals
 What does `minimalist` mean?
 ----------------------------
 
+First of all it is an absence of user interface noise. During file edit you only
+need to see text view. Toolbar, menubar, statusbar or project browser are
+useless. Hence main Snaked principle -- you see what you need to see.
+
+In the second you do not need a feature which provided by other tool. For
+example project browser (to look at project structure or to do file operations)
+will never be implemented, because File Managers are intended for such tasks.
+
+And third minor claim: there are no any widgets designed for controlling with
+mouse. For example tab close buttons, toolbars and so on.
+
+However, `minimalist` doesn't mean feature poor. I have a bunch of ideas
+increasing developer productivity which are waiting to be implemented. If you
+also have suggestions I'll listen them with pleasure.
+
 
 .. _snaked: http://github.com/baverman/snaked
 .. _scribes: http://scribes.sourceforge.net
