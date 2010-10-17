@@ -3,3 +3,5 @@
 *.pyo
 /dist
 /*.egg-info
+/doc/_build
+/doc/doc.zip
