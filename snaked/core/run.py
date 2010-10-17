@@ -1,6 +1,7 @@
-def init():
+def get_manager():
     from optparse import OptionParser
-
+    import sys
+    
     parser = OptionParser()
     parser.add_option('-s', '--session', dest='session', help="Open snaked with specified session")
     parser.add_option('-w', '--windowed', action="store_true", 
@@ -19,20 +20,22 @@ def init():
 
     if options.session:
         manager.open_session(options.session)
-    else:
-        if len(args):
-            for f in args:    
-                manager.open(f)
-        else:
-            manager.open(None)
     
+    for f in args:    
+        manager.open(f)
+
+    if not manager.editors:
+        print >> sys.stderr, 'You must specify at least one file to edit'
+        sys.exit(1)
+        
+    return manager
+            
 def run():
+    manager = get_manager()
 
-    #import cProfile
+    import gtk
     
-    #cProfile.runctx('profiled()', {'profiled':profiled}, None, '/tmp/wow.prof')
-    
-    init()
-
-    import gtk    
-    gtk.main()
+    try:    
+        gtk.main()
+    except KeyboardInterrupt:
+        manager.quit()

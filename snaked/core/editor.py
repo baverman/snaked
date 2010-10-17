@@ -93,6 +93,8 @@ class Editor(SignalManager):
         if self.uri:
             try:
                 save_file(self.uri, self.buffer.get_text(*self.buffer.get_bounds()), 'utf-8')
+                if not self.buffer.get_modified():
+                    self.message("%s saved" % self.uri)
                 self.buffer.set_modified(False)
                 self.file_saved.emit()
             except Exception, e:
@@ -294,11 +296,9 @@ class EditorManager(object):
         settings = ListSettings('session-%s.db' % session)
         files = settings.load()
 
-        if files:        
+        if files:
             for f in files:
                 self.open(f)
-        else:
-            self.open(None)
                     
     def save_session(self, session):
         from .prefs import ListSettings
