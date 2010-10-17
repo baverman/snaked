@@ -231,8 +231,13 @@ class EditorManager(object):
 
     @Editor.editor_closed(idle=True)
     def on_editor_closed(self, editor):
+        if self.session and len(self.editors) == 1:
+            self.save_session(self.session)
+            self.session = None
+        
         self.plugin_manager.editor_closed(editor)
         self.editors.remove(editor)
+        
         if not self.editors:
             self.plugin_manager.quit()
             gtk.main_quit()
@@ -287,18 +292,15 @@ class EditorManager(object):
     def quit(self, *args):
         if self.session:
             self.save_session(self.session)
+            self.session = None
             
         [self.close_editor(e) for e in self.editors]
 
-    def open_session(self, session):
+    def get_session_files(self, session):
         self.session = session
         from .prefs import ListSettings
         settings = ListSettings('session-%s.db' % session)
-        files = settings.load()
-
-        if files:
-            for f in files:
-                self.open(f)
+        return settings.load()
                     
     def save_session(self, session):
         from .prefs import ListSettings

@@ -18,11 +18,16 @@ def get_manager():
 
     manager = WM()
 
-    if options.session:
-        manager.open_session(options.session)
+    opened_files = []
     
-    for f in args:    
-        manager.open(f)
+    session_files = []
+    if options.session:
+        session_files = manager.get_session_files(options.session)
+    
+    for f in session_files + args:
+        if f not in opened_files:    
+            manager.open(f)
+            opened_files.append(f)
 
     if not manager.editors:
         print >> sys.stderr, 'You must specify at least one file to edit'
