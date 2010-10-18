@@ -13,7 +13,9 @@ class Proposal(gobject.GObject, CompletionProposal):
 
     def do_get_text(self):
         return self.proposal.name
-                
+
+    def do_get_info(self):
+        return self.proposal.get_doc()                
                 
 class RopeCompletionProvider(gobject.GObject, CompletionProvider):
     def __init__(self, plugin):
