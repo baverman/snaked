@@ -124,8 +124,10 @@ def get_matches(entry):
 def fill_model(model, path, entry=None):
     model.clear()
     model.last_path = path
-    if path:
+    try:
         for p in os.listdir(path):
             fullpath = os.path.join(path, p)
             if os.path.isdir(fullpath):
                 model.append((p,))
+    except OSError:
+        pass
