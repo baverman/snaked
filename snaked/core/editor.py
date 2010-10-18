@@ -273,21 +273,8 @@ class EditorManager(object):
                 idle(self.set_editor_prefs, e, e.uri)
         
     def new_file_action(self, editor):
-        dialog = gtk.FileChooserDialog('Create file', None, gtk.FILE_CHOOSER_ACTION_SAVE,
-            (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
-        
-        root = editor.project_root
-        if root:
-            dialog.set_current_folder(root)
-
-        dialog.set_do_overwrite_confirmation(True)
-        self.set_transient_for(editor, dialog)
-        
-        response = dialog.run()
-        if response == gtk.RESPONSE_OK:
-            self.open(dialog.get_filename())
-            
-        dialog.destroy()
+        from snaked.core.gui import new_file
+        new_file.show_create_file(editor)
         
     def quit(self, *args):
         if self.session:
