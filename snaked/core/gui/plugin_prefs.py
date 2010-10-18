@@ -44,11 +44,10 @@ class PluginDialog(BuilderAware):
     def get_aviable_plugins(self):
         for pname in discover_plugins():
             package = get_plugin(pname)
-            author = getattr(package, 'author', 'Somebody')
             name = getattr(package, 'name', pname)
             desc = getattr(package, 'desc', 'Some weird plugin')
-            markup = "<b>%s</b> by <i>%s</i>\n<small>%s</small>" % tuple(
-                map(markup_escape_text, (name, author, desc)))
+            markup = "<b>%s</b>\n<small>%s</small>" % tuple(
+                map(markup_escape_text, (name, desc)))
             
             yield (pname, markup, name)
     
