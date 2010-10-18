@@ -1,3 +1,5 @@
+.. _install:
+
 Installation
 ============
 
@@ -29,7 +31,18 @@ Also, with pip you can install Snaked locally::
 
    pip install snaked --user
 
-In this case executable script will be placed in $HOME/.local/bin
+In this case executable script will be placed in ``$HOME/.local/bin``
+
+
+From source
+-----------
+
+::
+
+   git clone --depth=1 git://github.com/baverman/snaked.git
+   cd snaked
+   python setup.py build
+   sudo python setup.py install
 
 
 .. _pip: http://pip.openplans.org/

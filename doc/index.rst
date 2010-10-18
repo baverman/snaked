@@ -1,4 +1,4 @@
-Snaked's user manual
+Snaked user manual
 ====================
 
 `Snaked`_ (**snak**\ e **ed**\ itor) is light and :ref:`minimalist
@@ -55,7 +55,7 @@ Content
 
    intro
    install
-   quick
+   start
 
 .. _snaked: http://github.com/baverman/snaked
 .. _scribes: http://scribes.sourceforge.net
