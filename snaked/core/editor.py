@@ -25,6 +25,7 @@ class Editor(SignalManager):
     request_transient_for = Signal(object)
     file_saved = Signal()
     push_escape_callback = Signal(object, object)
+    plugins_changed = Signal()
 
     def __init__(self):    
         self.uri = None
@@ -330,3 +331,8 @@ class EditorManager(object):
         from snaked.core.gui.editor_prefs import PreferencesDialog
         dialog = PreferencesDialog(self.lang_prefs)
         dialog.show(editor)
+
+    @Editor.plugins_changed
+    def on_plugins_changed(self, editor):
+        for e in self.editors:
+            self.set_editor_shortcuts(e)

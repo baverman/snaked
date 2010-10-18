@@ -38,7 +38,7 @@ def dir_is_good(name, path):
     return True
 
 def file_is_good(name, path):
-    if name.endswith('.pyc') or name.endswith('.pyo'):
+    if any(map(name.endswith, ('.pyc', '.pyo', '.png'))):
         return False
     
     return True

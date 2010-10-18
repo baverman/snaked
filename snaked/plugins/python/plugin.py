@@ -78,7 +78,7 @@ class Plugin(object):
         try:
             resource, line = codeassist.get_definition_location(
                 project, *self.get_source_and_offset(),
-                resource=current_resource)
+                resource=current_resource, maxfixes=3)
         except Exception, e:
             import traceback
             traceback.print_exc()

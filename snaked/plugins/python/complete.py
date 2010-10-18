@@ -40,7 +40,7 @@ class RopeCompletionProvider(gobject.GObject, CompletionProvider):
         try:
             proposals = codeassist.sorted_proposals(
                 codeassist.code_assist(project, *self.plugin.get_source_and_offset(),
-                    resource=self.plugin.get_rope_resource(project)))
+                    resource=self.plugin.get_rope_resource(project), maxfixes=3))
                     
         except Exception, e:
             import traceback
