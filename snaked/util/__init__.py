@@ -1,4 +1,5 @@
 import os
+import shutil
 from os.path import join, dirname, realpath, abspath, exists
 
 import gobject
@@ -28,6 +29,9 @@ def save_file(filename, data, encoding):
                     
     f.write(data.encode(encoding))
     f.close()
+    
+    if exists(filename):
+        shutil.copymode(filename, tmpfilename)
     
     os.rename(tmpfilename, filename)
 
