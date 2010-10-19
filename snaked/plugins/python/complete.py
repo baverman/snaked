@@ -1,6 +1,12 @@
+import re
+
 from gtksourceview2 import CompletionProvider, CompletionProposal
 from gtksourceview2 import COMPLETION_ACTIVATION_USER_REQUESTED
+
 import gobject
+from glib import markup_escape_text
+
+pydoc_converter = re.compile(r'([^\n])\n[ \t]*?([^\n])')
 
 
 class Proposal(gobject.GObject, CompletionProposal):
@@ -15,7 +21,11 @@ class Proposal(gobject.GObject, CompletionProposal):
         return self.proposal.name
 
     def do_get_info(self):
-        return self.proposal.get_doc()                
+        info = self.proposal.get_doc()
+        if info:
+            return markup_escape_text(pydoc_converter.sub(r'\1 \2', info))
+        else:
+            return None                
                 
 class RopeCompletionProvider(gobject.GObject, CompletionProvider):
     def __init__(self, plugin):
