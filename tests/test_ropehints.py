@@ -16,6 +16,12 @@ def get_rope_resource(project, uri):
 def func_with_unknown_type(lolwhat):
     lolwhat.s
 
+def func_with_unknown_return(magick_arg):
+    return magick_arg
+
+def caller_of_func_with_unknown_return(lol):
+    return func_with_unknown_return(lol).s
+
 class Lolwhat(object):
     def star(self):
         pass
@@ -32,4 +38,15 @@ def test_func_param_hint():
     resource = get_rope_resource(project, module_path)
 
     proposals = code_assist(project, source, 419, resource=resource)
+    assert ['superstar', 'star'] == [p.name for p in proposals]
+    
+def test_func_return():
+    project = Project('/tmp')
+    hintdb = ReHintDb(project)
+    hintdb.add_hint('test_ropehints.func_with_unknown_return', '^return$', 'test_ropehints.Lolwhat')
+    module_path = os.path.join(os.path.dirname(__file__), __name__+'.py')
+    source = open(module_path).read().decode('utf8')
+    resource = get_rope_resource(project, module_path)
+
+    proposals = code_assist(project, source, 573, resource=resource)
     assert ['superstar', 'star'] == [p.name for p in proposals]

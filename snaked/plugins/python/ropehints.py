@@ -1,3 +1,4 @@
+import os.path
 import re
 
 import rope.base.oi.soi
@@ -21,6 +22,21 @@ def infer_parameter_objects_with_hints(func):
 
 rope.base.oi.soi.infer_parameter_objects = infer_parameter_objects_with_hints(
     rope.base.oi.soi.infer_parameter_objects)
+
+
+def infer_returned_object_with_hints(func):
+    def inner(pyfunction, args):
+        rtype = pyfunction.pycore.hintdb.get_function_param_type(pyfunction, 'return')
+        if rtype is None:
+            rtype = func(pyfunction, args)
+        
+        return rtype
+        
+    return inner
+
+rope.base.oi.soi.infer_returned_object = infer_returned_object_with_hints(
+    rope.base.oi.soi.infer_returned_object)
+
 
 class HintDb(object):
     def __init__(self, project):
@@ -64,7 +80,7 @@ class HintDb(object):
             module = pycore.get_module(module)
             obj = module[name].get_object()
         else:
-            obj = None
+            obj = pycore.get_module(name)
         
         self.type_cache[type_name] = obj
         return obj
@@ -84,3 +100,33 @@ class ReHintDb(HintDb):
                 return otype
                 
         return None
+        
+class FileHintDb(ReHintDb):
+    def __init__(self, project):
+        super(FileHintDb, self).__init__(project)
+        self.hints_filename = os.path.join(project.ropefolder.real_path, 'hints')
+        self.hints_loaded = False
+        
+    def refresh(self):
+        self.hints_loaded = False
+        
+    def load_hints(self):
+        if self.hints_loaded:
+            return
+        
+        self.hints_loaded = True
+        
+        try:
+            with open(self.hints_filename) as f:
+                for l in f:
+                    try:
+                        scope, name, type = l.strip().split()
+                        self.add_hint(scope, name, type)
+                    except ValueError:
+                        continue        
+        except IOError:
+            pass
+        
+    def find_type_for(self, *args):
+        self.load_hints()
+        return super(FileHintDb, self).find_type_for(*args)

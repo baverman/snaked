@@ -1,10 +1,13 @@
 import re
 
 def get_pattern(what):
-    parts = re.split(r'[./\\]', what)
-    rexp = r'.*?[./\\].*?'.join(parts)
-    p = re.compile(rexp)
-    return p
+    parts = what.split('/')
+    
+    if len(parts) <= 1:
+        return None
+    
+    rexp = r'(/|^)' + r'[^/]+/'.join(map(re.escape, parts))
+    return re.compile(rexp)
 
 def name_start_match(what):
     def inner(name, path):
@@ -27,12 +30,15 @@ def path_match(what):
 def fuzzy_match(what):
     pattern = get_pattern(what)
     def inner(name, path):
-        return pattern.search(path) is not None
+        if pattern:
+            return pattern.search(path) is not None
+        else:
+            return False
 
     return inner
     
 def dir_is_good(name, path):
-    if name.startswith('.'):
+    if name.startswith('.') and name != '.ropeproject':
         return False
     
     return True

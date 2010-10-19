@@ -3,7 +3,7 @@ import gtk
 from snaked.signals import connect_external, connect_all
 from snaked.util import idle, refresh_gui, lazy_property
 
-from .ropehints import ReHintDb
+from .ropehints import FileHintDb
 
 class Plugin(object):
     def __init__(self, editor):
@@ -25,8 +25,7 @@ class Plugin(object):
         if root:
             from rope.base.project import Project
             project = Project(root)
-            hintdb = ReHintDb(project)
-            hintdb.add_hint('.*', '^editor$', 'snaked.core.editor.Editor')
+            FileHintDb(project)
             return project
         else:
             return None           
