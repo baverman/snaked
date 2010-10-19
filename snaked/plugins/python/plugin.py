@@ -1,13 +1,15 @@
 import gtk
 
 from snaked.signals import connect_external, connect_all
-from snaked.util import idle, refresh_gui
+from snaked.util import idle, refresh_gui, lazy_property
+
+from .ropehints import ReHintDb
 
 class Plugin(object):
     def __init__(self, editor):
         self.editor = editor
         idle(connect_all, self, view=editor.view)
-        idle(self.init_completion) 
+        idle(self.init_completion)
 
     def init_completion(self):
         provider = self.completion_provider
@@ -15,30 +17,24 @@ class Plugin(object):
         
     def close(self):
         if hasattr(self, '__project'):
-            self.__project.close()
+            self.project.close()
         
-    @property
+    @lazy_property
     def project(self):
-        try:
-            return self.__project
-        except AttributeError:
-            root = self.editor.project_root
-            if root:
-                from rope.base.project import Project
-                self.__project = Project(root)
-            else:
-                self.__project = None
-                
-            return self.__project
+        root = self.editor.project_root
+        if root:
+            from rope.base.project import Project
+            project = Project(root)
+            hintdb = ReHintDb(project)
+            hintdb.add_hint('.*', '^editor$', 'snaked.core.editor.Editor')
+            return project
+        else:
+            return None           
     
-    @property
+    @lazy_property
     def completion_provider(self):
-        try:
-            return self.__completion_provider
-        except AttributeError:
-            import complete
-            self.__completion_provider = complete.RopeCompletionProvider(self)
-            return self.__completion_provider
+        import complete
+        return complete.RopeCompletionProvider(self)
 
     def get_rope_resource(self, project, uri=None):
         from rope.base import libutils    

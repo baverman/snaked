@@ -5,6 +5,7 @@ desc = 'Various edit shortcuts'
 def init(manager):
     manager.add_shortcut('delete-line', '<ctrl>d', 'Edit', 'Deletes current line', delete_line)
     manager.add_shortcut('smart-select', '<alt>w', 'Selection', 'Smart anything selection', smart_select)
+    manager.add_shortcut('show_offset', '<ctrl><alt>o', 'Edit', 'Show cursor offset', show_offset)
 
 def delete_line(editor):
     from util import get_line_bounds
@@ -16,3 +17,6 @@ def smart_select(editor):
     from util import select_range
     from smart_select import get_smart_select
     select_range(editor.buffer, *get_smart_select(editor))
+    
+def show_offset(editor):
+    editor.message(str(editor.cursor.get_offset()), 3000)
