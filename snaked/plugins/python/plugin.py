@@ -119,6 +119,10 @@ class Plugin(object):
             self.editor.buffer.begin_user_action()
             self.editor.buffer.insert(cursor, u'\n' + ws + tab)
             self.editor.buffer.end_user_action()
+            
+            if cursor.is_end():
+                idle(self.editor.view.scroll_to_iter, cursor, 0.001, use_align=True, xalign=1.0)
+            
             return True
         
         return False
