@@ -57,7 +57,8 @@ I use Snaked for all my python development tasks. Following features are impleme
 - Shortcut manager
 - Preferences dialog
 - Editor preferences. Font, tabs and so on. Activated by ``<ctrl>p``
-- Python type hints defining.
+- Python type hints defining. One can override function parameters, return and
+  module attributes types.
 
 Current progress may be seen in `@a_bobrov <http://twitter.com/a_bobrov>`_.
 
