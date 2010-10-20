@@ -10,9 +10,15 @@ def update_type_for(project, source, resource):
 def infer_parameter_objects_with_hints(func):
     def inner(pyfunction):
         params_types = func(pyfunction)
+        
+        try:
+            hintdb = pyfunction.pycore.hintdb
+        except AttributeError:
+            return params_types
+        
         param_names = pyfunction.get_param_names(False)
         for i, name in enumerate(param_names):
-            ptype = pyfunction.pycore.hintdb.get_function_param_type(pyfunction, name)
+            ptype = hintdb.get_function_param_type(pyfunction, name)
             if ptype != None:
                 params_types[i] = ptype
         
@@ -26,7 +32,12 @@ rope.base.oi.soi.infer_parameter_objects = infer_parameter_objects_with_hints(
 
 def infer_returned_object_with_hints(func):
     def inner(pyfunction, args):
-        rtype = pyfunction.pycore.hintdb.get_function_param_type(pyfunction, 'return')
+        try:
+            hintdb = pyfunction.pycore.hintdb
+        except AttributeError:
+            return func(pyfunction, args)
+        
+        rtype = hintdb.get_function_param_type(pyfunction, 'return')
         if rtype is None:
             rtype = func(pyfunction, args)
         
@@ -123,3 +134,4 @@ class FileHintDb(ReHintDb):
         else:
             with open(self.hints_filename) as f:
                 f.write('')
+                
