@@ -105,28 +105,21 @@ class FileHintDb(ReHintDb):
     def __init__(self, project):
         super(FileHintDb, self).__init__(project)
         self.hints_filename = os.path.join(project.ropefolder.real_path, 'hints')
-        self.hints_loaded = False
+        self.load_hints()
         
     def refresh(self):
-        self.hints_loaded = False
+        self.load_hints()
         
     def load_hints(self):
-        if self.hints_loaded:
-            return
-        
-        self.hints_loaded = True
-        
-        try:
+        self.db[:] = []
+        if os.path.exists(self.hints_filename):
             with open(self.hints_filename) as f:
                 for l in f:
                     try:
                         scope, name, type = l.strip().split()
                         self.add_hint(scope, name, type)
                     except ValueError:
-                        continue        
-        except IOError:
-            pass
-        
-    def find_type_for(self, *args):
-        self.load_hints()
-        return super(FileHintDb, self).find_type_for(*args)
+                        continue
+        else:
+            with open(self.hints_filename) as f:
+                f.write('')

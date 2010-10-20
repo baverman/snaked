@@ -1,4 +1,5 @@
 import gtk
+import gio
 
 from snaked.signals import connect_external, connect_all
 from snaked.util import idle, refresh_gui, lazy_property
@@ -18,14 +19,23 @@ class Plugin(object):
     def close(self):
         if hasattr(self, '__project'):
             self.project.close()
-        
+            self.hints_monitor.cancel()
+    
+    def refresh_hints(self, filemonitor, file, other_file, event, db):
+        if event in (gio.FILE_MONITOR_EVENT_CHANGES_DONE_HINT, gio.FILE_MONITOR_EVENT_CREATED):        
+            db.refresh()
+    
     @lazy_property
     def project(self):
         root = self.editor.project_root
         if root:
             from rope.base.project import Project
             project = Project(root)
-            FileHintDb(project)
+            db = FileHintDb(project)
+
+            self.hints_monitor = gio.File(db.hints_filename).monitor_file()
+            self.hints_monitor.connect('changed', self.refresh_hints, db)
+            
             return project
         else:
             return None           
