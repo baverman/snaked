@@ -4,10 +4,17 @@ def get_line_bounds(cursor):
     end = cursor.copy()
     start = end.copy()
     start.set_line(end.get_line())
-    
+
+    very_end = end.copy()
+    very_end.forward_to_end()
+
+    if end.get_line() == very_end.get_line():
+        start.backward_char()
+        return start, very_end
+
     if not end.ends_line():
         end.forward_to_line_end()
-
+        
     end.forward_char()
     
     return start, end    
