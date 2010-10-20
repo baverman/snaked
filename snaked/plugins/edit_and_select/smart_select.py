@@ -2,6 +2,7 @@ from util import (iter_lines, line_is_empty, get_next_not_empty_line, get_whites
     line_text, next_line, prev_line, cursor_on_start_or_end_whitespace, get_line_bounds)
 
 def extend_with_gap(from_iter, ws, delta):
+    n = None
     for p, n in iter_lines(from_iter, delta):
         if line_is_empty(n):
             ne = get_next_not_empty_line(n, delta)
@@ -14,9 +15,10 @@ def extend_with_gap(from_iter, ws, delta):
         if n_ws < ws:
             return p
     
-    return n
+    return n if n else from_iter.copy()
 
 def extend_without_gap(from_iter, ws, delta):
+    n = None
     for p, n in iter_lines(from_iter, delta):
         if line_is_empty(n):
             ne = get_next_not_empty_line(n, delta)
@@ -29,9 +31,10 @@ def extend_without_gap(from_iter, ws, delta):
         if n_ws < ws:
             return p
     
-    return n
+    return n if n else from_iter.copy()
 
 def extend_block_without_gap(from_iter, ws, delta):
+    n = None
     for p, n in iter_lines(from_iter, delta):
         if line_is_empty(n):
             ne = get_next_not_empty_line(n, delta)
@@ -45,20 +48,21 @@ def extend_block_without_gap(from_iter, ws, delta):
         if n_ws < ws or ( n_ws == ws and len(line_text(n).strip()) > 4 ):
             return p
     
-    return n
+    return n if n else from_iter.copy()
 
 def block_smart_extend(has_selection, start, end):
     end = end.copy()
-    end.backward_lines(1)
+    if not end.is_end():
+        end.backward_lines(1)
     
     start_ws = len(get_whitespace(start))
-    prev_empty = line_is_empty(prev_line(start))
+    prev_empty = start.is_start() or line_is_empty(prev_line(start))
     prev_ws = len(get_whitespace(prev_line(start)))
     
     end_ws = len(get_whitespace(end))
-    next_empty = line_is_empty(next_line(end))
+    next_empty = end.is_end() or line_is_empty(next_line(end))
     next_ws = len(get_whitespace(next_line(end)))
-    
+
     newstart, newend = start.copy(), end
     
     if not has_selection and start.get_line() == end.get_line() and \
@@ -101,7 +105,7 @@ def block_smart_extend(has_selection, start, end):
 def get_smart_select(editor):
     if editor.buffer.get_has_selection():
         start, end = editor.buffer.get_selection_bounds()
-        if start.starts_line() and end.starts_line():
+        if start.starts_line() and ( end.starts_line() or end.is_end() ):
             return block_smart_extend(True, start, end)
         else:
             return line_smart_extend(True, start, end)
@@ -117,7 +121,7 @@ def get_words_bounds(cursor, include_hyphen=False):
     return backward_word_start(cursor, include_hyphen), forward_word_end(cursor, include_hyphen)
 
 def char_is_word(char, include_hyphen=False):
-    return char.isalnum() or char == u'_' or (include_hyphen and char == u'-')
+    return char and char.isalnum() or char == u'_' or (include_hyphen and char == u'-')
 
 def backward_word_start(iter, include_hyphen=False):
     iter = iter.copy()
@@ -154,14 +158,25 @@ def line_smart_extend(has_selection, start, end):
     right.forward_chars(3)
     rchars = end.get_text(right)
 
+    if not rchars:
+        rchars = [None]
+        
+    if not lchars:
+        lchars = [None]
+
     text = start.get_buffer().get_text(*start.get_buffer().get_bounds())
     br, spos, epos = pairs_parser.get_brackets(text, start.get_offset())
     in_quotes = br in ('"', "'", '"""', "'''")
     #print br, spos, epos, start.get_offset()
     
     if not in_quotes and rchars[0] in (u'(', u'[', "'", '"'):
-        br, spos, epos = pairs_parser.get_brackets(text, end.get_offset() + 1)
+        try:
+            br, spos, epos = pairs_parser.get_brackets(text, end.get_offset() + 1)
+        except TypeError:
+            br = None
+            
         if not br: return ahtung()
+        
         end.set_offset(epos)    
     elif char_is_word(lchars[-1]) or char_is_word(rchars[0]):
         start = backward_word_start(start, in_quotes)

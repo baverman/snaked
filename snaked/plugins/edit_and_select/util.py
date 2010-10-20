@@ -30,6 +30,9 @@ def cursor_on_start_or_end_whitespace(cursor):
 
 match_ws = re.compile(u'(?u)^[ \t]*')
 def get_whitespace(start):
+    if start.is_end():
+        return u''
+        
     match = match_ws.search(line_text(start))
     if match:
         return match.group(0)
@@ -48,7 +51,7 @@ def line_text(iter):
     return iter.get_text(end)
         
 def line_is_empty(iter):
-    return line_text(iter).strip() == u''
+    return iter.is_end() or line_text(iter).strip() == u''
 
 def iter_lines(from_iter, delta):
     line_count = from_iter.get_buffer().get_line_count()
