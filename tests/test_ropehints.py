@@ -43,7 +43,7 @@ def get_project():
 def test_func_param_hint():
     project = get_project() 
     hintdb = ReHintDb(project)
-    hintdb.add_hint('.*', 'lolwhat', 'test_ropehints.Lolwhat')
+    hintdb.add_hint('.*', 'lolwhat', 'test_ropehints.Lolwhat()')
     module_path = os.path.join(os.path.dirname(__file__), __name__+'.py')
     source = open(module_path).read().decode('utf8')
     resource = get_rope_resource(project, module_path)
@@ -54,7 +54,7 @@ def test_func_param_hint():
 def test_func_return():
     project = get_project() 
     hintdb = ReHintDb(project)
-    hintdb.add_hint('test_ropehints.func_with_unknown_return', '^return$', 'test_ropehints.Lolwhat')
+    hintdb.add_hint('test_ropehints.func_with_unknown_return', '^return$', 'test_ropehints.Lolwhat()')
     module_path = os.path.join(os.path.dirname(__file__), __name__+'.py')
     source = open(module_path).read().decode('utf8')
     resource = get_rope_resource(project, module_path)
@@ -63,13 +63,21 @@ def test_func_return():
     assert ['superstar', 'star'] == [p.name for p in proposals]
     
 def test_module_attribute():
-    project = get_project() 
+    project = get_project()
     hintdb = ReHintDb(project)
-    hintdb.add_hint('re', '^compile$', 'test_ropehints.Lolwhat')
+    hintdb.add_hint('^re$', '^compile$', 'test_ropehints.Lolwhat()')
     module_path = os.path.join(os.path.dirname(__file__), __name__+'.py')
     source = open(module_path).read().decode('utf8')
     resource = get_rope_resource(project, module_path)
 
     proposals = code_assist(project, source, 639, resource=resource)
     assert ['superstar', 'star'] == [p.name for p in proposals]
+    
+#def test_class_base():
+#    project = get_project()
+#    hintdb = ReHintDb(project)
+#    hintdb.add_hint('^werkzeug$', '^Request$', 'werkzeug.wrappers.Request')
+#
+#    mod = project.pycore.get_module('flask.wrappers')
+#    print mod['RequestBase'].get_object().get_attributes()
     

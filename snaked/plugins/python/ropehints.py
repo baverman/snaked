@@ -1,8 +1,13 @@
 import os.path
 import re
 
+import weakref
+
 import rope.base.oi.soi
-from rope.base.pyobjectsdef import PyModule
+import rope.base.pyobjects
+import rope.base.pynames
+from rope.base import exceptions
+from rope.base.pyobjectsdef import PyModule, PyPackage
 
 def update_type_for(project, source, resource):
     pass
@@ -49,16 +54,42 @@ rope.base.oi.soi.infer_returned_object = infer_returned_object_with_hints(
     rope.base.oi.soi.infer_returned_object)
 
 
+def get_module_attribute_with_hints(func, what):
+    def inner(self, name):
+        #print what, self.pycore.modname(self.resource), name
+
+        try:
+            hintdb = self.pycore.hintdb
+        except AttributeError:
+            return func(self, name)
+
+        try:
+            original_pyname = func(self, name)
+        except exceptions.AttributeNotFoundError:
+            original_pyname = None
+        
+        result = hintdb.get_module_attribute(self, name, original_pyname)
+        if not result:
+            raise exceptions.AttributeNotFoundError()
+        else:
+            return result
+        
+    return inner
+        
+PyModule.get_attribute = get_module_attribute_with_hints(PyModule.get_attribute, 'mod')
+PyPackage.get_attribute = get_module_attribute_with_hints(PyPackage.get_attribute, 'pkg')
+
 class HintDb(object):
     def __init__(self, project):
         self.type_cache = {}
+        self.module_attrs_cache = weakref.WeakKeyDictionary()
         project.pycore.hintdb = self
         
     def get_function_param_type(self, pyfunc, name):
         scope_path = self.get_scope_path(pyfunc.get_scope())
         type_name = self.find_type_for(scope_path, name)
         if type_name:
-            return self.get_type(pyfunc.pycore, type_name)
+            return self.get_type(pyfunc.pycore, type_name).get_object()
         else:
             return None
         
@@ -85,16 +116,47 @@ class HintDb(object):
             return self.type_cache[type_name]
         except KeyError:
             pass
-                
-        module, sep, name = type_name.rpartition('.')
+        
+        module, sep, name = type_name.strip('()').rpartition('.')
         if module:
             module = pycore.get_module(module)
-            obj = module[name].get_object()
+            obj = module[name]
         else:
             obj = pycore.get_module(name)
         
         self.type_cache[type_name] = obj
         return obj
+        
+    def get_module_attribute(self, pymodule, name, original_pyname):
+        try:
+            return self.module_attrs_cache[pymodule][name]
+        except KeyError:
+            pass
+
+        scope_path = pymodule.pycore.modname(pymodule.resource)
+        type_name = self.find_type_for(scope_path, name)
+        if type_name:
+            type = self.get_type(pymodule.pycore, type_name)
+        else:
+            type = None
+        
+        if type:
+            if type_name.endswith('()'):
+                type = type.get_object()
+                
+                obj = rope.base.pyobjects.PyObject(type)
+                if isinstance(original_pyname, rope.base.pynamesdef.AssignedName):
+                    pyname = rope.base.pynamesdef.AssignedName(original_pyname.lineno,
+                        original_pyname.module, obj)
+                else:
+                    pyname = rope.base.pynames.DefinedName(obj)
+            else:
+                pyname = type
+        else:
+            pyname = original_pyname
+        
+        self.module_attrs_cache.setdefault(pymodule, {})[name] = pyname
+        return pyname
 
         
 class ReHintDb(HintDb):
@@ -123,6 +185,8 @@ class FileHintDb(ReHintDb):
         
     def load_hints(self):
         self.db[:] = []
+        self.module_attrs_cache.clear()
+        
         if os.path.exists(self.hints_filename):
             with open(self.hints_filename) as f:
                 for l in f:

@@ -1,3 +1,5 @@
+import os
+
 import gtk
 import gio
 
@@ -27,7 +29,11 @@ class Plugin(object):
     
     @lazy_property
     def project(self):
-        root = self.editor.project_root
+        if not os.access(self.editor.uri, os.W_OK):
+            root = '/tmp'
+        else:
+            root = self.editor.project_root
+        
         if root:
             from rope.base.project import Project
             project = Project(root)

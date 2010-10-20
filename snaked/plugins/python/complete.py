@@ -25,7 +25,7 @@ class Proposal(gobject.GObject, CompletionProposal):
         if info:
             return markup_escape_text(pydoc_converter.sub(r'\1 \2', info))
         else:
-            return None                
+            return ''                
                 
 class RopeCompletionProvider(gobject.GObject, CompletionProvider):
     def __init__(self, plugin):
