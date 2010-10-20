@@ -22,6 +22,10 @@ def func_with_unknown_return(magick_arg):
 def caller_of_func_with_unknown_return(lol):
     return func_with_unknown_return(lol).s
 
+def caller_of_module_attribute():
+    import re
+    re.compile.s
+
 class Lolwhat(object):
     def star(self):
         pass
@@ -29,8 +33,15 @@ class Lolwhat(object):
     def superstar(self):
         pass
 
+def get_project():
+    if os.path.exists('/tmp/.ropeproject'):
+        import shutil
+        shutil.rmtree('/tmp/.ropeproject')
+        
+    return Project('/tmp')
+
 def test_func_param_hint():
-    project = Project('/tmp')
+    project = get_project() 
     hintdb = ReHintDb(project)
     hintdb.add_hint('.*', 'lolwhat', 'test_ropehints.Lolwhat')
     module_path = os.path.join(os.path.dirname(__file__), __name__+'.py')
@@ -41,7 +52,7 @@ def test_func_param_hint():
     assert ['superstar', 'star'] == [p.name for p in proposals]
     
 def test_func_return():
-    project = Project('/tmp')
+    project = get_project() 
     hintdb = ReHintDb(project)
     hintdb.add_hint('test_ropehints.func_with_unknown_return', '^return$', 'test_ropehints.Lolwhat')
     module_path = os.path.join(os.path.dirname(__file__), __name__+'.py')
@@ -50,3 +61,15 @@ def test_func_return():
 
     proposals = code_assist(project, source, 573, resource=resource)
     assert ['superstar', 'star'] == [p.name for p in proposals]
+    
+def test_module_attribute():
+    project = get_project() 
+    hintdb = ReHintDb(project)
+    hintdb.add_hint('re', '^compile$', 'test_ropehints.Lolwhat')
+    module_path = os.path.join(os.path.dirname(__file__), __name__+'.py')
+    source = open(module_path).read().decode('utf8')
+    resource = get_rope_resource(project, module_path)
+
+    proposals = code_assist(project, source, 639, resource=resource)
+    assert ['superstar', 'star'] == [p.name for p in proposals]
+    

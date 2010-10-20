@@ -131,7 +131,3 @@ class FileHintDb(ReHintDb):
                         self.add_hint(scope, name, type)
                     except ValueError:
                         continue
-        else:
-            with open(self.hints_filename) as f:
-                f.write('')
-                
