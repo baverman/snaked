@@ -23,10 +23,11 @@ class Plugin(object):
             self.project.close()
             self.hints_monitor.cancel()
     
-    def refresh_hints(self, filemonitor, file, other_file, event, db):
+    def refresh_hints(self, filemonitor, file, other_file, event, db, project):
         if event in (gio.FILE_MONITOR_EVENT_CHANGES_DONE_HINT, gio.FILE_MONITOR_EVENT_CREATED):        
             db.refresh()
-    
+            project.pycore.module_cache.forget_all_data()
+
     @lazy_property
     def project(self):
         if not os.access(self.editor.uri, os.W_OK):
@@ -40,7 +41,7 @@ class Plugin(object):
             db = FileHintDb(project)
 
             self.hints_monitor = gio.File(db.hints_filename).monitor_file()
-            self.hints_monitor.connect('changed', self.refresh_hints, db)
+            self.hints_monitor.connect('changed', self.refresh_hints, db, project)
             
             return project
         else:
