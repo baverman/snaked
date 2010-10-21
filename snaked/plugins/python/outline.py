@@ -9,9 +9,9 @@ matcher = re.compile(r'(?m)^(?P<level>[ \t]*)(?P<type>def|class)\s+(?P<name>\w+)
 def get_outline(source):
     last_start = 0
     last_line = 1
-    cpath = (None,)
+    cpath = ()
+    cpath_levels = (0,)
     cname = None
-    clevel = None
     for match in matcher.finditer(source):
         last_line = last_line + source.count('\n', last_start, match.start())
         last_start = match.start()
@@ -19,14 +19,16 @@ def get_outline(source):
         level, name = match.group('level', 'name')
         level = len(level)
         
-        if clevel is None or level < clevel:
-            cpath = cpath[:-1]
-        elif level > clevel:
+        if level < cpath_levels[-1]:
+            while level < cpath_levels[-1]:
+                cpath = cpath[:-1]
+                cpath_levels = cpath_levels[:-1]
+        elif level > cpath_levels[-1]:
             cpath += (cname,)
-        
+            cpath_levels += (level, )
+
         yield cpath, name, last_line
         
-        clevel = level
         cname = name
             
 class OutlineDialog(BuilderAware):
@@ -83,7 +85,8 @@ class OutlineDialog(BuilderAware):
             elif len(top) > len(ptop):
                 roots = roots + (self.outline.append(roots[-1], (name, '', line)),)
             else:
-                roots = roots[:-2] + (self.outline.append(roots[-3], (name, '', line)),)
+                delta = len(ptop) - len(top) + 1
+                roots = roots[:-delta] + (self.outline.append(roots[-delta-1], (name, '', line)),)
 
             ptop = top
             
