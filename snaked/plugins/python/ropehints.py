@@ -9,9 +9,18 @@ import rope.base.pynames
 from rope.base import exceptions
 from rope.base.pyobjectsdef import PyModule, PyPackage
 
-def update_type_for(project, source, resource):
-    pass
-    
+class ReplacedName(rope.base.pynames.PyName):
+    def __init__(self, pyobject, pyname):
+        self.pyobject = pyobject
+        self.pyname = pyname
+
+    def get_object(self):
+        return self.pyobject
+
+    def get_definition_location(self):
+        return self.pyname.get_definition_location()
+
+
 def infer_parameter_objects_with_hints(func):
     def inner(pyfunction):
         params_types = func(pyfunction)
@@ -142,14 +151,8 @@ class HintDb(object):
         
         if type:
             if type_name.endswith('()'):
-                type = type.get_object()
-                
-                obj = rope.base.pyobjects.PyObject(type)
-                if isinstance(original_pyname, rope.base.pynamesdef.AssignedName):
-                    pyname = rope.base.pynamesdef.AssignedName(original_pyname.lineno,
-                        original_pyname.module, obj)
-                else:
-                    pyname = rope.base.pynames.DefinedName(obj)
+                obj = rope.base.pyobjects.PyObject(type.get_object())
+                pyname = ReplacedName(obj, type)
             else:
                 pyname = type
         else:
@@ -169,7 +172,8 @@ class ReHintDb(HintDb):
 
     def find_type_for(self, scope_path, name):
         for scope, vname, otype in self.db:
-            if scope.search(scope_path) and vname.search(name):
+            if scope.match(scope_path) and vname.match(name):
+                #print 'matched', scope_path, name
                 return otype
                 
         return None
