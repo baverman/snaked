@@ -98,9 +98,11 @@ class HintDb(object):
         scope_path = self.get_scope_path(pyfunc.get_scope())
         type_name = self.find_type_for(scope_path, name)
         if type_name:
-            return self.get_type(pyfunc.pycore, type_name).get_object()
-        else:
-            return None
+            pyname = self.get_type(pyfunc.pycore, type_name)
+            if pyname:
+                return pyname.get_object()
+        
+        return None
         
     def get_scope_path(self, scope):
         result = []
@@ -129,12 +131,15 @@ class HintDb(object):
         module, sep, name = type_name.strip('()').rpartition('.')
         if module:
             module = pycore.get_module(module)
-            obj = module[name]
+            try:
+                pyname = module[name]
+            except exceptions.AttributeNotFoundError:
+                pyname = None
         else:
-            obj = pycore.get_module(name)
+            pyname = pycore.get_module(name)
         
-        self.type_cache[type_name] = obj
-        return obj
+        self.type_cache[type_name] = pyname
+        return pyname
         
     def get_module_attribute(self, pymodule, name, original_pyname):
         try:
@@ -190,6 +195,7 @@ class FileHintDb(ReHintDb):
     def load_hints(self):
         self.db[:] = []
         self.module_attrs_cache.clear()
+        self.type_cache.clear()
         
         if os.path.exists(self.hints_filename):
             with open(self.hints_filename) as f:
