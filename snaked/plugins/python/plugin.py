@@ -72,6 +72,40 @@ class Plugin(object):
         iterator = edit.get_iter_at_line(line - 1)
         edit.place_cursor(iterator)
         editor.view.scroll_to_iter(iterator, 0.001, use_align=True, xalign=1.0)
+    
+    def get_fuzzy_location(self, source, offset):
+        from rope.base import worder, exceptions
+        
+        word_finder = worder.Worder(source, True)
+        expression = word_finder.get_primary_at(offset)
+        expression = expression.replace('\\\n', ' ').replace('\n', ' ')
+        
+        names = expression.split('.')
+        pyname = None
+        try:
+            obj = self.project.pycore.get_module(names[0])
+            for n in names[1:]:
+                pyname = obj[n]
+                obj = pyname.get_object()
+        except (exceptions.ModuleNotFoundError, exceptions.AttributeNotFoundError):
+            return None, None
+   
+        if not pyname:
+            try:
+                resource = obj._get_init_dot_py()
+            except AttributeError:
+                resource = obj.get_resource()
+            
+            if not resource:
+                return None, None
+            else:
+                return resource, 1
+        else:
+            resource, line = pyname.get_definition_location()
+            if hasattr(resource, 'resource'):
+                resource = resource.resource
+            
+        return resource, line
 
     def goto_definition(self):
         project = self.project
@@ -82,20 +116,24 @@ class Plugin(object):
                 return
         
         project.validate()
-                 
+
         current_resource = self.get_rope_resource(project) 
         
         from rope.contrib import codeassist
 
+        source, offset = self.get_source_and_offset()
         try:
             resource, line = codeassist.get_definition_location(
-                project, *self.get_source_and_offset(),
+                project, source, offset,
                 resource=current_resource, maxfixes=3)
         except Exception, e:
             import traceback
             traceback.print_exc()
             self.editor.message(str(e), 5000)
             return
+
+        if resource is None and line is None:
+            resource, line = self.get_fuzzy_location(source, offset)
         
         if resource and resource.real_path == current_resource.real_path:
             resource = None
