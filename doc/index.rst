@@ -43,7 +43,7 @@ Features:
 .. note::
 
    Just a brief remark: I'm not a native English speaker so you may feel some
-   confusion reading this manual.  Please, share your discomfiture with me. I'll
+   confusion reading this manual.  Please, :ref:`share <contacts>` your discomfiture with me. I'll
    be very grateful for that.
 
 
@@ -56,6 +56,8 @@ Content
    intro
    install
    start
+   plugins
+   contacts
 
 .. _snaked: http://github.com/baverman/snaked
 .. _scribes: http://scribes.sourceforge.net

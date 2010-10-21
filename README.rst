@@ -7,6 +7,11 @@ may find it useful too.
 
 Shortly, Snaked is Scribes with blackjack and bitches.
 
+Documentation
+-------------
+
+May be found at http://packages.python.org/snaked/index.html
+
 
 Goals
 -----
