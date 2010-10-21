@@ -1,7 +1,8 @@
+from optparse import OptionParser
+import sys
+import os
+
 def get_manager():
-    from optparse import OptionParser
-    import sys
-    
     parser = OptionParser()
     parser.add_option('-s', '--session', dest='session', help="Open snaked with specified session")
     parser.add_option('-w', '--windowed', action="store_true", 
@@ -25,6 +26,7 @@ def get_manager():
         session_files = manager.get_session_files(options.session)
     
     for f in session_files + args:
+        f = os.path.abspath(f)
         if f not in opened_files:    
             manager.open(f)
             opened_files.append(f)
