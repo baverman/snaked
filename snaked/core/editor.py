@@ -14,7 +14,7 @@ from .plugins import PluginManager
 
 class Editor(SignalManager):
     editor_closed = Signal()
-    request_to_open_file = Signal(str, return_type=object)
+    request_to_open_file = Signal(str, object, return_type=object)
     request_close = Signal()
     settings_changed = Signal()
     get_title = Signal(return_type=str)
@@ -60,7 +60,7 @@ class Editor(SignalManager):
         
         self.change_title.emit(modified + title)          
 
-    def load_file(self, filename):
+    def load_file(self, filename, line=None):
         self.uri = os.path.abspath(filename)
         
         if os.path.exists(self.uri):
@@ -75,7 +75,7 @@ class Editor(SignalManager):
             self.on_modified_changed_handler.unblock()
             self.view.window.thaw_updates()
             
-            pos = self.get_file_position.emit()
+            pos = line if line is not None else self.get_file_position.emit()
             if pos is not None and pos >= 0:
                 self.buffer.place_cursor(self.buffer.get_iter_at_line(pos))
                 self.view.scroll_to_mark(self.buffer.get_insert(), 0.001, use_align=True, xalign=1.0)
@@ -112,8 +112,8 @@ class Editor(SignalManager):
             
         return None
 
-    def open_file(self, filename):        
-        editor = self.request_to_open_file.emit(filename)
+    def open_file(self, filename, line=None):        
+        editor = self.request_to_open_file.emit(filename, line)
         if not self.uri and not self.buffer.get_modified() and self.text == u'':
             self.request_close.emit()
             
@@ -178,7 +178,7 @@ class EditorManager(object):
             'Open dialog to choose new file directory and name')
         register_shortcut('show-preferences', '<ctrl>p', 'Window', 'Open preferences dialog')
         
-    def open(self, filename):
+    def open(self, filename, line=None):
         editor = Editor()
         self.editors.append(editor)
         
@@ -191,7 +191,7 @@ class EditorManager(object):
         self.manage_editor(editor)
         
         if filename:
-            idle(editor.load_file, filename)
+            idle(editor.load_file, filename, line)
 
         idle(self.plugin_manager.editor_opened, editor)
         
@@ -254,13 +254,15 @@ class EditorManager(object):
         self.close_editor(editor)
     
     @Editor.request_to_open_file
-    def on_request_to_open_file(self, editor, filename):
+    def on_request_to_open_file(self, editor, filename, line):
         for e in self.editors:
             if e.uri == filename:
                 self.focus_editor(e)
+                if line is not None:
+                    e.goto_line(line + 1)
                 break
         else:
-            e = self.open(filename)
+            e = self.open(filename, line)
         
         return e
 

@@ -140,9 +140,8 @@ class Plugin(object):
             
         if resource:
             uri = resource.real_path
-            editor = self.editor.open_file(uri)
+            editor = self.editor.open_file(uri, line-1)
             editor.ropeproject = project 
-            self.goto_line(editor, line)
         else:
             if line:
                 self.goto_line(self.editor, line)
