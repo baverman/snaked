@@ -27,7 +27,7 @@ def get_manager():
     
     for f in session_files + args:
         f = os.path.abspath(f)
-        if f not in opened_files and os.path.isfile(f):    
+        if f not in opened_files and (not os.path.exists(f) or os.path.isfile(f)):    
             manager.open(f)
             opened_files.append(f)
 
