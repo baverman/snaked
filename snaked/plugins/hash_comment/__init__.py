@@ -3,6 +3,7 @@ name = 'Hash comment'
 desc = '(Un)Comments line or selection with hashes'
 
 import gtk
+import re
 
 langs = ['python', 'sh', 'ruby', 'perl']
 
@@ -62,8 +63,16 @@ def line_is_empty(iter):
     return get_line_text(iter).strip() == u''
     
 def comment_range(editor, traversor):
+    ws_match = re.compile(r'[ \t]*')
+    min_indent = 1000
+    for iter in traversor():
+        match = ws_match.match(get_line_text(iter))
+        if match and len(match.group()) < min_indent:
+            min_indent = len(match.group())
+
     editor.buffer.begin_user_action()
     for iter in traversor():
+        iter.forward_chars(min_indent)
         editor.buffer.insert(iter, u'#')
 
     editor.buffer.end_user_action()
