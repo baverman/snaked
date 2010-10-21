@@ -21,9 +21,8 @@ def delete_line(editor):
     editor.buffer.end_user_action()
 
 def smart_select(editor):
-    from util import select_range
     from smart_select import get_smart_select
-    select_range(editor.buffer, *get_smart_select(editor))
+    editor.buffer.select_range(*get_smart_select(editor))
     
 def show_offset(editor):
     editor.message(str(editor.cursor.get_offset()), 3000)

@@ -141,7 +141,7 @@ def forward_word_end(iter, include_hyphen=False):
     return iter
     
 def line_smart_extend(has_selection, start, end):
-    import pairs_parser
+    from snaked.util import pairs_parser
 
     def ahtung():
         start.set_line(start.get_line())

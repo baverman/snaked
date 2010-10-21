@@ -2,7 +2,7 @@ import sys
 import os.path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__))) 
 
-from snaked.plugins.edit_and_select.pairs_parser import get_brackets, find_closing_quote_pos
+from snaked.util.pairs_parser import get_brackets, find_closing_quote_pos
 
 def test_bracket_matcher():
     assert get_brackets('foo(1,2, boo(a, b))', 13) == ('(', 13, 18)
