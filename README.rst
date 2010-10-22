@@ -67,12 +67,3 @@ I use Snaked for all my python development tasks. Following features are impleme
 
 Current progress may be seen in `@a_bobrov <http://twitter.com/a_bobrov>`_.
 
-
-Todo
-----
-
-Features to implement in nearest time (day or two):
-
-- User manual
-- Release announce
-
