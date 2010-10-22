@@ -63,7 +63,8 @@ class CompositePreferences(object):
         raise KeyError('There is no %s in preferences' % key)
 
 def get_settings_path(name):
-    path = os.path.join(os.path.expanduser("~"), '.local', 'snaked')
+    config_dir = os.getenv('XDG_CONFIG_HOME', os.path.expanduser('~/.config'))
+    path = os.path.join(config_dir, 'snaked')
     if not os.path.exists(path):
         os.makedirs(path, mode=0755)
         
