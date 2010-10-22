@@ -65,7 +65,7 @@ Goals
 * Tabs! I'm using awesome tiling wm, so Scribes lacking of tabs is not a problem
   for me.  But many users complain about it.
 
-* Speed. All development will be maid on Atom Netbook. Scribes is too slow on
+* Speed. All development will be made on Atom Netbook. Scribes is too slow on
   this hardware.
 
 * Memory footprint. Scribes internals is too complicated to trace all object
