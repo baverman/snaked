@@ -57,9 +57,12 @@ class OutlineDialog(BuilderAware):
 
     def goto_name(self):
         (model, iter) = self.outline_tree.get_selection().get_selected()
-        self.hide()
-        self.editor().goto_line(model.get_value(iter, 2))
-        
+        if iter:
+            self.hide()
+            self.editor().goto_line(model.get_value(iter, 2))
+        else:
+            self.editor().message('You need select item')
+            
     def on_search_entry_changed(self, *args):
         what = self.search_entry.get_text().strip()
         if what:

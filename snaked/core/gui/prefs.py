@@ -41,11 +41,12 @@ class PreferencesDialog(BuilderAware):
         
     def activate(self):
         (model, iter) = self.dialogs_view.get_selection().get_selected()
-        if not iter:
+        if iter:
+            name = model.get_value(iter, 0)
+            prefs.registered_dialogs[name][1](self.editor())
+            idle(self.hide)
+        else:        
             self.editor().message('You need select item')
-        name = model.get_value(iter, 0)
-        prefs.registered_dialogs[name][1](self.editor())
-        idle(self.hide)
         
     def focus_search(self):
         self.search_entry.grab_focus()
