@@ -115,7 +115,7 @@ use it automatically.
 Plugins
 *******
 
-Simple list with available extension. Check to enable, uncheck to disable
+Simple list with available extension. Check to enable, uncheck to disable,
 nothing more. If plugin will provide it's own configuration dialog it will
 appear in preferences.
 
