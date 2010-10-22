@@ -41,6 +41,8 @@ class PreferencesDialog(BuilderAware):
         
     def activate(self):
         (model, iter) = self.dialogs_view.get_selection().get_selected()
+        if not iter:
+            self.editor().message('You need select item')
         name = model.get_value(iter, 0)
         prefs.registered_dialogs[name][1](self.editor())
         idle(self.hide)
