@@ -5,7 +5,7 @@ Very light and minimalist editor inspired by Scribes. Snaked
 intended mostly for python developers but other Scribes users
 may find it useful too.
 
-Shortly, Snaked is Scribes with blackjack and bitches.
+Shortly, Snaked is Scribes with blackjack & hookers.
 
 Documentation
 -------------
