@@ -25,13 +25,12 @@ class QuickOpenDialog(BuilderAware):
         
     def show(self, editor):
         self.editor = weakref.ref(editor)
-        
         self.update_recent_projects()
         self.update_projects(editor.project_root)
-
+        editor.request_transient_for.emit(self.window)
+        
         self.search_entry.grab_focus()
         
-        editor.request_transient_for.emit(self.window)
         self.window.present()
     
     def update_recent_projects(self):

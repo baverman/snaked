@@ -12,6 +12,9 @@ import prefs
 from .shortcuts import register_shortcut, load_shortcuts
 from .plugins import PluginManager
 
+import snaked.core.quick_open
+
+
 class Editor(SignalManager):
     editor_closed = Signal()
     request_to_open_file = Signal(str, object, return_type=object)
@@ -170,6 +173,9 @@ class EditorManager(object):
         load_shortcuts()
         self.register_app_shortcuts()
 
+        # Init core plugins
+        self.plugin_manager.load_core_plugin(snaked.core.quick_open)
+
     def register_app_shortcuts(self):
         register_shortcut('quit', '<ctrl>q', 'Application', 'Quit')        
         register_shortcut('close-window', '<ctrl>w', 'Window', 'Closes window')
@@ -192,12 +198,10 @@ class EditorManager(object):
         idle(self.plugin_manager.editor_created, editor)
         
         self.manage_editor(editor)
-        
-        if filename:
-            idle(editor.load_file, filename, line)
 
+        idle(editor.load_file, filename, line)
         idle(self.plugin_manager.editor_opened, editor)
-        
+
         return editor
 
     @lazy_property
@@ -244,6 +248,9 @@ class EditorManager(object):
         self.plugin_manager.editor_closed(editor)
         self.editors.remove(editor)
 
+        if not self.editors:
+            snaked.core.quick_open.activate(self.get_fake_editor())
+        
     @Editor.change_title
     def on_editor_change_title(self, editor, title):
         self.set_editor_title(editor, title)
@@ -288,8 +295,9 @@ class EditorManager(object):
         map(self.plugin_manager.editor_closed, self.editors)
         
         self.plugin_manager.quit()
-
-        gtk.main_quit()
+        
+        if gtk.main_level() > 0:
+            gtk.main_quit()
 
     def get_session_settings(self, session):
         from .prefs import load_json_settings
@@ -341,3 +349,23 @@ class EditorManager(object):
     def on_plugins_changed(self, editor):
         for e in self.editors:
             self.set_editor_shortcuts(e)
+
+    def get_fake_editor(self):
+        self.fake_editor = FakeEditor(self)
+        return self.fake_editor
+        
+
+class FakeEditor(object):
+    def __init__(self, manager):
+        self.project_root = None
+        self.manager = manager
+        self.request_transient_for = self
+
+    def emit(self, window):
+        self.manager.set_transient_for(self, window)
+
+    def open_file(self, filename, line=None):
+        result = self.manager.open(filename, line)
+        del self.manager.fake_editor
+        self.manager.fake_editor = None
+        return result

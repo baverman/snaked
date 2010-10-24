@@ -1,7 +1,3 @@
-author = 'Anton Bobrov<bobrov@vl.ru>'
-name = 'Quick open'
-desc = 'Allows one to open files in project very fast and easy'
-
 dialog = None
         
 def init(manager):
@@ -22,5 +18,5 @@ def activate(editor):
     dialog.show(editor)
         
 def quit():
-    global gui
-    gui = None
+    global dialog
+    dialog = dialog

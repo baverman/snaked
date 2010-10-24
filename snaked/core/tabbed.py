@@ -29,7 +29,7 @@ class TabbedEditorManager(snaked.core.editor.EditorManager):
             if e.widget is widget:
                 return (e,)
 
-        raise Exception('Editor not found')
+        return (None,)
 
     def manage_editor(self, editor):
         label = gtk.Label('Unknown')
@@ -56,7 +56,7 @@ class TabbedEditorManager(snaked.core.editor.EditorManager):
             self.update_top_level_title()
 
     def on_delete_event(self, *args):
-        self.quit()
+        self.quit(None)
 
     def close_editor(self, editor):
         idx = self.note.page_num(editor.widget)

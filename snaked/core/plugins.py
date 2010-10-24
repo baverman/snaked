@@ -4,7 +4,7 @@ import traceback
 from snaked.core.shortcuts import Shortcut, register_shortcut, get_path_by_key
 from snaked.core.prefs import ListSettings
 
-default_enabled_plugins = ['quick_open', 'save_positions', 'edit_and_select',
+default_enabled_plugins = ['save_positions', 'edit_and_select',
     'python', 'complete_words', 'hash_comment', 'python_flakes', 'goto_line',
     'goto_dir', 'search']
 
@@ -33,6 +33,7 @@ class PluginManager(object):
         self.restore_enabled_plugins()
 
         self.loaded_plugins = {}
+        self.core_plugins = []
 
         self.plugin_by_path = {}
         self.shortcuts_by_plugins = {}
@@ -43,12 +44,20 @@ class PluginManager(object):
             return self.loaded_plugins[name]
         except KeyError:
             plugin = get_plugin(name)
-            if hasattr(plugin, 'init'):
-                holder = ShortcutsHolder()
-                plugin.init(holder)
-                self.add_shortcuts(plugin, holder)
-            self.loaded_plugins[name] = plugin
+            self.init_plugin(plugin, name)
             return plugin
+
+    def init_plugin(self, plugin, name=None):
+        name = name or plugin.__name__
+        if hasattr(plugin, 'init'):
+            holder = ShortcutsHolder()
+            plugin.init(holder)
+            self.add_shortcuts(plugin, holder)
+        self.loaded_plugins[name] = plugin
+
+    def load_core_plugin(self, plugin):
+        self.init_plugin(plugin)
+        self.core_plugins.append(plugin.__name__)
 
     def add_shortcuts(self, plugin, holder):
         for name, accel, category, desc, callback in holder.shortcuts:
@@ -86,7 +95,7 @@ class PluginManager(object):
         return not hasattr(plugin, 'langs') or editor.lang in plugin.langs
 
     def plugins_for(self, editor):
-        for name in self.enabled_plugins:
+        for name in self.enabled_plugins + self.core_plugins:
             try:
                 plugin = self.get_plugin(name)
             except Exception:
@@ -146,7 +155,7 @@ class PluginManager(object):
         
     def unload_unnecessary_plugins(self):
         bad_plugin_names = [name for name in self.loaded_plugins
-            if name not in self.enabled_plugins]
+            if name not in self.enabled_plugins and name not in self.core_plugins]
             
         for name in bad_plugin_names:
             p = self.loaded_plugins[name]
