@@ -67,6 +67,10 @@ def get_module_attribute_with_hints(func, what):
     def inner(self, name):
         #print what, self.pycore.modname(self.resource), name
 
+        getting_name = 'getting_attr_%s' % name
+        if getattr(self, getting_name, False):
+            return func(self, name)
+
         try:
             hintdb = self.pycore.hintdb
         except AttributeError:
@@ -77,7 +81,14 @@ def get_module_attribute_with_hints(func, what):
         except exceptions.AttributeNotFoundError:
             original_pyname = None
         
-        result = hintdb.get_module_attribute(self, name, original_pyname)
+        try:
+            setattr(self, getting_name, True)
+            result = hintdb.get_module_attribute(self, name, original_pyname)
+        except Exception:
+            raise
+        finally:
+            setattr(self, getting_name, False)
+            
         if result is None:
             raise exceptions.AttributeNotFoundError()
         else:
