@@ -201,7 +201,7 @@ class FileHintDb(ReHintDb):
             with open(self.hints_filename) as f:
                 for l in f:
                     try:
-                        scope, name, type = l.strip().split()
+                        scope, name, type = l.strip().split()[:3]
                         if not scope.startswith('#'):
                             self.add_hint(scope, name, type)
                     except ValueError:
