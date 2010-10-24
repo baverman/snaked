@@ -33,7 +33,7 @@ def infer_parameter_objects_with_hints(func):
         param_names = pyfunction.get_param_names(False)
         for i, name in enumerate(param_names):
             ptype = hintdb.get_function_param_type(pyfunction, name)
-            if ptype != None:
+            if ptype is not None:
                 params_types[i] = ptype
         
         return params_types
@@ -78,7 +78,7 @@ def get_module_attribute_with_hints(func, what):
             original_pyname = None
         
         result = hintdb.get_module_attribute(self, name, original_pyname)
-        if not result:
+        if result is None:
             raise exceptions.AttributeNotFoundError()
         else:
             return result
@@ -202,6 +202,7 @@ class FileHintDb(ReHintDb):
                 for l in f:
                     try:
                         scope, name, type = l.strip().split()
-                        self.add_hint(scope, name, type)
+                        if not scope.startswith('#'):
+                            self.add_hint(scope, name, type)
                     except ValueError:
                         continue
