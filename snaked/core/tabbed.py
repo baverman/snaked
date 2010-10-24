@@ -82,9 +82,9 @@ class TabbedEditorManager(snaked.core.editor.EditorManager):
 
         self.activator.bind('Escape', self.process_escape)
 
-    def quit(self, *args):
+    def quit(self, editor):
         self.window.hide()
-        super(TabbedEditorManager, self).quit()
+        super(TabbedEditorManager, self).quit(editor)
 
     def save(self, editor):
         editor.save()

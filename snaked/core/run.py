@@ -22,18 +22,28 @@ def get_manager():
     opened_files = []
     
     session_files = []
+    active_file = None
     if options.session:
-        session_files = manager.get_session_files(options.session)
+        settings = manager.get_session_settings(options.session)
+        session_files = settings.get('files', [])
+        active_file = settings.get('active_file', None)
+        manager.session = options.session
     
+    editor_to_focus = None
     for f in session_files + args:
         f = os.path.abspath(f)
         if f not in opened_files and (not os.path.exists(f) or os.path.isfile(f)):    
-            manager.open(f)
+            e = manager.open(f)
+            if f == active_file:
+                editor_to_focus = e
             opened_files.append(f)
 
     if not manager.editors:
         print >> sys.stderr, 'You must specify at least one file to edit'
         sys.exit(1)
+
+    if editor_to_focus and active_file != opened_files[-1]:
+        manager.focus_editor(editor_to_focus)
         
     return manager
             

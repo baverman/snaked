@@ -27,9 +27,11 @@ class Editor(SignalManager):
     push_escape_callback = Signal(object, object)
     plugins_changed = Signal()
 
-    def __init__(self):    
+    def __init__(self):
         self.uri = None
-        
+        self.session = None
+        self.opened_from = lambda: None
+                
         sw = gtk.ScrolledWindow()
         sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
                 
@@ -181,6 +183,7 @@ class EditorManager(object):
     def open(self, filename, line=None):
         editor = Editor()
         self.editors.append(editor)
+        editor.session = self.session
         
         connect_all(self, editor)
 
@@ -234,16 +237,12 @@ class EditorManager(object):
 
     @Editor.editor_closed(idle=True)
     def on_editor_closed(self, editor):
-        if self.session and len(self.editors) == 1:
-            self.save_session(self.session)
-            self.session = None
+        opened_from = editor.opened_from()
+        if opened_from:
+            self.focus_editor(opened_from)
         
         self.plugin_manager.editor_closed(editor)
         self.editors.remove(editor)
-        
-        if not self.editors:
-            self.plugin_manager.quit()
-            gtk.main_quit()
 
     @Editor.change_title
     def on_editor_change_title(self, editor, title):
@@ -263,7 +262,8 @@ class EditorManager(object):
                 break
         else:
             e = self.open(filename, line)
-        
+            if editor:
+                e.opened_from = weakref.ref(editor)
         return e
 
     @Editor.request_transient_for
@@ -281,23 +281,26 @@ class EditorManager(object):
         from snaked.core.gui import new_file
         new_file.show_create_file(editor)
         
-    def quit(self, *args):
+    def quit(self, editor):
         if self.session:
-            self.save_session(self.session)
-            self.session = None
+            self.save_session(self.session, editor)
             
-        [self.close_editor(e) for e in self.editors]
+        map(self.plugin_manager.editor_closed, self.editors)
+        
+        self.plugin_manager.quit()
 
-    def get_session_files(self, session):
-        self.session = session
-        from .prefs import ListSettings
-        settings = ListSettings('session-%s.db' % session)
-        return settings.load()
+        gtk.main_quit()
+
+    def get_session_settings(self, session):
+        from .prefs import load_json_settings
+        return load_json_settings('%s.session' % session, {})
                     
-    def save_session(self, session):
-        from .prefs import ListSettings
-        settings = ListSettings('session-%s.db' % session)
-        settings.store(e.uri for e in self.editors if e.uri)
+    def save_session(self, session, active_editor=None):
+        from .prefs import save_json_settings
+        settings = self.get_session_settings(session)
+        settings['files'] = [e.uri for e in self.editors if e.uri]
+        settings['active_file'] = active_editor.uri if active_editor else None
+        save_json_settings('%s.session' % session, settings)
 
     @Editor.push_escape_callback
     def on_push_escape_callback(self, editor, callback, args):
