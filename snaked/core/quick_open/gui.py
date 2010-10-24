@@ -12,7 +12,7 @@ class QuickOpenDialog(BuilderAware):
     def __init__(self):
         super(QuickOpenDialog, self).__init__(join_to_file_dir(__file__, 'gui.glade'))
         self.shortcuts = ShortcutActivator(self.window)
-        self.shortcuts.bind('Escape', self.hide)
+        self.shortcuts.bind('Escape', self.escape)
         self.shortcuts.bind('<alt>Up', self.project_up)
         self.shortcuts.bind('<alt>Down', self.project_down)
         self.shortcuts.bind('Return', self.open_file)
@@ -64,7 +64,7 @@ class QuickOpenDialog(BuilderAware):
         self.window.hide()
         
     def on_delete_event(self, *args):
-        self.hide()
+        self.escape()
         return True
     
     def project_up(self):
@@ -136,3 +136,8 @@ class QuickOpenDialog(BuilderAware):
 
     def focus_search(self):
         self.search_entry.grab_focus()
+
+    def escape(self):
+        if hasattr(self.editor(), 'on_dialog_escape'):
+            idle(self.editor().on_dialog_escape, self)
+        self.hide()

@@ -369,3 +369,6 @@ class FakeEditor(object):
         del self.manager.fake_editor
         self.manager.fake_editor = None
         return result
+
+    def on_dialog_escape(self, dialog):
+        self.manager.quit(None)
