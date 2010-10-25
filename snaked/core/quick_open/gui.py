@@ -21,6 +21,7 @@ class QuickOpenDialog(BuilderAware):
         self.shortcuts.bind('<ctrl>Return', self.open_mime)
         self.shortcuts.bind('<alt>s', self.focus_search)
         self.shortcuts.bind('<ctrl>o', self.free_open)
+        self.shortcuts.bind('<ctrl>p', self.popup_projects)
 
     @single_ref
     def prefs(self):
@@ -160,3 +161,6 @@ class QuickOpenDialog(BuilderAware):
             idle(self.hide)
         
         dialog.destroy()
+
+    def popup_projects(self):
+        self.projects_cbox.popup()

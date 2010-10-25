@@ -60,6 +60,7 @@
                 <property name="search_column">0</property>
                 <child>
                   <object class="GtkTreeViewColumn" id="treeviewcolumn1">
+                    <property name="sizing">autosize</property>
                     <property name="title">name</property>
                     <child>
                       <object class="GtkCellRendererText" id="cellrenderertext1"/>
@@ -71,6 +72,7 @@
                 </child>
                 <child>
                   <object class="GtkTreeViewColumn" id="treeviewcolumn2">
+                    <property name="sizing">autosize</property>
                     <property name="title">path</property>
                     <child>
                       <object class="GtkCellRendererText" id="cellrenderertext2"/>
@@ -91,6 +93,7 @@
           <object class="GtkComboBox" id="projects_cbox">
             <property name="visible">True</property>
             <property name="model">projectlist</property>
+            <property name="wrap_width">1</property>
             <signal name="changed" handler="on_projects_cbox_changed"/>
             <child>
               <object class="GtkCellRendererText" id="cellrenderertext3"/>
