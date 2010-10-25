@@ -213,3 +213,39 @@ class Plugin(object):
         self.editor.buffer.end_user_action()
 
         return True
+
+    def show_calltips(self):
+        project = self.project
+        if not project:
+            project = getattr(self.editor, 'ropeproject', None)
+            if not project:
+                self.editor.message("Can't find project path")
+                return
+        
+        project.validate()
+
+        current_resource = self.get_rope_resource(project) 
+        
+        from rope.contrib import codeassist
+        from snaked.util.pairs_parser import get_brackets
+ 
+        source, offset = self.get_source_and_offset()
+        
+        brackets = get_brackets(source, offset)
+        if brackets:
+            br, spos, epos = brackets
+            if br == '(':
+                offset = spos - 1
+            
+        try:
+            doc = codeassist.get_doc(project, source, offset, resource=current_resource, maxfixes=3)
+        except Exception, e:
+            import traceback
+            traceback.print_exc()
+            self.editor.message(str(e), 5000)
+            return
+        
+        if doc:
+            self.editor.message(doc.strip(), 20000)
+        else:
+            self.editor.message('Info not found')

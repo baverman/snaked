@@ -4,7 +4,9 @@ desc = 'Autocompletion, definitions navigation and smart ident'
 
 langs = ['python']
 
-handlers = {}
+import weakref
+
+handlers = weakref.WeakKeyDictionary()
 outline_dialog = None
 
 def init(manager):
@@ -13,6 +15,10 @@ def init(manager):
 
     manager.add_shortcut('python-outline', '<ctrl>o', 'Python',
         'Opens outline dialog', open_outline)
+
+    manager.add_shortcut('python-calltip', '<ctrl>Return', 'Python',
+        'Shows calltips', show_calltips)
+
 
 def editor_created(editor):
     editor.connect('get-title', on_editor_get_title)
@@ -39,6 +45,14 @@ def goto_definition(editor):
         return
         
     h.goto_definition()
+
+def show_calltips(editor):
+    try:
+        h = handlers[editor]
+    except KeyError:
+        return
+        
+    h.show_calltips()
 
 def on_editor_get_title(editor):
     if editor.uri.endswith('.py'):
