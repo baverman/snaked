@@ -1,12 +1,42 @@
 from optparse import OptionParser
-import sys
 import os
+
+def select_session():
+    import gtk
+    from snaked.util import join_to_file_dir
+    from snaked.core.prefs import get_settings_path
+    
+    builder = gtk.Builder()
+    builder.add_from_file(join_to_file_dir(__file__, 'gui', 'select_session.glade'))
+    dialog = builder.get_object('dialog')
+    dialog.vbox.remove(dialog.action_area)
+    dialog.set_default_response(1)
+    
+    sessions_view = builder.get_object('sessions_view')
+    sessions = builder.get_object('sessions')
+    
+    for p in os.listdir(get_settings_path('')):
+        if p.endswith('.session'):
+            sessions.append((p.rpartition('.')[0],))
+
+    def row_activated(view, path, *args):
+        dialog.response(path[0])
+        
+    sessions_view.connect('row-activated', row_activated)
+    
+    response = dialog.run()
+    result = sessions[response][0] if response >= 0 else None
+    dialog.destroy()    
+    return result
 
 def get_manager():
     parser = OptionParser()
     parser.add_option('-s', '--session', dest='session', help="Open snaked with specified session")
     parser.add_option('-w', '--windowed', action="store_true", 
         dest='windowed', default = False, help="Open separate editor window instead tab")
+    parser.add_option('', '--select-session', action="store_true", dest='select_session',
+        help="Opens dialog to select session")
+
     options, args = parser.parse_args()
 
     import gobject
@@ -16,6 +46,9 @@ def get_manager():
         from .windowed import WindowedEditorManager as WM
     else:
         from .tabbed import TabbedEditorManager as WM
+
+    if options.select_session:
+        options.session = select_session()
 
     manager = WM()
 
