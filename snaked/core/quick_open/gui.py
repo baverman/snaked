@@ -3,9 +3,9 @@ import weakref
 
 import gtk
 
-from snaked.util import idle, join_to_file_dir, BuilderAware, open_mime, refresh_gui, single_ref
+from snaked.util import idle, join_to_file_dir, BuilderAware, open_mime, refresh_gui
 from snaked.core.shortcuts import ShortcutActivator
-from snaked.core.prefs import ListSettings
+from snaked.core.prefs import ListSettings, load_json_settings, save_json_settings
 
 import settings
 import searcher
@@ -24,10 +24,22 @@ class QuickOpenDialog(BuilderAware):
         self.shortcuts.bind('<ctrl>p', self.popup_projects)
         self.shortcuts.bind('<ctrl>Delete', self.delete_project)
 
-    @single_ref
-    def prefs(self):
-        return ListSettings('project-roots.db')
-        
+    def get_stored_recent_projects(self):
+        if self.editor().session:
+            return load_json_settings(
+                '%s.session' % self.editor().session, {}).get('recent_projects', [])
+        else:
+            return ListSettings('project-roots.db').load()
+            
+    def store_recent_projects(self, projects):
+        if self.editor().session:
+            name = '%s.session' % self.editor().session
+            settings = load_json_settings(name, {})
+            settings['recent_projects'] = list(projects)
+            save_json_settings(name, settings)
+        else:
+            return ListSettings('project-roots.db').store(projects)
+    
     def show(self, editor):
         self.editor = weakref.ref(editor)
         self.update_recent_projects()
@@ -39,12 +51,12 @@ class QuickOpenDialog(BuilderAware):
         self.window.present()
     
     def update_recent_projects(self):
-        saved_projects = self.prefs.load()
+        saved_projects = self.get_stored_recent_projects()
                 
         if any(p not in saved_projects for p in settings.recent_projects):
             [saved_projects.append(p) for p in settings.recent_projects
                 if p not in saved_projects]
-            self.prefs.store(saved_projects)
+            self.store_recent_projects(saved_projects)
             settings.recent_projects = saved_projects
             return
             
@@ -173,7 +185,7 @@ class QuickOpenDialog(BuilderAware):
                 self.editor().message('You can not remove current project')
                 return
             settings.recent_projects.remove(current_root)
-            self.prefs.store(settings.recent_projects)
+            self.store_recent_projects(settings.recent_projects)
         
             idx = self.projects_cbox.get_active()
             self.projectlist.remove(self.projects_cbox.get_active_iter())
