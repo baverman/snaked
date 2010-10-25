@@ -185,6 +185,7 @@ class EditorManager(object):
         register_shortcut('new-file', '<ctrl>n', 'File',
             'Open dialog to choose new file directory and name')
         register_shortcut('show-preferences', '<ctrl>p', 'Window', 'Open preferences dialog')
+        register_shortcut('fullscreen', 'F11', 'Window', 'Toggles fullscreen mode')
         
     def open(self, filename, line=None):
         editor = Editor()

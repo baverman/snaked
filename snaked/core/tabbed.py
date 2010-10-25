@@ -77,8 +77,8 @@ class TabbedEditorManager(snaked.core.editor.EditorManager):
         self.activator.bind_to_name('next-editor', self.switch_to, 1)
         self.activator.bind_to_name('prev-editor', self.switch_to, -1)
         self.activator.bind_to_name('new-file', self.new_file_action)
-
         self.activator.bind_to_name('show-preferences', self.show_preferences)
+        self.activator.bind_to_name('fullscreen', self.fullscreen, [True])
 
         self.activator.bind('Escape', self.process_escape)
 
@@ -98,3 +98,11 @@ class TabbedEditorManager(snaked.core.editor.EditorManager):
     def switch_to(self, editor, dir):
         idx = ( self.note.get_current_page() + dir ) % self.note.get_n_pages()
         self.note.set_current_page(idx)
+
+    def fullscreen(self, editor, state):
+        if state[0]:
+            self.window.fullscreen()
+        else:
+            self.window.unfullscreen()
+            
+        state[0] = not state[0]
