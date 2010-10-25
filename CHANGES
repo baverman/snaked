@@ -1,0 +1,23 @@
+Snaked changelog
+================
+
+v0.3.7
+------
+
+- Session selector. (via running ``snaked --select-session``)
+
+- Per session recent projects.
+
+- Show pydoc on ``<ctrl>Enter``.
+
+- Fullscreen mode toggle on F11 in tabbed interface.
+
+- Recent projects deleting from Quick Open dialog on ``<ctrl>Delete``.
+
+- Quick project selection from large recent projects list on ``<ctrl>p`` in Quick Open.
+
+- Quick Open allows to open any file by pressing ``<ctrl>o``
+
+- After closing last tab Quick Open dialog will be shown.
+
+- Recursive type hints.

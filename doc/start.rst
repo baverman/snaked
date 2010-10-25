@@ -10,9 +10,16 @@ Running
 After :ref:`installation <install>` ``snaked`` script will be created.
 You can run it either from terminal or run dialog::
 
+   snaked
+
+:ref:`Quick Open dialog <quick-open>` will be shown after Snaked's start to
+allow one open first file.
+
+
+This command will run snaked with specified file::
+
    snaked /tmp/first_snaked_file.py
 
-This will run snaked with default :ref:`tabbed <tabbed-interface>` interface.
 
 .. image:: /images/first-run.*
    :align: center
@@ -50,14 +57,7 @@ Behavior is very simple: you type several characters of subject to find,
 navigate between items, ``Enter`` activates selection, ``<alt>s`` focuses search
 entry again.
 
-Quick Open provides additional functionality:
-
-* ``<ctrl>Enter`` opens selected item with default system editor. This important
-  feature is missed in many other editors. For example you may open glade file
-  as xml in Snaked (``Enter``) or show it in Glade Designer (``<ctrl>Enter``).
-
-* At very bottom there is project combo box, it allows switch between project
-  paths being searched. ``<alt>Up`` and ``<alt>Down`` keys change its value.
+Quick Open provides :ref:`additional functionality <quick-open>`:
 
 
 Sessions
@@ -74,6 +74,11 @@ Now, after closing editor by ``<ctrl>q`` key or closing window by wm facilities
 ``test`` session will be created and you can open it with simple command::
 
    snaked -s test
+
+Also there is ability to select session at snaked start::
+
+   snaked --select-session
+
 
 Think about sessions like some sort of workspaces which are separate you tasks.
 One session for task or project or whatever.

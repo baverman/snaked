@@ -95,6 +95,8 @@ Background python code linter. Highlights problems like unused or undefined impo
 variables. Also gives feedback about syntax errors. Quite handy plugin.
 
 
+.. _quick-open:
+
 Quick Open
 ----------
 
@@ -112,13 +114,19 @@ following these matching rules:
   example ``pl/py`` will match ``plugin/python/__init__.py`` or
   ``plugin/name/python.py``
 
-Current project may be changed by ``<alt>Up``, ``<alt>Down`` combination. I
-think to replace project selection combox with treeview for more easier
-choosing.
+Shortcuts
+*********
 
-Also dialog allows to open files with default system editor, not Snaked itself.
-Just hit ``<ctrl>Enter``. For example you can start watching video or run gimp
-for pictures. 
+* ``<ctrl>Enter`` opens selected item with default system editor. This important
+  feature is missed in many other editors. For example you may open glade file
+  as xml in Snaked (``Enter``) or show it in Glade Designer (``<ctrl>Enter``).
+
+* At very bottom there is project combo box, it allows switch between project
+  paths being searched. ``<alt>Up`` and ``<alt>Down`` keys change its value.
+
+* ``<ctrl>p`` popups project combo box for easy selecting from large list.
+
+* ``<ctrl>o`` shows standard file choose dialog.
 
 
 Save positions
