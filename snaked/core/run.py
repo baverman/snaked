@@ -39,12 +39,8 @@ def get_manager():
             opened_files.append(f)
 
     if not manager.editors:
-        if options.session:
-            import snaked.core.quick_open
-            snaked.core.quick_open.activate(manager.get_fake_editor())
-        else:
-            print >> sys.stderr, 'You must specify at least one file to edit'
-            sys.exit(1)
+        import snaked.core.quick_open
+        snaked.core.quick_open.activate(manager.get_fake_editor())
 
     if editor_to_focus and active_file != opened_files[-1]:
         manager.focus_editor(editor_to_focus)

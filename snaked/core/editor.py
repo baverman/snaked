@@ -360,6 +360,7 @@ class FakeEditor(object):
         self.project_root = None
         self.manager = manager
         self.request_transient_for = self
+        self.session = manager.session
 
     def emit(self, window):
         self.manager.set_transient_for(self, window)

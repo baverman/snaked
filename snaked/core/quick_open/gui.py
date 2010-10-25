@@ -1,6 +1,8 @@
 import os.path
 import weakref
 
+import gtk
+
 from snaked.util import idle, join_to_file_dir, BuilderAware, open_mime, refresh_gui, single_ref
 from snaked.core.shortcuts import ShortcutActivator
 from snaked.core.prefs import ListSettings
@@ -18,6 +20,7 @@ class QuickOpenDialog(BuilderAware):
         self.shortcuts.bind('Return', self.open_file)
         self.shortcuts.bind('<ctrl>Return', self.open_mime)
         self.shortcuts.bind('<alt>s', self.focus_search)
+        self.shortcuts.bind('<ctrl>o', self.free_open)
 
     @single_ref
     def prefs(self):
@@ -141,3 +144,19 @@ class QuickOpenDialog(BuilderAware):
         if hasattr(self.editor(), 'on_dialog_escape'):
             idle(self.editor().on_dialog_escape, self)
         self.hide()
+        
+    def free_open(self):
+        dialog = gtk.FileChooserDialog("Open file...",
+            None,
+            gtk.FILE_CHOOSER_ACTION_OPEN,
+            (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+            gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+        
+        dialog.set_default_response(gtk.RESPONSE_OK)
+        
+        response = dialog.run()
+        if response == gtk.RESPONSE_OK:
+            idle(self.editor().open_file, dialog.get_filename())
+            idle(self.hide)
+        
+        dialog.destroy()
