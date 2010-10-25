@@ -373,3 +373,6 @@ class FakeEditor(object):
 
     def on_dialog_escape(self, dialog):
         self.manager.quit(None)
+        
+    def message(self, message, timeout=None):
+        print message

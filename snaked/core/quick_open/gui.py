@@ -22,6 +22,7 @@ class QuickOpenDialog(BuilderAware):
         self.shortcuts.bind('<alt>s', self.focus_search)
         self.shortcuts.bind('<ctrl>o', self.free_open)
         self.shortcuts.bind('<ctrl>p', self.popup_projects)
+        self.shortcuts.bind('<ctrl>Delete', self.delete_project)
 
     @single_ref
     def prefs(self):
@@ -164,3 +165,17 @@ class QuickOpenDialog(BuilderAware):
 
     def popup_projects(self):
         self.projects_cbox.popup()
+        
+    def delete_project(self):
+        if len(self.projectlist):
+            current_root = self.get_current_root()
+            if current_root == self.editor().project_root:
+                self.editor().message('You can not remove current project')
+                return
+            settings.recent_projects.remove(current_root)
+            self.prefs.store(settings.recent_projects)
+        
+            idx = self.projects_cbox.get_active()
+            self.projectlist.remove(self.projects_cbox.get_active_iter())
+            self.projects_cbox.set_active(idx % len(self.projectlist))
+            self.editor().message('Project removed')
