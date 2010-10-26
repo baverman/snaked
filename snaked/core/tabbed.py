@@ -23,6 +23,11 @@ class TabbedEditorManager(snaked.core.editor.EditorManager):
         self.window.add(self.note)
 
         register_shortcut('toggle-tabs-visibility', '<alt>F11', 'Window', 'Toggles tabs visibility')
+        register_shortcut('next-editor', '<alt>Right', 'Window', 'Switches to next editor')
+        register_shortcut('prev-editor', '<alt>Left', 'Window', 'Switches to previous editor')
+        register_shortcut('next-editor-alt', '<ctrl>Page_Down', 'Window', 'Switches to next editor')
+        register_shortcut('prev-editor-alt', '<ctrl>Page_Up', 'Window', 'Switches to previous editor')
+        register_shortcut('fullscreen', 'F11', 'Window', 'Toggles fullscreen mode')
         
         self.window.show_all()
     
@@ -79,6 +84,8 @@ class TabbedEditorManager(snaked.core.editor.EditorManager):
         self.activator.bind_to_name('save', self.save)
         self.activator.bind_to_name('next-editor', self.switch_to, 1)
         self.activator.bind_to_name('prev-editor', self.switch_to, -1)
+        self.activator.bind_to_name('next-editor-alt', self.switch_to, 1)
+        self.activator.bind_to_name('prev-editor-alt', self.switch_to, -1)
         self.activator.bind_to_name('new-file', self.new_file_action)
         self.activator.bind_to_name('show-preferences', self.show_preferences)
         self.activator.bind_to_name('fullscreen', self.fullscreen, [True])

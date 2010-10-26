@@ -180,12 +180,9 @@ class EditorManager(object):
         register_shortcut('quit', '<ctrl>q', 'Application', 'Quit')        
         register_shortcut('close-window', '<ctrl>w', 'Window', 'Closes window')
         register_shortcut('save', '<ctrl>s', 'File', 'Saves file')
-        register_shortcut('next-editor', '<alt>Right', 'Window', 'Switches to next editor')
-        register_shortcut('prev-editor', '<alt>Left', 'Window', 'Switches to previous editor')
         register_shortcut('new-file', '<ctrl>n', 'File',
             'Open dialog to choose new file directory and name')
         register_shortcut('show-preferences', '<ctrl>p', 'Window', 'Open preferences dialog')
-        register_shortcut('fullscreen', 'F11', 'Window', 'Toggles fullscreen mode')
         
     def open(self, filename, line=None):
         editor = Editor()
