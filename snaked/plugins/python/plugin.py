@@ -4,7 +4,7 @@ import weakref
 import gtk
 import gio
 
-from snaked.signals import connect_external, connect_all
+from snaked.signals import connect_external, connect_all, weak_connect
 from snaked.util import idle, lazy_property
 
 from .ropehints import FileHintDb
@@ -14,23 +14,26 @@ project_managers = weakref.WeakValueDictionary()
 class RopeProjectManager(object):
     def __init__(self, project):
         self.project = project
+        self.hints_monitor = None
 
         if project.ropefolder:        
-            db = FileHintDb(project)
-            self.hints_monitor = gio.File(db.hints_filename).monitor_file()
-            self.hints_monitor.connect('changed', self.refresh_hints, db, project)
+            self.db = FileHintDb(project)
+            self.hints_monitor = gio.File(self.db.hints_filename).monitor_file()
+            weak_connect(self.hints_monitor, 'changed', self, 'refresh_hints')
 
-    def refresh_hints(self, filemonitor, file, other_file, event, db, project):
+    def refresh_hints(self, filemonitor, file, other_file, event):
         if event in (gio.FILE_MONITOR_EVENT_CHANGES_DONE_HINT, gio.FILE_MONITOR_EVENT_CREATED):        
-            db.refresh()
-            project.pycore.module_cache.forget_all_data()
+            self.db.refresh()
+            self.project.pycore.module_cache.forget_all_data()
 
-    def __del__(self):
-        print 'pm deleted', self.project
+    def close(self):
         if self.hints_monitor:
             self.hints_monitor.cancel()
+            self.hints_monitor = None
         self.project.close()
-
+        
+    def __del__(self):
+        self.close()
 
 class Plugin(object):
     def __init__(self, editor):

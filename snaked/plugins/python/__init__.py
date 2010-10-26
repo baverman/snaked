@@ -37,12 +37,9 @@ def quit():
         outline_dialog.window.destroy()
         del outline_dialog
 
-    for k in handlers.keys():
-        del handlers[k]
-    
     import plugin
     for v in plugin.project_managers.values():
-        del v
+        v.close()
 
 def goto_definition(editor):
     try:

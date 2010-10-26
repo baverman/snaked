@@ -1,5 +1,7 @@
 import re
 
+import weakref
+
 from gtksourceview2 import CompletionProvider, CompletionProposal
 from gtksourceview2 import COMPLETION_ACTIVATION_USER_REQUESTED
 
@@ -30,7 +32,7 @@ class Proposal(gobject.GObject, CompletionProposal):
 class RopeCompletionProvider(gobject.GObject, CompletionProvider):
     def __init__(self, plugin):
         gobject.GObject.__init__(self)
-        self.plugin = plugin
+        self.plugin = weakref.ref(plugin)
     
     def do_get_name(self):
         return 'python'
@@ -45,26 +47,26 @@ class RopeCompletionProvider(gobject.GObject, CompletionProvider):
         return COMPLETION_ACTIVATION_USER_REQUESTED 
 
     def do_populate(self, context):
-        project = self.plugin.project_manager.project
+        project = self.plugin().project_manager.project
     
         from rope.contrib import codeassist
         
         try:
             proposals = codeassist.sorted_proposals(
-                codeassist.code_assist(project, *self.plugin.get_source_and_offset(),
-                    resource=self.plugin.get_rope_resource(project), maxfixes=3))
+                codeassist.code_assist(project, *self.plugin().get_source_and_offset(),
+                    resource=self.plugin().get_rope_resource(project), maxfixes=3))
                     
         except Exception, e:
             import traceback
             traceback.print_exc()
-            self.plugin.editor.message(str(e), 5000) 
+            self.plugin().editor.message(str(e), 5000) 
             return
 
         if proposals:
             context.add_proposals(self, [Proposal(p) for p in proposals], True)
         else:
             context.add_proposals(self, [], True)
-            self.plugin.editor.message("Can't assist")
+            self.plugin().editor.message("Can't assist")
         
 gobject.type_register(RopeCompletionProvider)
 gobject.type_register(Proposal)
