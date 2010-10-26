@@ -33,9 +33,11 @@ def get_manager():
     parser = OptionParser()
     parser.add_option('-s', '--session', dest='session', help="Open snaked with specified session")
     parser.add_option('-w', '--windowed', action="store_true", 
-        dest='windowed', default = False, help="Open separate editor window instead tab")
+        dest='windowed', default=False, help="Open separate editor window instead tab")
     parser.add_option('', '--select-session', action="store_true", dest='select_session',
-        help="Opens dialog to select session")
+        help="Opens dialog to select session", default=False)
+    parser.add_option('', '--hide-tabs', action="store_false", dest='show_tabs',
+        help="Hides tabs in tabbed interface", default=True)
 
     options, args = parser.parse_args()
 
@@ -44,13 +46,13 @@ def get_manager():
     
     if options.windowed:
         from .windowed import WindowedEditorManager as WM
+        manager = WM()
     else:
         from .tabbed import TabbedEditorManager as WM
+        manager = WM(options.show_tabs)
 
     if options.select_session:
         options.session = select_session()
-
-    manager = WM()
 
     opened_files = []
     

@@ -1,10 +1,10 @@
 import gtk
 
-from snaked.core.shortcuts import ContextShortcutActivator
+from snaked.core.shortcuts import ContextShortcutActivator, register_shortcut
 import snaked.core.editor
 
 class TabbedEditorManager(snaked.core.editor.EditorManager):
-    def __init__(self):
+    def __init__(self, show_tabs=True):
         super(TabbedEditorManager, self).__init__()
 
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
@@ -16,10 +16,13 @@ class TabbedEditorManager(snaked.core.editor.EditorManager):
         self.activator = ContextShortcutActivator(self.window, self.get_context)
         
         self.note = gtk.Notebook()
+        self.note.set_show_tabs(show_tabs)
         self.note.set_property('tab-hborder', 10)
         self.note.set_property('homogeneous', False)
         self.note.connect_after('switch-page', self.on_switch_page)
         self.window.add(self.note)
+
+        register_shortcut('toggle-tabs-visibility', '<alt>F11', 'Window', 'Toggles tabs visibility')
         
         self.window.show_all()
     
@@ -79,6 +82,7 @@ class TabbedEditorManager(snaked.core.editor.EditorManager):
         self.activator.bind_to_name('new-file', self.new_file_action)
         self.activator.bind_to_name('show-preferences', self.show_preferences)
         self.activator.bind_to_name('fullscreen', self.fullscreen, [True])
+        self.activator.bind_to_name('toggle-tabs-visibility', self.toggle_tabs)
 
         self.activator.bind('Escape', self.process_escape)
 
@@ -106,3 +110,6 @@ class TabbedEditorManager(snaked.core.editor.EditorManager):
             self.window.unfullscreen()
             
         state[0] = not state[0]
+        
+    def toggle_tabs(self, editor):
+        self.note.set_show_tabs(not self.note.get_show_tabs())
