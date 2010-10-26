@@ -4,7 +4,7 @@ import gtk
 import gio
 
 from snaked.signals import connect_external, connect_all
-from snaked.util import idle, refresh_gui, lazy_property
+from snaked.util import idle, lazy_property
 
 from .ropehints import FileHintDb
 
@@ -21,7 +21,8 @@ class Plugin(object):
     def close(self):
         if hasattr(self, '__project'):
             self.project.close()
-            self.hints_monitor.cancel()
+            if self.hints_monitor:
+                self.hints_monitor.cancel()
     
     def refresh_hints(self, filemonitor, file, other_file, event, db, project):
         if event in (gio.FILE_MONITOR_EVENT_CHANGES_DONE_HINT, gio.FILE_MONITOR_EVENT_CREATED):        
@@ -30,22 +31,27 @@ class Plugin(object):
 
     @lazy_property
     def project(self):
-        if not os.access(self.editor.uri, os.W_OK):
-            root = '/tmp'
-        else:
-            root = self.editor.project_root
-        
-        if root:
-            from rope.base.project import Project
-            project = Project(root)
-            db = FileHintDb(project)
+        self.hints_monitor = None
 
+        parent = getattr(self.editor, 'ropeproject', None)
+        if parent:
+            return parent
+
+        root = self.editor.project_root
+        if os.access(self.editor.uri, os.W_OK):
+            kwargs = {}
+        else:
+            kwargs = dict(ropefolder=None)
+        
+        from rope.base.project import Project
+        project = Project(root, **kwargs)
+
+        if project.ropefolder:        
+            db = FileHintDb(project)
             self.hints_monitor = gio.File(db.hints_filename).monitor_file()
             self.hints_monitor.connect('changed', self.refresh_hints, db, project)
-            
-            return project
-        else:
-            return None           
+        
+        return project
     
     @lazy_property
     def completion_provider(self):
@@ -66,13 +72,6 @@ class Plugin(object):
         
         return source, offset
 
-    def goto_line(self, editor, line):
-        refresh_gui()
-        edit = editor.buffer
-        iterator = edit.get_iter_at_line(line - 1)
-        edit.place_cursor(iterator)
-        editor.view.scroll_to_iter(iterator, 0.001, use_align=True, xalign=1.0)
-    
     def get_fuzzy_location(self, source, offset):
         from rope.base import worder, exceptions
         
@@ -109,12 +108,7 @@ class Plugin(object):
 
     def goto_definition(self):
         project = self.project
-        if not project:
-            project = getattr(self.editor, 'ropeproject', None)
-            if not project:
-                self.editor.message("Can't find project path")
-                return
-        
+
         project.validate()
 
         current_resource = self.get_rope_resource(project) 
@@ -144,7 +138,7 @@ class Plugin(object):
             editor.ropeproject = project 
         else:
             if line:
-                self.goto_line(self.editor, line)
+                self.editor.goto_line(line)
             else:
                 self.editor.message("Unknown definition")
 
@@ -216,12 +210,6 @@ class Plugin(object):
 
     def show_calltips(self):
         project = self.project
-        if not project:
-            project = getattr(self.editor, 'ropeproject', None)
-            if not project:
-                self.editor.message("Can't find project path")
-                return
-        
         project.validate()
 
         current_resource = self.get_rope_resource(project) 
