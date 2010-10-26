@@ -1,5 +1,6 @@
 import os
 
+import weakref
 import gtk
 import gio
 
@@ -7,6 +8,29 @@ from snaked.signals import connect_external, connect_all
 from snaked.util import idle, lazy_property
 
 from .ropehints import FileHintDb
+
+project_managers = weakref.WeakValueDictionary()
+
+class RopeProjectManager(object):
+    def __init__(self, project):
+        self.project = project
+
+        if project.ropefolder:        
+            db = FileHintDb(project)
+            self.hints_monitor = gio.File(db.hints_filename).monitor_file()
+            self.hints_monitor.connect('changed', self.refresh_hints, db, project)
+
+    def refresh_hints(self, filemonitor, file, other_file, event, db, project):
+        if event in (gio.FILE_MONITOR_EVENT_CHANGES_DONE_HINT, gio.FILE_MONITOR_EVENT_CREATED):        
+            db.refresh()
+            project.pycore.module_cache.forget_all_data()
+
+    def __del__(self):
+        print 'pm deleted', self.project
+        if self.hints_monitor:
+            self.hints_monitor.cancel()
+        self.project.close()
+
 
 class Plugin(object):
     def __init__(self, editor):
@@ -18,40 +42,26 @@ class Plugin(object):
         provider = self.completion_provider
         self.editor.view.get_completion().add_provider(provider)
         
-    def close(self):
-        if hasattr(self, '__project'):
-            self.project.close()
-            if self.hints_monitor:
-                self.hints_monitor.cancel()
-    
-    def refresh_hints(self, filemonitor, file, other_file, event, db, project):
-        if event in (gio.FILE_MONITOR_EVENT_CHANGES_DONE_HINT, gio.FILE_MONITOR_EVENT_CREATED):        
-            db.refresh()
-            project.pycore.module_cache.forget_all_data()
-
     @lazy_property
-    def project(self):
-        self.hints_monitor = None
+    def project_manager(self):
+        root = getattr(self.editor, 'ropeproject_root', self.editor.project_root)
+        try:
+            return project_managers[root]
+        except KeyError:
+            pass
 
-        parent = getattr(self.editor, 'ropeproject', None)
-        if parent:
-            return parent
-
-        root = self.editor.project_root
-        if os.access(self.editor.uri, os.W_OK):
+        if os.access(root, os.W_OK):
             kwargs = {}
         else:
             kwargs = dict(ropefolder=None)
         
         from rope.base.project import Project
         project = Project(root, **kwargs)
-
-        if project.ropefolder:        
-            db = FileHintDb(project)
-            self.hints_monitor = gio.File(db.hints_filename).monitor_file()
-            self.hints_monitor.connect('changed', self.refresh_hints, db, project)
+        project.snaked_project_root = root
         
-        return project
+        pm = RopeProjectManager(project)
+        project_managers[root] = pm
+        return pm
     
     @lazy_property
     def completion_provider(self):
@@ -72,7 +82,7 @@ class Plugin(object):
         
         return source, offset
 
-    def get_fuzzy_location(self, source, offset):
+    def get_fuzzy_location(self, project, source, offset):
         from rope.base import worder, exceptions
         
         word_finder = worder.Worder(source, True)
@@ -82,7 +92,7 @@ class Plugin(object):
         names = expression.split('.')
         pyname = None
         try:
-            obj = self.project.pycore.get_module(names[0])
+            obj = project.pycore.get_module(names[0])
             for n in names[1:]:
                 pyname = obj[n]
                 obj = pyname.get_object()
@@ -107,7 +117,7 @@ class Plugin(object):
         return resource, line
 
     def goto_definition(self):
-        project = self.project
+        project = self.project_manager.project
 
         project.validate()
 
@@ -127,7 +137,7 @@ class Plugin(object):
             return
 
         if resource is None and line is None:
-            resource, line = self.get_fuzzy_location(source, offset)
+            resource, line = self.get_fuzzy_location(project, source, offset)
         
         if resource and resource.real_path == current_resource.real_path:
             resource = None
@@ -135,7 +145,7 @@ class Plugin(object):
         if resource:
             uri = resource.real_path
             editor = self.editor.open_file(uri, line-1)
-            editor.ropeproject = project 
+            editor.ropeproject_root = project.snaked_project_root 
         else:
             if line:
                 self.editor.goto_line(line)
@@ -209,7 +219,7 @@ class Plugin(object):
         return True
 
     def show_calltips(self):
-        project = self.project
+        project = self.project_manager.project
         project.validate()
 
         current_resource = self.get_rope_resource(project) 

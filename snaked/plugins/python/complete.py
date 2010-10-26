@@ -45,7 +45,7 @@ class RopeCompletionProvider(gobject.GObject, CompletionProvider):
         return COMPLETION_ACTIVATION_USER_REQUESTED 
 
     def do_populate(self, context):
-        project = self.plugin.project
+        project = self.plugin.project_manager.project
     
         from rope.contrib import codeassist
         
