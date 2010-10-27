@@ -1,5 +1,7 @@
 import weakref
 
+import re
+
 from snaked.util import BuilderAware, join_to_file_dir, idle
 from snaked.core import shortcuts
 from snaked.core.prefs import CompositePreferences, load_json_settings, save_json_settings
@@ -11,6 +13,8 @@ default_prefs = {
     'stdin': 'none',
     'stdout': 'show-feedback',
 }
+
+remove_tags = re.compile(r'<[^<]*?/?>')
 
 class PreferencesDialog(BuilderAware):
     def __init__(self):
@@ -31,14 +35,23 @@ class PreferencesDialog(BuilderAware):
         for n in ('stdin', 'stdout'):
             getattr(self, n+'_cb').connect('changed', self.cb_changed, n)
 
+    def get_name(self, name):
+        return remove_tags.sub('', name).strip().replace('_', '')
+
     def show(self, editor):
         self.editor = weakref.ref(editor)        
         editor.request_transient_for.emit(self.window)
         self.select_tool('New tool')
         self.window.present()
 
+    def save_settings(self):
+        settings = {}
+        for v in self.tool_settings.values():
+            settings[self.get_name(v['name'])] = v
+        save_json_settings('external-tools.conf', settings)
+
     def hide(self):
-        save_json_settings('external-tools.conf', self.tool_settings)
+        self.save_settings()
         self.editor().message('External tool settings saved')
         idle(self.window.destroy)
     
@@ -96,7 +109,7 @@ class PreferencesDialog(BuilderAware):
             self.set_cb(getattr(self, n+'_cb'), prefs[n])        
 
     def on_add_btn_clicked(self, *args):
-        name = self.dirty_settings.get('name', '').strip()
+        name = self.get_name(self.dirty_settings.get('name', ''))
         if not name or self.isnew(name):
             self.editor().message('Enter tool name')
             return

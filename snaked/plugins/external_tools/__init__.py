@@ -17,19 +17,32 @@ def get_run_menu(prefs, editor):
     menu = gtk.Menu()
     menu.set_reserve_toggle_size(False)
 
+    has_selection = editor.buffer.get_has_selection()
+    
+    any_items = False
     for tool in sorted(prefs):
+        if prefs[tool]['stdin'] == 'selection' and not has_selection:
+            continue
+            
+        if prefs[tool]['langs'] and editor.lang not in map(str.strip, prefs[tool]['langs'].split(',')):
+            continue
+        
+        any_items = True
         item = gtk.MenuItem(None, True)
         label = gtk.Label()
         label.set_alignment(0, 0.5)
         label.set_width_chars(10)
         label.set_markup_with_mnemonic(prefs[tool]['name'])
         item.add(label)
-        item.run_prefs = prefs[tool]
         menu.append(item)
+        item.connect('activate', on_item_activate, weakref.ref(editor), prefs[tool])
 
-    menu.connect_after('activate-current', on_menu_activate)
-    menu.show_all()
-    return menu
+    if any_items:
+        menu.show_all()
+        return menu
+    else:
+        menu.destroy()
+        return None
     
 def run_tool(editor):
     from snaked.core.prefs import load_json_settings
@@ -40,18 +53,22 @@ def run_tool(editor):
         return
 
     def get_coords(menu):
-        r = editor.view.get_iter_location(editor.cursor)
-        x, y = editor.view.buffer_to_window_coords(gtk.TEXT_WINDOW_WIDGET, r.x, r.y)
-        dx, dy = editor.view.get_window(gtk.TEXT_WINDOW_WIDGET).get_origin()
-        return x+dx, y+dy, False
+        win = editor.view.get_window(gtk.TEXT_WINDOW_TEXT)
+        x, y, w, h, _ = win.get_geometry()
+        x, y = win.get_origin()
+        mw, mh = menu.size_request()
+        return x + w - mw, y + h - mh, False
 
     menu = get_run_menu(prefs, editor)
-    menu.editor = weakref.ref(editor)
+    if not menu:
+        editor.message('There is no any tool to run')
+        return
+        
     menu.popup(None, None, get_coords, 0, gtk.get_current_event_time())
 
-def on_menu_activate(menu, *args):
-    idle(run, menu.editor(), menu.get_active().run_prefs)
-    idle(menu.destroy)
+def on_item_activate(item, editor, prefs):
+    idle(run, editor(), prefs)
+    idle(item.get_parent().destroy)
 
 def show_preferences(editor):
     from prefs import PreferencesDialog
@@ -131,7 +148,7 @@ def run(editor, prefs):
             
     stdout, stderr = Popen(command_to_run, stdout=PIPE, stderr=PIPE,
         stdin=PIPE if stdin else None).communicate(stdin)
-        
+    
     if stderr:
         editor.message(stderr, 5000)
         
