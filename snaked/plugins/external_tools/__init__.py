@@ -13,6 +13,12 @@ def init(manager):
     manager.add_shortcut('external-tools', '<alt>x', 'Tools', 'Run tool', run_tool)
     register_dialog('External tools', show_preferences, 'run', 'external', 'tool', 'command')
 
+def to_str(data, encoding='utf-8'):
+    if isinstance(data, unicode):
+        return data.decode(encoding)
+        
+    return data
+
 def get_run_menu(prefs, editor):
     menu = gtk.Menu()
     menu.set_reserve_toggle_size(False)
@@ -24,9 +30,10 @@ def get_run_menu(prefs, editor):
         if prefs[tool]['stdin'] == 'selection' and not has_selection:
             continue
             
-        if prefs[tool]['langs'] and editor.lang not in map(str.strip, prefs[tool]['langs'].split(',')):
+        if prefs[tool]['langs'].strip() and editor.lang not in map(str.strip,
+                to_str(prefs[tool]['langs'].split(','))):
             continue
-        
+            
         any_items = True
         item = gtk.MenuItem(None, True)
         label = gtk.Label()
@@ -128,7 +135,7 @@ def run(editor, prefs):
     import os.path
     from subprocess import Popen, PIPE
     
-    command = shlex.split(prefs['command'])
+    command = shlex.split(to_str(prefs['command']))
     if not command:
         editor.message('Tool must define command to run')
         return    
