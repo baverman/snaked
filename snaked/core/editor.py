@@ -173,7 +173,7 @@ class Editor(SignalManager):
     def message(self, message, timeout=1500):
         popup = self.feedback_popup
         popup.show(message, timeout)
-        self.push_escape(popup.hide)
+        self.push_escape(popup.hide, popup.escape)
 
     def push_escape(self, callback, *args):
         self.push_escape_callback.emit(callback, args)

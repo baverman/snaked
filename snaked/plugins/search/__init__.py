@@ -8,11 +8,18 @@ import gtksourceview2
 from snaked.util import idle
 
 active_widgets = {}
+search_selections = []
+
+class SearchSelection(object):
+    def __init__(self, search):
+        self.search = search
 
 def init(manager):
     manager.add_shortcut('search', '<ctrl>f', 'Edit', 'Search', search)
     manager.add_shortcut('find-next', '<ctrl>j', 'Edit', 'Find next', find_next)
     manager.add_shortcut('find-prev', '<ctrl>k', 'Edit', 'Find prev', find_prev)
+    manager.add_shortcut('mark-selection', '<ctrl>h', 'Edit',
+        'Mark selection occurrences', mark_selection)
 
 def search(editor):
     if editor in active_widgets:
@@ -26,11 +33,13 @@ def search(editor):
         widget.show_all()
 
 def do_find(editor, search_func, dir, start_from=None):
-    if editor not in active_widgets:
+    if editor in active_widgets:
+        search = active_widgets[editor].entry.get_text()
+    elif search_selections:
+        search = search_selections[0].search
+    else:
         return
-    
-    search = active_widgets[editor].entry.get_text()
-    
+        
     iter = start_from
     if not iter:
         if editor.buffer.get_has_selection() and dir == 1:
@@ -101,13 +110,20 @@ def delete_all_marks(editor):
 def mark_occurences(editor, search):
     cursor = editor.buffer.get_bounds()[0]
     
+    count = 0    
     while True:
         bounds = gtksourceview2.iter_forward_search(cursor, search,
             gtksourceview2.SEARCH_VISIBLE_ONLY | gtksourceview2.SEARCH_CASE_INSENSITIVE)
         
         if not bounds:
+            if count == 1:
+                editor.message('One occurrence is marked')
+            elif count > 1:
+                editor.message('%d occurrences are marked' % count)
+                
             return
         
+        count += 1
         editor.buffer.apply_tag(get_tag(editor), *bounds)
         
         cursor = bounds[1]
@@ -138,3 +154,24 @@ def hide(editor, widget):
         widget.destroy()
 
     editor.view.grab_focus()
+
+
+def mark_selection(editor):
+    if not editor.buffer.get_has_selection():
+        editor.message('Select something')
+        return
+    
+    if search_selections:
+        search_selections[:] = []
+    
+    delete_all_marks(editor)
+    
+    occur = SearchSelection(editor.buffer.get_text(*editor.buffer.get_selection_bounds()))
+    search_selections.append(occur)
+    
+    def remove_all(editor, occur):
+        search_selections[:] = []
+        delete_all_marks(editor)
+    
+    mark_occurences(editor, occur.search)
+    editor.push_escape(remove_all, editor, occur)
