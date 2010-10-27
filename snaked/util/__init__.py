@@ -18,7 +18,7 @@ def idle(callable, *args, **kwargs):
 
 def save_file(filename, data, encoding):
     tmpfilename = realpath(filename) + '.bak'
-    
+
     try:
         f = open(tmpfilename, 'w')
     except IOError:

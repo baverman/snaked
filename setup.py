@@ -9,6 +9,7 @@ setup(
     long_description = open('README.rst').read(),
     zip_safe   = False,
     packages = find_packages(),
+    install_requires = ['chardet'],
     include_package_data = True,
     namespace_packages = ['snaked', 'snaked.plugins'],
     entry_points = {

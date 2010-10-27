@@ -34,7 +34,8 @@ class Editor(SignalManager):
         self.uri = None
         self.session = None
         self.opened_from = lambda: None
-                
+        self.saveable = True    
+        
         sw = gtk.ScrolledWindow()
         sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
                 
@@ -67,13 +68,32 @@ class Editor(SignalManager):
 
     def load_file(self, filename, line=None):
         self.uri = os.path.abspath(filename)
+        self.encoding = 'utf-8'
         
         if os.path.exists(self.uri):
             self.view.window.freeze_updates()        
             self.on_modified_changed_handler.block()
             self.buffer.begin_not_undoable_action()
             
-            self.buffer.set_text(open(filename).read().decode('utf-8'))
+            text = open(filename).read()
+            
+            try:
+                utext = text.decode('utf-8')
+            except UnicodeDecodeError, e:
+                try:
+                    import chardet
+                    result = chardet.detect(text)
+                    utext = text.decode(result['encoding'])
+                    self.encoding = result['encoding']
+                    idle(self.message, 'Automatically selected ' + self.encoding + 'encoding', 5000)
+                except ImportError:
+                    self.saveable = False
+                    utext = str(e)
+                except UnicodeDecodeError, ee:
+                    self.saveable = False
+                    utext = str(ee)
+                
+            self.buffer.set_text(utext)
             self.buffer.set_modified(False)
             
             self.buffer.end_not_undoable_action()
@@ -96,9 +116,13 @@ class Editor(SignalManager):
         self.update_title()
             
     def save(self):
+        if not self.saveable:
+            self.message("This file was opened with error and can't be saved")
+            return
+            
         if self.uri:
             try:
-                save_file(self.uri, self.buffer.get_text(*self.buffer.get_bounds()), 'utf-8')
+                save_file(self.uri, self.utext, self.encoding)
                 if not self.buffer.get_modified():
                     self.message("%s saved" % self.uri)
                 self.buffer.set_modified(False)
@@ -131,6 +155,10 @@ class Editor(SignalManager):
     @property
     def text(self):
         return self.buffer.get_text(*self.buffer.get_bounds())
+
+    @property
+    def utext(self):
+        return unicode(self.buffer.get_text(*self.buffer.get_bounds()), 'utf-8')
 
     def goto_line(self, line):
         iterator = self.buffer.get_iter_at_line(line - 1)
