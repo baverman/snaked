@@ -1,4 +1,5 @@
 import os.path
+import os
 import weakref
 
 import gtk
@@ -34,9 +35,9 @@ class QuickOpenDialog(BuilderAware):
     def store_recent_projects(self, projects):
         if self.editor().session:
             name = '%s.session' % self.editor().session
-            settings = load_json_settings(name, {})
-            settings['recent_projects'] = list(projects)
-            save_json_settings(name, settings)
+            session_settings = load_json_settings(name, {})
+            session_settings['recent_projects'] = list(projects)
+            save_json_settings(name, session_settings)
         else:
             return ListSettings('project-roots.db').store(projects)
     
@@ -73,11 +74,15 @@ class QuickOpenDialog(BuilderAware):
             if r == root:
                 index = i
             self.projectlist.append((r,))
+
+        if not len(self.projectlist):
+            self.projectlist.append((os.getcwd(),))
         
         self.projects_cbox.set_model(self.projectlist)
         self.projects_cbox.set_active(index)
     
     def hide(self):
+        self.current_search = None
         self.window.hide()
         
     def on_delete_event(self, *args):

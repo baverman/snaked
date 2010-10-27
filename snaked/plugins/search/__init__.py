@@ -155,7 +155,6 @@ def hide(editor, widget):
 
     editor.view.grab_focus()
 
-
 def mark_selection(editor):
     if not editor.buffer.get_has_selection():
         editor.message('Select something')
