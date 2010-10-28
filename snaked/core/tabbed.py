@@ -17,6 +17,7 @@ class TabbedEditorManager(snaked.core.editor.EditorManager):
         
         self.note = gtk.Notebook()
         self.note.set_show_tabs(show_tabs)
+        self.note.set_scrollable(True)
         self.note.set_property('tab-hborder', 10)
         self.note.set_property('homogeneous', False)
         self.note.connect_after('switch-page', self.on_switch_page)
