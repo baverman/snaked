@@ -24,6 +24,7 @@ class QuickOpenDialog(BuilderAware):
         self.shortcuts.bind('<ctrl>o', self.free_open)
         self.shortcuts.bind('<ctrl>p', self.popup_projects)
         self.shortcuts.bind('<ctrl>Delete', self.delete_project)
+        self.shortcuts.bind('BackSpace', self.browse_top)
 
     def get_stored_recent_projects(self):
         if self.editor().session:
@@ -66,6 +67,10 @@ class QuickOpenDialog(BuilderAware):
                 if p not in settings.recent_projects]
     
     def update_projects(self, root):
+        old_root = self.get_current_root()
+        
+        self.projects_cbox.handler_block_by_func(self.on_projects_cbox_changed)
+        
         self.projects_cbox.set_model(None)
         self.projectlist.clear()
         
@@ -80,7 +85,12 @@ class QuickOpenDialog(BuilderAware):
         
         self.projects_cbox.set_model(self.projectlist)
         self.projects_cbox.set_active(index)
-    
+        
+        self.projects_cbox.handler_unblock_by_func(self.on_projects_cbox_changed)
+
+        if self.get_current_root() != old_root:
+            self.on_search_entry_changed()
+        
     def hide(self):
         self.current_search = None
         self.window.hide()
@@ -100,13 +110,17 @@ class QuickOpenDialog(BuilderAware):
         self.projects_cbox.set_active(idx)
 
     def get_current_root(self):
-        return self.projectlist[self.projects_cbox.get_active()][0]
+        try:
+            idx = self.projects_cbox.get_active()
+            if idx >=0:
+                return self.projectlist[idx][0]
+        except IndexError:
+            pass
+            
+        return None
     
-    def fill_filelist(self, search):
+    def fill_filelist(self, search, current_search):
         self.filelist.clear()
-        
-        current_search = object()
-        self.current_search = current_search
         
         already_matched = {}
         counter = [-1]
@@ -133,30 +147,71 @@ class QuickOpenDialog(BuilderAware):
 
         self.filelist_tree.columns_autosize()
 
+    def fill_with_dirs(self, top='', place=False):
+        self.filelist.clear()
+
+        dirs = []
+        files = []
+        
+        if top and not top.endswith('/'):
+            top += '/'
+        
+        root = os.path.join(self.get_current_root(), top)
+        for name in os.listdir(root):
+            path = os.path.join(root, name)
+            if os.path.islink(path):
+                path = os.path.readlink(path)
+                           
+            if os.path.isdir(path):
+                dirs.append(name+'/')
+            else:
+                files.append(name)
+        
+        place_idx = 0
+        for i, name in enumerate(sorted(dirs)):
+            if name == place:
+                place_idx = i
+            self.filelist.append((name, top))
+
+        for name in sorted(files):
+            self.filelist.append((name, top))
+        
+        self.filelist_tree.columns_autosize()
+        
+        if place and len(self.filelist):
+            self.filelist_tree.set_cursor((place_idx,))
+
     def on_search_entry_changed(self, *args):
         search = self.search_entry.get_text().strip()
+        self.current_search = object()
         if search:
-            idle(self.fill_filelist, search)
-        
+            idle(self.fill_filelist, search, self.current_search)
+        else:
+            idle(self.fill_with_dirs)
+                    
     def on_projects_cbox_changed(self, *args):
         self.on_search_entry_changed()
 
     def get_selected_file(self):
         (model, iter) = self.filelist_tree.get_selection().get_selected()
         if iter:
-            return os.path.join(self.get_current_root(), *self.filelist.get(iter, 1, 0))
+            name, top = self.filelist.get(iter, 0, 1)
+            return os.path.join(self.get_current_root(), top, name), name, top
         else:
-            return None
+            return None, None, None
     
     def open_file(self):
-        fname = self.get_selected_file()
+        fname, name, top = self.get_selected_file()
         if fname:
-            self.hide()
-            refresh_gui()
-            self.editor().open_file(fname)
+            if os.path.isdir(fname):
+                idle(self.fill_with_dirs, os.path.join(top, name), True)
+            else:
+                self.hide()
+                refresh_gui()
+                self.editor().open_file(fname)
         
     def open_mime(self):
-        fname = self.get_selected_file()
+        fname, name, top = self.get_selected_file()
         if fname:
             self.hide()
             refresh_gui()
@@ -202,3 +257,16 @@ class QuickOpenDialog(BuilderAware):
             self.projectlist.remove(self.projects_cbox.get_active_iter())
             self.projects_cbox.set_active(idx % len(self.projectlist))
             self.editor().message('Project removed')
+
+    def browse_top(self):
+        if self.search_entry.get_text():
+            self.editor().message('You are not in browse mode')
+            return
+            
+        fname, name, top = self.get_selected_file()
+        if fname:
+            if not top:
+                self.editor().message('No way!')
+            else:
+                place = os.path.basename(os.path.dirname(top)) + '/'
+                idle(self.fill_with_dirs, os.path.dirname(os.path.dirname(top)), place)
