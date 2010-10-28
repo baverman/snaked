@@ -49,12 +49,15 @@ def file_is_good(name, path):
     
     return True
 
-def search(root, top, match, already_matched):
+def search(root, top, match, already_matched, tick):
     from os import listdir
     from os.path import join, isdir
-    
+
+    tick()
+
     dirs_to_visit = []
     for name in listdir(join(root, top)):
+        tick()
         fullpath = join(root, top, name)
         path = join(top, name)
         
@@ -64,5 +67,5 @@ def search(root, top, match, already_matched):
             yield name, top
             
     for path in dirs_to_visit:
-        for p in search(root, path, match, already_matched):
+        for p in search(root, path, match, already_matched, tick):
             yield p

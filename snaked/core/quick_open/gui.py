@@ -109,21 +109,27 @@ class QuickOpenDialog(BuilderAware):
         self.current_search = current_search
         
         already_matched = {}
-        i = 0
+        counter = [-1]
+        
+        def tick():
+            counter[0] += 1
+            if counter[0] % 50 == 0:
+                refresh_gui()
+                if self.current_search is not current_search:
+                    raise StopIteration()
         
         for m in (searcher.name_start_match, searcher.name_match,
                 searcher.path_match, searcher.fuzzy_match):
-            for p in searcher.search(self.get_current_root(), '', m(search), already_matched):
+            for p in searcher.search(self.get_current_root(), '', m(search), already_matched, tick):
                 if self.current_search is not current_search:
                     return
-                    
+                
                 already_matched[p] = True            
                 self.filelist.append(p)
                 
-                if i % 10 == 0:
-                    refresh_gui()
-                    
-                i += 1
+                if len(self.filelist) > 150:
+                    self.filelist_tree.columns_autosize()
+                    return            
 
         self.filelist_tree.columns_autosize()
 
