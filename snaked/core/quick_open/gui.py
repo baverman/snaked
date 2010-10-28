@@ -259,6 +259,9 @@ class QuickOpenDialog(BuilderAware):
             self.editor().message('Project removed')
 
     def browse_top(self):
+        if not self.filelist_tree.is_focus():
+            return False
+        
         if self.search_entry.get_text():
             self.editor().message('You are not in browse mode')
             return
