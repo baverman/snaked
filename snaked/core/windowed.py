@@ -14,7 +14,7 @@ class WindowedEditorManager(snaked.core.editor.EditorManager):
     def on_window_destroy(self, window, editor):
         editor().editor_closed.emit()
 
-    def manage_editor(self, editor):
+    def manage_editor(self, editor, open_in_next_tab):
         window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         window.set_default_size(800, 550)
         window.add(editor.widget)

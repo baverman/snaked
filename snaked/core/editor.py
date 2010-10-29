@@ -17,7 +17,7 @@ import snaked.core.quick_open
 
 class Editor(SignalManager):
     editor_closed = Signal()
-    request_to_open_file = Signal(str, object, return_type=object)
+    request_to_open_file = Signal(str, object, bool, return_type=object)
     request_close = Signal()
     settings_changed = Signal()
     get_title = Signal(return_type=str)
@@ -33,7 +33,6 @@ class Editor(SignalManager):
     def __init__(self):
         self.uri = None
         self.session = None
-        self.opened_from = lambda: None
         self.saveable = True    
         
         sw = gtk.ScrolledWindow()
@@ -141,12 +140,8 @@ class Editor(SignalManager):
             
         return None
 
-    def open_file(self, filename, line=None):        
-        editor = self.request_to_open_file.emit(filename, line)
-        if not self.uri and not self.buffer.get_modified() and self.text == u'':
-            self.request_close.emit()
-            
-        return editor
+    def open_file(self, filename, line=None, open_in_next_tab=False):        
+        return self.request_to_open_file.emit(filename, line, open_in_next_tab)
 
     @property
     def cursor(self):
@@ -212,7 +207,7 @@ class EditorManager(object):
             'Open dialog to choose new file directory and name')
         register_shortcut('show-preferences', '<ctrl>p', 'Window', 'Open preferences dialog')
         
-    def open(self, filename, line=None):
+    def open(self, filename, line=None, open_in_next_tab=False):
         editor = Editor()
         self.editors.append(editor)
         editor.session = self.session
@@ -223,7 +218,7 @@ class EditorManager(object):
         idle(self.set_editor_shortcuts, editor)
         idle(self.plugin_manager.editor_created, editor)
         
-        self.manage_editor(editor)
+        self.manage_editor(editor, open_in_next_tab)
 
         idle(editor.load_file, filename, line)
         idle(self.plugin_manager.editor_opened, editor)
@@ -267,10 +262,6 @@ class EditorManager(object):
 
     @Editor.editor_closed(idle=True)
     def on_editor_closed(self, editor):
-        opened_from = editor.opened_from()
-        if opened_from:
-            self.focus_editor(opened_from)
-        
         self.plugin_manager.editor_closed(editor)
         self.editors.remove(editor)
 
@@ -286,7 +277,7 @@ class EditorManager(object):
         self.close_editor(editor)
     
     @Editor.request_to_open_file
-    def on_request_to_open_file(self, editor, filename, line):
+    def on_request_to_open_file(self, editor, filename, line, open_in_next_tab):
         for e in self.editors:
             if e.uri == filename:
                 self.focus_editor(e)
@@ -294,9 +285,8 @@ class EditorManager(object):
                     e.goto_line(line + 1)
                 break
         else:
-            e = self.open(filename, line)
-            if editor:
-                e.opened_from = weakref.ref(editor)
+            e = self.open(filename, line, open_in_next_tab)
+
         return e
 
     @Editor.request_transient_for

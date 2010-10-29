@@ -21,6 +21,7 @@ class TabbedEditorManager(snaked.core.editor.EditorManager):
         self.note.set_property('tab-hborder', 10)
         self.note.set_property('homogeneous', False)
         self.note.connect_after('switch-page', self.on_switch_page)
+        self.note.connect('page_removed', self.on_page_removed)
         self.window.add(self.note)
 
         register_shortcut('toggle-tabs-visibility', '<alt>F11', 'Window', 'Toggles tabs visibility')
@@ -40,9 +41,12 @@ class TabbedEditorManager(snaked.core.editor.EditorManager):
 
         return (None,)
 
-    def manage_editor(self, editor):
+    def manage_editor(self, editor, open_in_next_tab):
         label = gtk.Label('Unknown')
-        self.note.append_page(editor.widget, label)
+        pos = -1
+        if open_in_next_tab and self.note.get_current_page() > -1:
+            pos = self.note.get_current_page() + 1
+        self.note.insert_page(editor.widget, label, pos)
         self.focus_editor(editor)
         editor.view.grab_focus()
        
@@ -106,6 +110,10 @@ class TabbedEditorManager(snaked.core.editor.EditorManager):
 
     def on_switch_page(self, *args):
         self.update_top_level_title()
+
+    def on_page_removed(self, note, child, idx):
+        if idx > 0:
+            note.set_current_page(idx - 1)
         
     def switch_to(self, editor, dir):
         idx = ( self.note.get_current_page() + dir ) % self.note.get_n_pages()
