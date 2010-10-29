@@ -19,13 +19,18 @@ class RopeProjectManager(object):
         if project.ropefolder:        
             self.db = FileHintDb(project)
             self.hints_monitor = gio.File(self.db.hints_filename).monitor_file()
-            weak_connect(self.hints_monitor, 'changed', self, 'refresh_hints')
+            weak_connect(self.hints_monitor, 'changed', self, 'on_hints_file_changed')
 
-    def refresh_hints(self, filemonitor, file, other_file, event):
+            self.refresh_hints()            
+
+    def refresh_hints(self):
+        self.db.refresh()
+        self.project.pycore.module_cache.forget_all_data()
+            
+    def on_hints_file_changed(self, filemonitor, file, other_file, event):
         if event in (gio.FILE_MONITOR_EVENT_CHANGES_DONE_HINT, gio.FILE_MONITOR_EVENT_CREATED):        
-            self.db.refresh()
-            self.project.pycore.module_cache.forget_all_data()
-
+            self.refresh_hints()
+            
     def close(self):
         if self.hints_monitor:
             self.hints_monitor.cancel()
@@ -154,7 +159,6 @@ class Plugin(object):
                 self.editor.goto_line(line)
             else:
                 self.editor.message("Unknown definition")
-
 
     @connect_external('view', 'key-press-event')
     def on_textview_key_press_event(self, sender, event):

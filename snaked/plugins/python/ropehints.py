@@ -107,7 +107,8 @@ class HintDb(object):
         
     def get_function_param_type(self, pyfunc, name):
         scope_path = self.get_scope_path(pyfunc.get_scope())
-        type_name = self.find_type_for(scope_path, name)
+        print scope_path, name
+        type_name = self.find_param_type_for(scope_path, name)
         if type_name:
             pyname = self.get_type(pyfunc.pycore, type_name)
             if pyname:
@@ -131,6 +132,9 @@ class HintDb(object):
         return '.'.join(result)
         
     def find_type_for(scope_path, name):
+        return None
+
+    def find_param_type_for(scope_path, name):
         return None
         
     def get_type(self, pycore, type_name):
@@ -181,39 +185,55 @@ class HintDb(object):
 class ReHintDb(HintDb):
     def __init__(self, project):
         super(ReHintDb, self).__init__(project)
-        self.db = []
+        self.attribute_hints = []
+        self.param_hints = []
         
-    def add_hint(self, scope, name, object_type):
-        self.db.append((re.compile(scope), re.compile(name), object_type))  
+    def add_attribute_hint(self, scope, name, object_type):
+        self.attribute_hints.append((re.compile(scope), re.compile(name), object_type))  
+
+    def add_param_hint(self, scope, name, object_type):
+        self.param_hints.append((re.compile(scope), re.compile(name), object_type))  
 
     def find_type_for(self, scope_path, name):
-        for scope, vname, otype in self.db:
+        for scope, vname, otype in self.attribute_hints:
             if scope.match(scope_path) and vname.match(name):
                 #print 'matched', scope_path, name
                 return otype
                 
         return None
-        
+
+    def find_param_type_for(self, scope_path, name):
+        for scope, vname, otype in self.param_hints:
+            if scope.match(scope_path) and vname.match(name):
+                #print 'matched', scope_path, name
+                return otype
+                
+        return None
+
+
 class FileHintDb(ReHintDb):
     def __init__(self, project):
         super(FileHintDb, self).__init__(project)
-        self.hints_filename = os.path.join(project.ropefolder.real_path, 'hints')
-        self.load_hints()
+        self.hints_filename = os.path.join(project.ropefolder.real_path, 'ropehints.py')
         
     def refresh(self):
         self.load_hints()
         
     def load_hints(self):
-        self.db[:] = []
+        self.attribute_hints[:] = []
+        self.param_hints[:] = []
         self.module_attrs_cache.clear()
         self.type_cache.clear()
         
+        self.add_param_hint('ropehints\.init$', 'db$', 'snaked.plugins.python.ropehints.ReHintDb()')
+        
         if os.path.exists(self.hints_filename):
-            with open(self.hints_filename) as f:
-                for l in f:
-                    try:
-                        scope, name, type = l.strip().split()[:3]
-                        if not scope.startswith('#'):
-                            self.add_hint(scope, name, type)
-                    except ValueError:
-                        continue
+            namespace = {}
+            execfile(self.hints_filename, namespace)
+            if 'init' in namespace:
+                try:
+                    namespace['init'](self)
+                except:
+                    import traceback
+                    traceback.print_exc()
+                                
