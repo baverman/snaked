@@ -54,6 +54,7 @@
                 <property name="rules_hint">True</property>
                 <property name="enable_search">False</property>
                 <property name="search_column">0</property>
+			    <signal name="row-activated" handler="activate"/>
                 <child>
                   <object class="GtkTreeViewColumn" id="treeviewcolumn1">
                     <property name="title">name</property>

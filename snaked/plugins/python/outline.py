@@ -1,7 +1,7 @@
 import weakref
 import re
 
-from snaked.util import idle, join_to_file_dir, BuilderAware, refresh_gui
+from snaked.util import idle, join_to_file_dir, BuilderAware, refresh_gui, set_activate_the_one_item
 from snaked.core.shortcuts import ShortcutActivator
 
 matcher = re.compile(r'(?m)^(?P<level>[ \t]*)(?P<type>def|class)\s+(?P<name>\w+)\s*\(')
@@ -36,8 +36,9 @@ class OutlineDialog(BuilderAware):
         super(OutlineDialog, self).__init__(join_to_file_dir(__file__, 'outline.glade'))
         self.shortcuts = ShortcutActivator(self.window)
         self.shortcuts.bind('Escape', self.hide)
-        self.shortcuts.bind('Return', self.goto_name)
         self.shortcuts.bind('<alt>s', self.focus_search)
+        
+        set_activate_the_one_item(self.search_entry, self.outline_tree)
 
     def show(self, editor):
         self.editor = weakref.ref(editor)
@@ -55,7 +56,7 @@ class OutlineDialog(BuilderAware):
         self.hide()
         return True
 
-    def goto_name(self):
+    def goto_name(self, *args):
         (model, iter) = self.outline_tree.get_selection().get_selected()
         if iter:
             self.hide()

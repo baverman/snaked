@@ -4,7 +4,8 @@ import weakref
 
 import gtk
 
-from snaked.util import idle, join_to_file_dir, BuilderAware, open_mime, refresh_gui
+from snaked.util import (idle, join_to_file_dir, BuilderAware, open_mime, refresh_gui,
+    set_activate_the_one_item)
 from snaked.core.shortcuts import ShortcutActivator
 from snaked.core.prefs import ListSettings, load_json_settings, save_json_settings
 
@@ -18,7 +19,6 @@ class QuickOpenDialog(BuilderAware):
         self.shortcuts.bind('Escape', self.escape)
         self.shortcuts.bind('<alt>Up', self.project_up)
         self.shortcuts.bind('<alt>Down', self.project_down)
-        self.shortcuts.bind('Return', self.open_file)
         self.shortcuts.bind('<ctrl>Return', self.open_mime)
         self.shortcuts.bind('<alt>s', self.focus_search)
         self.shortcuts.bind('<ctrl>o', self.free_open)
@@ -26,6 +26,8 @@ class QuickOpenDialog(BuilderAware):
         self.shortcuts.bind('<ctrl>Delete', self.delete_project)
         self.shortcuts.bind('BackSpace', self.browse_top)
 
+        set_activate_the_one_item(self.search_entry, self.filelist_tree)        
+        
     def get_stored_recent_projects(self):
         if self.editor().session:
             return load_json_settings(
@@ -200,7 +202,7 @@ class QuickOpenDialog(BuilderAware):
         else:
             return None, None, None
     
-    def open_file(self):
+    def open_file(self, *args):
         fname, name, top = self.get_selected_file()
         if fname:
             if os.path.isdir(fname):

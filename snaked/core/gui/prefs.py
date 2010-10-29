@@ -1,6 +1,6 @@
 import weakref
 
-from snaked.util import BuilderAware, join_to_file_dir, idle
+from snaked.util import BuilderAware, join_to_file_dir, idle, set_activate_the_one_item
 
 import snaked.core.prefs as prefs
 
@@ -11,8 +11,9 @@ class PreferencesDialog(BuilderAware):
         from snaked.core.shortcuts import ShortcutActivator
         self.activator = ShortcutActivator(self.window)
         self.activator.bind('Escape', self.hide)
-        self.activator.bind('Return', self.activate)
         self.activator.bind('<alt>s', self.focus_search)
+        
+        set_activate_the_one_item(self.search_entry, self.dialogs_view)
         
     def hide(self):
         self.window.destroy()
@@ -39,7 +40,7 @@ class PreferencesDialog(BuilderAware):
         search = self.search_entry.get_text().strip().lower()
         idle(self.fill_dialogs, search)
         
-    def activate(self):
+    def activate(self, *args):
         (model, iter) = self.dialogs_view.get_selection().get_selected()
         if iter:
             name = model.get_value(iter, 0)
