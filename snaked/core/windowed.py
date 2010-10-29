@@ -58,4 +58,7 @@ class WindowedEditorManager(snaked.core.editor.EditorManager):
         editor.save()
 
     def set_transient_for(self, editor, window):
-        window.set_transient_for(self.windows[editor])
+        try:
+            window.set_transient_for(self.windows[editor])
+        except KeyError:
+            pass
