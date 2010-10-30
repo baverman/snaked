@@ -4,7 +4,7 @@ import re
 from snaked.util import idle, join_to_file_dir, BuilderAware, refresh_gui, set_activate_the_one_item
 from snaked.core.shortcuts import ShortcutActivator
 
-matcher = re.compile(r'(?m)^(?P<level>[ \t]*)(?P<type>def|class)\s+(?P<name>\w+)\s*\(')
+matcher = re.compile(r'(?m)^(?P<level>[ \t]*)(?P<type>def|class)\s+(?P<name>\w+)\s*(\(|:)')
 
 def get_outline(source):
     last_start = 0
