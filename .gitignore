@@ -5,3 +5,4 @@
 /*.egg-info
 /doc/_build
 /doc/doc.zip
+/tests/tmp

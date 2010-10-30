@@ -75,17 +75,20 @@ def get_module_attribute_with_hints(func, what):
         except AttributeError:
             return func(self, name)
 
-        result = None
         try:
             setattr(self, getting_name, True)
             result = hintdb.get_module_attribute(self, name)
+        except exceptions.AttributeNotFoundError:
+            result = None
         except Exception:
             raise
         finally:
             setattr(self, getting_name, False)
-            
+        
         if result is None:
             return func(self, name)
+        
+        return result
         
     return inner
         
@@ -161,9 +164,9 @@ class ScopeHintProvider(HintProvider):
     def get_module_attribute(self, pymodule, name):
         scope_path = pymodule.pycore.modname(pymodule.resource)
 
-        type_name = self.find_attribute_type_for(scope_path, name)
+        type_name = self.matcher.find_attribute_type_for(scope_path, name)
         if type_name:
-            type = self.get_type(pymodule.pycore, type_name)
+            type = self.get_type(type_name)
         else:
             type = None
         
