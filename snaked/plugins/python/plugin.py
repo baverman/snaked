@@ -7,7 +7,7 @@ import gio
 from snaked.signals import connect_external, connect_all, weak_connect
 from snaked.util import idle, lazy_property
 
-from .ropehints import FileHintDb
+from .ropehints import CompositeHintProvider
 
 project_managers = weakref.WeakValueDictionary()
 
@@ -16,16 +16,25 @@ class RopeProjectManager(object):
         self.project = project
         self.hints_monitor = None
 
-        if project.ropefolder:        
-            self.db = FileHintDb(project)
-            self.hints_monitor = gio.File(self.db.hints_filename).monitor_file()
+        if project.ropefolder:
+            self.hints_filename = os.path.join(project.ropefolder.real_path, 'ropehints.py')        
+            self.hints_monitor = gio.File(self.hints_filename).monitor_file()
             weak_connect(self.hints_monitor, 'changed', self, 'on_hints_file_changed')
 
             self.refresh_hints()            
 
     def refresh_hints(self):
-        self.db.refresh()
         self.project.pycore.module_cache.forget_all_data()
+        if self.hints_filename and os.path.exists(self.hints_filename):
+            namespace = {}
+            execfile(self.hints_filename, namespace)
+            if 'init' in namespace:
+                try:
+                    self.project.pycore.hintdb = CompositeHintProvider(self.project)
+                    namespace['init'](self.project.pycore.hintdb)
+                except:
+                    import traceback
+                    traceback.print_exc()
             
     def on_hints_file_changed(self, filemonitor, file, other_file, event):
         if event in (gio.FILE_MONITOR_EVENT_CHANGES_DONE_HINT, gio.FILE_MONITOR_EVENT_CREATED):        

@@ -1,4 +1,3 @@
-import os.path
 import re
 
 import weakref
@@ -76,46 +75,64 @@ def get_module_attribute_with_hints(func, what):
         except AttributeError:
             return func(self, name)
 
-        try:
-            original_pyname = func(self, name)
-        except exceptions.AttributeNotFoundError:
-            original_pyname = None
-        
+        result = None
         try:
             setattr(self, getting_name, True)
-            result = hintdb.get_module_attribute(self, name, original_pyname)
+            result = hintdb.get_module_attribute(self, name)
         except Exception:
             raise
         finally:
             setattr(self, getting_name, False)
             
         if result is None:
-            raise exceptions.AttributeNotFoundError()
-        else:
-            return result
+            return func(self, name)
         
     return inner
         
 PyModule.get_attribute = get_module_attribute_with_hints(PyModule.get_attribute, 'mod')
 PyPackage.get_attribute = get_module_attribute_with_hints(PyPackage.get_attribute, 'pkg')
 
-class HintDb(object):
+
+class HintProvider(object):
     def __init__(self, project):
-        self.type_cache = {}
-        self.module_attrs_cache = weakref.WeakKeyDictionary()
-        project.pycore.hintdb = self
-        
+        self._project = weakref.ref(project)
+    
+    @property
+    def project(self):
+        return self._project()
+
     def get_function_param_type(self, pyfunc, name):
-        scope_path = self.get_scope_path(pyfunc.get_scope())
-        print scope_path, name
-        type_name = self.find_param_type_for(scope_path, name)
-        if type_name:
-            pyname = self.get_type(pyfunc.pycore, type_name)
-            if pyname:
-                return pyname.get_object()
+        """Should resolve type for function's parameter `name`
         
+        Also should resolve return type if name == 'return'
+        If there is no any type hints None is returned
+        """
         return None
+
+    def get_module_attribute(self, pymodule, name):
+        """Resolves module/package attribute's PyName"""
+        return None
+
+    def get_type(self, type_name):
+        pycore = self.project.pycore
+        module, sep, name = type_name.strip('()').rpartition('.')
+        if module:
+            module = pycore.get_module(module)
+            try:
+                pyname = module[name]
+            except exceptions.AttributeNotFoundError:
+                pyname = None
+        else:
+            pyname = pycore.get_module(name)
         
+        return pyname
+
+
+class ScopeHintProvider(HintProvider):
+    def __init__(self, project, scope_matcher):
+        super(ScopeHintProvider, self).__init__(project)
+        self.matcher = scope_matcher
+
     def get_scope_path(self, scope):
         result = []
         current_scope = scope
@@ -131,39 +148,20 @@ class HintDb(object):
         
         return '.'.join(result)
         
-    def find_type_for(scope_path, name):
+    def get_function_param_type(self, pyfunc, name):
+        scope_path = self.get_scope_path(pyfunc.get_scope())
+        type_name = self.matcher.find_param_type_for(scope_path, name)
+        if type_name:
+            pyname = self.get_type(type_name)
+            if pyname:
+                return pyname.get_object()
+        
         return None
 
-    def find_param_type_for(scope_path, name):
-        return None
-        
-    def get_type(self, pycore, type_name):
-        try:
-            return self.type_cache[type_name]
-        except KeyError:
-            pass
-        
-        module, sep, name = type_name.strip('()').rpartition('.')
-        if module:
-            module = pycore.get_module(module)
-            try:
-                pyname = module[name]
-            except exceptions.AttributeNotFoundError:
-                pyname = None
-        else:
-            pyname = pycore.get_module(name)
-        
-        self.type_cache[type_name] = pyname
-        return pyname
-        
-    def get_module_attribute(self, pymodule, name, original_pyname):
-        try:
-            return self.module_attrs_cache[pymodule][name]
-        except KeyError:
-            pass
-
+    def get_module_attribute(self, pymodule, name):
         scope_path = pymodule.pycore.modname(pymodule.resource)
-        type_name = self.find_type_for(scope_path, name)
+
+        type_name = self.find_attribute_type_for(scope_path, name)
         if type_name:
             type = self.get_type(pymodule.pycore, type_name)
         else:
@@ -176,15 +174,13 @@ class HintDb(object):
             else:
                 pyname = type
         else:
-            pyname = original_pyname
+            pyname = None
         
-        self.module_attrs_cache.setdefault(pymodule, {})[name] = pyname
         return pyname
 
         
-class ReHintDb(HintDb):
-    def __init__(self, project):
-        super(ReHintDb, self).__init__(project)
+class ReScopeMatcher(object):
+    def __init__(self):
         self.attribute_hints = []
         self.param_hints = []
         
@@ -194,7 +190,7 @@ class ReHintDb(HintDb):
     def add_param_hint(self, scope, name, object_type):
         self.param_hints.append((re.compile(scope), re.compile(name), object_type))  
 
-    def find_type_for(self, scope_path, name):
+    def find_attribute_type_for(self, scope_path, name):
         for scope, vname, otype in self.attribute_hints:
             if scope.match(scope_path) and vname.match(name):
                 #print 'matched', scope_path, name
@@ -211,29 +207,36 @@ class ReHintDb(HintDb):
         return None
 
 
-class FileHintDb(ReHintDb):
+class CompositeHintProvider(HintProvider):
     def __init__(self, project):
-        super(FileHintDb, self).__init__(project)
-        self.hints_filename = os.path.join(project.ropefolder.real_path, 'ropehints.py')
+        super(CompositeHintProvider, self).__init__(project)
         
-    def refresh(self):
-        self.load_hints()
+        self.hint_provider = []
         
-    def load_hints(self):
-        self.attribute_hints[:] = []
-        self.param_hints[:] = []
-        self.module_attrs_cache.clear()
-        self.type_cache.clear()
-        
-        self.add_param_hint('ropehints\.init$', 'db$', 'snaked.plugins.python.ropehints.ReHintDb()')
-        
-        if os.path.exists(self.hints_filename):
-            namespace = {}
-            execfile(self.hints_filename, namespace)
-            if 'init' in namespace:
-                try:
-                    namespace['init'](self)
-                except:
-                    import traceback
-                    traceback.print_exc()
-                                
+        self.db = ReScopeMatcher()
+        self.db.add_param_hint('ropehints\.init$', 'provider$',
+            'snaked.plugins.python.ropehints.CompositeHintProvider()')
+
+        self.add_hint_provider(ScopeHintProvider(project, self.db)) 
+    
+    def add_hint_provider(self, provider):
+        self.hint_provider.insert(0, provider)
+
+    def get_function_param_type(self, pyfunc, name):
+        for p in self.hint_provider:
+            result = p.get_function_param_type(pyfunc, name)
+            if result is not None:
+                return result
+                
+        return None
+
+    def get_module_attribute(self, pymodule, name):
+        for p in self.hint_provider:
+            try:
+                result = p.get_module_attribute(pymodule, name)
+                if result is not None:
+                    return result
+            except AttributeError:
+                pass
+            
+        return None
