@@ -294,3 +294,10 @@ class CompositeHintProvider(HintProvider):
                 pass
             
         return None
+        
+    def get_class_attributes(self, pyclass):
+        attrs = {}
+        for p in self.hint_provider:
+            attrs.update(p.get_class_attributes(pyclass))
+        
+        return attrs
