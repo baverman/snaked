@@ -2,7 +2,6 @@ import os.path
 
 import xml.sax.handler
 import rope.base.pynames
-from rope.base import libutils    
 
 from .ropehints import HintProvider, get_attribute_scope_path
 
@@ -52,8 +51,7 @@ class PyGtkHintProvider(HintProvider):
             return attrs
             
         glade_file = self.gtk_aware_classes[scope_path]
-        resource = libutils.path_to_resource(self.project,
-            os.path.join(self.project.address, glade_file))
+        resource = self.project.get_resource(glade_file)
         
         handler = GladeHandler()
         xml.sax.parseString(open(resource.real_path).read(), handler)
