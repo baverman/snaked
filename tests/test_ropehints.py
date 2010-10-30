@@ -11,6 +11,9 @@ def caller_of_module_attribute():
     import re
     re.compile.s
 
+def caller_of_class_attribute():
+    Lolwhat().trololo.e
+    
 
 import sys
 import os.path
@@ -27,13 +30,20 @@ from rope.contrib.codeassist import code_assist
 def get_rope_resource(project, uri):
     return libutils.path_to_resource(project, uri)
 
-
 class Lolwhat(object):
     def star(self):
         pass
         
     def superstar(self):
         pass
+
+class Trololo(object):
+    def eduard(self):
+        pass
+        
+    def hill(self):
+        pass
+
 
 def get_project():
     path = os.path.join(os.path.dirname(__file__), 'tmp') 
@@ -85,11 +95,16 @@ def test_module_attribute():
     proposals = code_assist(project, source, 270, resource=resource)
     assert ['superstar', 'star'] == [p.name for p in proposals]
     
-#def test_class_base():
-#    project = get_project()
-#    hintdb = ReHintDb(project)
-#    hintdb.add_hint('^werkzeug$', '^Request$', 'werkzeug.wrappers.Request')
-#
-#    mod = project.pycore.get_module('flask.wrappers')
-#    print mod['RequestBase'].get_object().get_attributes()
+def test_class_attributes():
+    project = get_project()
+    hintdb = get_hint_db(project)
+    
+    hintdb.add_class_attribute('test_ropehints.Lolwhat$', 'trololo', 'test_ropehints.Trololo()')
+    
+    module_path = os.path.join(os.path.dirname(__file__), __name__+'.py')
+    source = open(module_path).read().decode('utf8')
+    resource = get_rope_resource(project, module_path)
+
+    proposals = code_assist(project, source, 328, resource=resource)
+    assert ['eduard'] == [p.name for p in proposals]
     

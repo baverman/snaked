@@ -6,7 +6,7 @@ import rope.base.oi.soi
 import rope.base.pyobjects
 import rope.base.pynames
 from rope.base import exceptions
-from rope.base.pyobjectsdef import PyModule, PyPackage
+from rope.base.pyobjectsdef import PyModule, PyPackage, PyClass
 
 class ReplacedName(rope.base.pynames.PyName):
     def __init__(self, pyobject, pyname):
@@ -61,10 +61,15 @@ def infer_returned_object_with_hints(func):
 rope.base.oi.soi.infer_returned_object = infer_returned_object_with_hints(
     rope.base.oi.soi.infer_returned_object)
 
-
-def get_module_attribute_with_hints(func, what):
+def get_attribute_scope_path(obj):
+    if isinstance(obj, (PyModule, PyPackage)):
+        return obj.pycore.modname(obj.resource)
+    elif isinstance(obj, (PyClass,)):
+        return get_attribute_scope_path(obj.get_module()) + '.' + obj.get_name()
+        
+def get_attribute_with_hints(func, what):
     def inner(self, name):
-        #print what, self.pycore.modname(self.resource), name
+        #print what, get_attribute_scope_path(self), name 
 
         getting_name = 'getting_attr_%s' % name
         if getattr(self, getting_name, False):
@@ -92,8 +97,28 @@ def get_module_attribute_with_hints(func, what):
         
     return inner
         
-PyModule.get_attribute = get_module_attribute_with_hints(PyModule.get_attribute, 'mod')
-PyPackage.get_attribute = get_module_attribute_with_hints(PyPackage.get_attribute, 'pkg')
+PyModule.get_attribute = get_attribute_with_hints(PyModule.get_attribute, 'mod')
+PyPackage.get_attribute = get_attribute_with_hints(PyPackage.get_attribute, 'pkg')
+
+
+def get_attributes_with_hints(func):
+    def inner(self):
+        #print 'request attributes for', get_attribute_scope_path(self) 
+
+        result = func(self)
+
+        try:
+            hintdb = self.pycore.hintdb
+        except AttributeError:
+            return result
+
+        result.update(hintdb.get_class_attributes(self))
+        
+        return result
+    
+    return inner
+
+PyClass._get_structural_attributes = get_attributes_with_hints(PyClass._get_structural_attributes)
 
 
 class HintProvider(object):
@@ -115,6 +140,10 @@ class HintProvider(object):
     def get_module_attribute(self, pymodule, name):
         """Resolves module/package attribute's PyName"""
         return None
+
+    def get_class_attributes(self, pyclass):
+        """Returns additional atributes for pyclass"""
+        return {}
 
     def get_type(self, type_name):
         pycore = self.project.pycore
@@ -162,7 +191,7 @@ class ScopeHintProvider(HintProvider):
         return None
 
     def get_module_attribute(self, pymodule, name):
-        scope_path = pymodule.pycore.modname(pymodule.resource)
+        scope_path = get_attribute_scope_path(pymodule)
 
         type_name = self.matcher.find_attribute_type_for(scope_path, name)
         if type_name:
@@ -181,11 +210,27 @@ class ScopeHintProvider(HintProvider):
         
         return pyname
 
+    def get_class_attributes(self, pyclass):
+        attrs = {}
+
+        scope_path = get_attribute_scope_path(pyclass)
+        for name, type_name in self.matcher.find_class_attributes(scope_path):
+            type = self.get_type(type_name)
+            if type:
+                if type_name.endswith('()'):
+                    obj = rope.base.pyobjects.PyObject(type.get_object())
+                    attrs[name] = ReplacedName(obj, type)
+                else:
+                    attrs[name] = type
+
+        return attrs
         
+
 class ReScopeMatcher(object):
     def __init__(self):
         self.attribute_hints = []
         self.param_hints = []
+        self.class_attributes = []
         
     def add_attribute_hint(self, scope, name, object_type):
         self.attribute_hints.append((re.compile(scope), re.compile(name), object_type))  
@@ -193,10 +238,12 @@ class ReScopeMatcher(object):
     def add_param_hint(self, scope, name, object_type):
         self.param_hints.append((re.compile(scope), re.compile(name), object_type))  
 
+    def add_class_attribute(self, scope, name, object_type):
+        self.class_attributes.append((re.compile(scope), name, object_type))  
+
     def find_attribute_type_for(self, scope_path, name):
         for scope, vname, otype in self.attribute_hints:
             if scope.match(scope_path) and vname.match(name):
-                #print 'matched', scope_path, name
                 return otype
                 
         return None
@@ -204,10 +251,14 @@ class ReScopeMatcher(object):
     def find_param_type_for(self, scope_path, name):
         for scope, vname, otype in self.param_hints:
             if scope.match(scope_path) and vname.match(name):
-                #print 'matched', scope_path, name
                 return otype
                 
         return None
+        
+    def find_class_attributes(self, scope_path):
+        for scope, vname, otype in self.class_attributes:
+            if scope.match(scope_path):
+                yield vname, otype
 
 
 class CompositeHintProvider(HintProvider):
