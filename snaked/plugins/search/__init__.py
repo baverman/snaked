@@ -30,6 +30,7 @@ def search(editor):
         active_widgets[editor] = widget
         editor.widget.pack_start(widget, False)
         widget.entry.grab_focus()
+        editor.push_escape(hide, editor, widget)
         widget.show_all()
 
 def do_find(editor, search_func, dir, start_from=None):
@@ -73,17 +74,53 @@ def find_next(editor, grab_focus=False):
 
 def create_widget(editor):
     widget = gtk.HBox(False, 10)
+    widget.set_border_width(3)
     
     label = gtk.Label()
-    label.set_text('Search:')
+    label.set_text('_Search:')
+    label.set_use_underline(True)
     widget.pack_start(label, False)
     
     entry = gtk.Entry()
     widget.pack_start(entry, False)
-    entry.connect('activate', on_search_activate, editor, widget)
-    entry.connect('key-press-event', on_key_press, editor, widget)
-    
     widget.entry = entry
+    label.set_mnemonic_widget(entry)
+    entry.connect('activate', on_search_activate, editor, widget)
+    
+
+    label = gtk.Label()
+    label.set_text('_Replace:')
+    label.set_use_underline(True)
+    widget.pack_start(label, False)
+
+    entry = gtk.Entry()
+    widget.pack_start(entry, False)
+    widget.replace_entry = entry
+    label.set_mnemonic_widget(entry)
+    entry.connect('activate', on_search_activate, editor, widget)
+    
+    
+    cb = gtk.CheckButton('Ignore _case')
+    widget.pack_start(cb, False)
+    widget.ignore_case_cb = cb
+    
+    cb = gtk.CheckButton('Rege_x')
+    widget.pack_start(cb, False)
+    widget.regex_cb = cb
+
+    label = gtk.Label('Re_place')
+    label.set_use_underline(True)
+    label.set_padding(10, 1)
+    button = gtk.Button()
+    button.add(label)
+    widget.pack_start(button, False)
+    
+    label = gtk.Label('Replace _all')
+    label.set_use_underline(True)
+    label.set_padding(10, 1)
+    button = gtk.Button()
+    button.add(label)
+    widget.pack_start(button, False)
     
     return widget
 
@@ -131,16 +168,8 @@ def mark_occurences(editor, search):
 def on_search_activate(sender, editor, widget):
     delete_all_marks(editor)
     idle(mark_occurences, editor, sender.get_text())
-    editor.push_escape(hide, editor, widget)
     find_next(editor, True)
 
-def on_key_press(sender, event, editor, widget):
-    if event.keyval == gtk.keysyms.Escape:
-        idle(hide, editor, widget)
-        return True
-    
-    return False
-    
 def hide(editor, widget):
     delete_all_marks(editor)
     
