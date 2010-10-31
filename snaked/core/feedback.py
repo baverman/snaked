@@ -34,7 +34,8 @@ class FeedbackPopup(object):
     def show(self, text, timeout=1500):
         self.remove_timeout()
         
-        self.label.set_text(u'  '+ text + u'  ')
+        self.label.set_text(text)
+        self.label.set_padding(10, 0)
         
         x, y, w, h, d = self.view().get_window(gtk.TEXT_WINDOW_TEXT).get_geometry()
         sw, sh = self.bar.size_request()
