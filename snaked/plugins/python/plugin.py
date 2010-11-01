@@ -86,10 +86,13 @@ class Plugin(object):
         return complete.RopeCompletionProvider(self)
 
     def get_rope_resource(self, project, uri=None):
-        from rope.base import libutils    
+        from rope.base import libutils, exceptions    
         uri = uri or self.editor.uri
-        return libutils.path_to_resource(project, uri)
-
+        try:
+            return libutils.path_to_resource(project, uri)
+        except exceptions.ResourceNotFoundError:
+            return None
+            
     def get_source_and_offset(self):
         offset = self.editor.cursor.get_offset()
         source = self.editor.text
