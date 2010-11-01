@@ -26,6 +26,8 @@ def save_file(filename, data, encoding):
         if not exists(dname):
             os.makedirs(dname, mode=0755)
             f = open(tmpfilename, 'w')
+        else:
+            raise
                     
     f.write(data.encode(encoding))
     f.close()

@@ -2,12 +2,12 @@ author = 'Anton Bobrov<bobrov@vl.ru>'
 name = 'Search'
 desc = 'Searches words in document'
 
+import re
+import weakref
 import gtk
-import gtksourceview2
-
 from snaked.util import idle
 
-active_widgets = {}
+active_widgets = weakref.WeakKeyDictionary()
 search_selections = []
 
 class SearchSelection(object):
@@ -33,12 +33,29 @@ def search(editor):
         editor.push_escape(hide, editor, widget)
         widget.show_all()
 
-def do_find(editor, search_func, dir, start_from=None):
+def backward_search(matcher, text, endpos):
+    match = None
+    for m in matcher.finditer(text):
+        if m.end() > endpos:
+            return match
+        match = m
+    
+    return match 
+
+def do_find(editor, dir, start_from=None):
     if editor in active_widgets:
         search = active_widgets[editor].entry.get_text()
+        ignore_case = active_widgets[editor].ignore_case.get_active()
+        regex = active_widgets[editor].regex.get_active()
     elif search_selections:
         search = search_selections[0].search
+        ignore_case = False
+        regex = False
     else:
+        return
+    
+    matcher = get_matcher(editor, search, ignore_case, regex)
+    if not matcher:
         return
         
     iter = start_from
@@ -47,11 +64,15 @@ def do_find(editor, search_func, dir, start_from=None):
             iter = editor.buffer.get_iter_at_mark(editor.buffer.get_selection_bound())
         else:
             iter = editor.cursor
-            
-    bounds = search_func(iter, search,
-        gtksourceview2.SEARCH_VISIBLE_ONLY | gtksourceview2.SEARCH_CASE_INSENSITIVE)
+    
+    match = None
+    if dir == 0:
+        match = matcher.search(editor.utext, iter.get_offset())
+    else:
+        match = backward_search(matcher, editor.utext, iter.get_offset())
 
-    if bounds:
+    if match:
+        bounds = map(editor.buffer.get_iter_at_offset, match.span())
         editor.buffer.select_range(bounds[1], bounds[0])
         editor.view.scroll_to_iter(bounds[0], 0.001, use_align=True, xalign=1.0)
         if start_from:
@@ -59,17 +80,17 @@ def do_find(editor, search_func, dir, start_from=None):
         
         return True
     elif not start_from:
-        return do_find(editor, search_func, dir, editor.buffer.get_bounds()[dir])
+        return do_find(editor, dir, editor.buffer.get_bounds()[dir])
     else:
         editor.message('Text not found')
     
     return False
     
 def find_prev(editor):
-    do_find(editor, gtksourceview2.iter_backward_search, 1) 
+    do_find(editor, 1) 
 
 def find_next(editor, grab_focus=False):
-    if do_find(editor, gtksourceview2.iter_forward_search, 0) and grab_focus:
+    if do_find(editor, 0) and grab_focus:
         editor.view.grab_focus() 
 
 def create_widget(editor):
@@ -102,11 +123,11 @@ def create_widget(editor):
     
     cb = gtk.CheckButton('Ignore _case')
     widget.pack_start(cb, False)
-    widget.ignore_case_cb = cb
+    widget.ignore_case = cb
     
     cb = gtk.CheckButton('Rege_x')
     widget.pack_start(cb, False)
-    widget.regex_cb = cb
+    widget.regex = cb
 
     label = gtk.Label('Re_place')
     label.set_use_underline(True)
@@ -144,31 +165,49 @@ def delete_all_marks(editor):
     if editor.buffer.get_tag_table().lookup('search'):
         editor.buffer.remove_tag_by_name('search', start, end)
 
-def mark_occurences(editor, search):
-    cursor = editor.buffer.get_bounds()[0]
-    
-    count = 0    
-    while True:
-        bounds = gtksourceview2.iter_forward_search(cursor, search,
-            gtksourceview2.SEARCH_VISIBLE_ONLY | gtksourceview2.SEARCH_CASE_INSENSITIVE)
+def get_matcher(editor, search, ignore_case, regex):
+    flags = re.UNICODE
+    if ignore_case:
+        flags |= re.IGNORECASE        
+
+    if regex:
+        try:
+            return re.compile(unicode(search), flags)
+        except Exception, e:
+            editor.message('Bad regex: ' + str(e), 3000)
+            if editor in active_widgets:
+                idle(active_widgets[editor].entry.grab_focus)
+            return None
+    else:
+        return re.compile(unicode(re.escape(search)), flags)
+
+def mark_occurences(editor, search, ignore_case, regex):
+    matcher = get_matcher(editor, search, ignore_case, regex)
+    if not matcher:
+        return False
         
-        if not bounds:
-            if count == 1:
-                editor.message('One occurrence is marked')
-            elif count > 1:
-                editor.message('%d occurrences are marked' % count)
-                
-            return
+    count = 0      
+    for m in matcher.finditer(editor.utext):
+        editor.buffer.apply_tag(get_tag(editor),
+            *map(editor.buffer.get_iter_at_offset, m.span()))
         
         count += 1
-        editor.buffer.apply_tag(get_tag(editor), *bounds)
+
+    if count == 1:
+        idle(editor.message, 'One occurrence is marked')
+    elif count > 1:
+        idle(editor.message, '%d occurrences are marked' % count)
+    else:
+        idle(editor.message, 'Text not found')
+        return False
         
-        cursor = bounds[1]
+    return True
 
 def on_search_activate(sender, editor, widget):
     delete_all_marks(editor)
-    idle(mark_occurences, editor, sender.get_text())
-    find_next(editor, True)
+    if mark_occurences(editor, sender.get_text(),
+            widget.ignore_case.get_active(), widget.regex.get_active()):
+        find_next(editor, True)
 
 def hide(editor, widget):
     delete_all_marks(editor)
@@ -201,5 +240,5 @@ def mark_selection(editor):
         search_selections[:] = []
         delete_all_marks(editor)
     
-    mark_occurences(editor, occur.search)
+    mark_occurences(editor, occur.search, False, False)
     editor.push_escape(remove_all, editor, occur)
