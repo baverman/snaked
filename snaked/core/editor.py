@@ -259,6 +259,7 @@ class EditorManager(object):
         editor.view.set_right_margin_position(pref['right-margin'])
         editor.view.set_show_right_margin(pref['show-right-margin'])
         editor.view.set_wrap_mode(gtk.WRAP_WORD if pref['wrap-text'] else gtk.WRAP_NONE)
+        editor.view.set_pixels_below_lines(pref['line-spacing'])
 
     @Editor.editor_closed(idle=True)
     def on_editor_closed(self, editor):

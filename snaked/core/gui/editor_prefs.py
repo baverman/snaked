@@ -34,6 +34,7 @@ class PreferencesDialog(BuilderAware):
 
         self.margin_width.connect('value-changed', self.on_spin_changed, 'right-margin')
         self.tab_width.connect('value-changed', self.on_spin_changed, 'tab-width')
+        self.line_spacing.connect('value-changed', self.on_spin_changed, 'line-spacing')
 
         self.font.connect('font-set', self.on_font_set, 'font')
         
@@ -87,6 +88,7 @@ class PreferencesDialog(BuilderAware):
         
         self.margin_width.set_value(pref['right-margin'])
         self.tab_width.set_value(pref['tab-width'])
+        self.line_spacing.set_value(pref['line-spacing'])
             
         self.font.set_font_name(pref['font'])
         

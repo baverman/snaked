@@ -18,6 +18,7 @@ default_prefs = {
         'smart-home-end': True,
         'highlight-current-line': True,
         'show-whitespace': False,
+        'line-spacing': 0,
     },
     'python': {
         'use-tabs': False,
