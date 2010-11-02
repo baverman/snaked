@@ -16,7 +16,7 @@ def init(manager):
 def to_str(data, encoding='utf-8'):
     if isinstance(data, unicode):
         return data.decode(encoding)
-        
+
     return data
 
 def get_run_menu(prefs, editor):
@@ -24,25 +24,27 @@ def get_run_menu(prefs, editor):
     menu.set_reserve_toggle_size(False)
 
     has_selection = editor.buffer.get_has_selection()
-    
+
     any_items = False
     for tool in sorted(prefs):
         if prefs[tool]['stdin'] == 'selection' and not has_selection:
             continue
-            
+
         if prefs[tool]['langs'].strip() and editor.lang not in map(str.strip,
                 to_str(prefs[tool]['langs'].split(','))):
             continue
-            
+
         any_items = True
         item = gtk.MenuItem(None, True)
         label = gtk.Label()
         label.set_alignment(0, 0.5)
-        label.set_width_chars(10)
         label.set_markup_with_mnemonic(prefs[tool]['name'])
+        if len(tool) < 10:
+            label.set_width_chars(10)
+
         item.add(label)
         menu.append(item)
-        item.connect('activate', on_item_activate, weakref.ref(editor), prefs[tool])
+        item.connect('activate', on_item_activate, weakref.ref(editor), tool, prefs[tool])
 
     if any_items:
         menu.show_all()
@@ -50,10 +52,10 @@ def get_run_menu(prefs, editor):
     else:
         menu.destroy()
         return None
-    
+
 def run_tool(editor):
     from snaked.core.prefs import load_json_settings
-    
+
     prefs = load_json_settings('external-tools.conf', {})
     if not prefs:
         editor.message('There is no any tool to run')
@@ -70,11 +72,11 @@ def run_tool(editor):
     if not menu:
         editor.message('There is no any tool to run')
         return
-        
+
     menu.popup(None, None, get_coords, 0, gtk.get_current_event_time())
 
-def on_item_activate(item, editor, prefs):
-    idle(run, editor(), prefs)
+def on_item_activate(item, editor, name, prefs):
+    idle(run, editor(), name, prefs)
     idle(item.get_parent().destroy)
 
 def show_preferences(editor):
@@ -95,10 +97,16 @@ def get_stdin(editor, id):
             return editor.text
 
 def replace(editor, bounds, text):
+    line = editor.cursor.get_line()
+    editor.view.window.freeze_updates()
+
     editor.buffer.begin_user_action()
     editor.buffer.delete(*bounds)
     editor.buffer.insert_at_cursor(text)
     editor.buffer.end_user_action()
+
+    editor.view.window.thaw_updates()
+    idle(editor.goto_line, line + 1)
 
 def insert(editor, iter, text):
     editor.buffer.begin_user_action()
@@ -130,33 +138,33 @@ def process_stdout(editor, stdout, id):
     else:
         editor.message('Unknown stdout action ' + id)
 
-def run(editor, prefs):
+def run(editor, name, prefs):
     import shlex
     import os.path
     from subprocess import Popen, PIPE
-    
+
     command = shlex.split(to_str(prefs['command']))
     if not command:
         editor.message('Tool must define command to run')
-        return    
+        return
 
-    editor.message('Running ' + prefs['name'])
+    editor.message('Running ' + name)
 
     stdin = get_stdin(editor, prefs['stdin'])
 
     current_file = editor.uri
     current_dir = os.path.dirname(current_file)
-    current_project = editor.project_root        
+    current_project = editor.project_root
 
     command_to_run = ['/usr/bin/env']
     for c in command:
         command_to_run.append(c.replace('%f', current_file).replace(
             '%d', current_dir).replace('%p', current_project))
-            
+
     stdout, stderr = Popen(command_to_run, stdout=PIPE, stderr=PIPE,
         stdin=PIPE if stdin else None).communicate(stdin)
-    
+
     if stderr:
         editor.message(stderr, 5000)
-        
+
     process_stdout(editor, stdout, prefs['stdout'])

@@ -96,7 +96,6 @@
         <property name="spacing">5</property>
         <child>
           <object class="GtkTreeView" id="tools_view">
-            <property name="width_request">100</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="model">tools</property>

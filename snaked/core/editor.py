@@ -24,7 +24,7 @@ class Editor(SignalManager):
     get_file_position = Signal(return_type=int)
     before_close = Signal()
     file_loaded = Signal()
-    change_title = Signal(str) 
+    change_title = Signal(str)
     request_transient_for = Signal(object)
     file_saved = Signal()
     push_escape_callback = Signal(object, object)
@@ -33,11 +33,11 @@ class Editor(SignalManager):
     def __init__(self):
         self.uri = None
         self.session = None
-        self.saveable = True    
-        
+        self.saveable = True
+
         sw = gtk.ScrolledWindow()
         sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
-                
+
         self.buffer = gtksourceview2.Buffer()
 
         self.view = gtksourceview2.View()
@@ -49,12 +49,12 @@ class Editor(SignalManager):
         self.widget.pack_start(sw)
 
         self.widget.show_all()
-        
+
         connect_all(self, buffer=self.buffer)
 
     def update_title(self):
         modified = '*' if self.buffer.get_modified() else ''
-        
+
         if self.uri:
             title = self.get_title.emit()
 
@@ -62,20 +62,20 @@ class Editor(SignalManager):
                 title = os.path.basename(self.uri)
         else:
             title = 'Unknown'
-        
-        self.change_title.emit(modified + title)          
+
+        self.change_title.emit(modified + title)
 
     def load_file(self, filename, line=None):
         self.uri = os.path.abspath(filename)
         self.encoding = 'utf-8'
-        
+
         if os.path.exists(self.uri):
-            self.view.window.freeze_updates()        
+            self.view.window.freeze_updates()
             self.on_modified_changed_handler.block()
             self.buffer.begin_not_undoable_action()
-            
+
             text = open(filename).read()
-            
+
             try:
                 utext = text.decode('utf-8')
             except UnicodeDecodeError, e:
@@ -91,34 +91,34 @@ class Editor(SignalManager):
                 except UnicodeDecodeError, ee:
                     self.saveable = False
                     utext = str(ee)
-                
+
             self.buffer.set_text(utext)
             self.buffer.set_modified(False)
-            
+
             self.buffer.end_not_undoable_action()
             self.on_modified_changed_handler.unblock()
             self.view.window.thaw_updates()
-            
+
             pos = line if line is not None else self.get_file_position.emit()
             if pos is not None and pos >= 0:
                 self.buffer.place_cursor(self.buffer.get_iter_at_line(pos))
                 self.view.scroll_to_mark(self.buffer.get_insert(), 0.001, use_align=True, xalign=1.0)
             else:
                 self.buffer.place_cursor(self.buffer.get_start_iter())
-                
+
         self.file_loaded.emit()
-                
+
         self.update_title()
-        
+
     @connect_external('buffer', 'modified-changed', idle=True)
     def on_modified_changed(self, *args):
         self.update_title()
-            
+
     def save(self):
         if not self.saveable:
             self.message("This file was opened with error and can't be saved")
             return
-            
+
         if self.uri:
             try:
                 save_file(self.uri, self.utext, self.encoding)
@@ -135,12 +135,12 @@ class Editor(SignalManager):
             root = get_project_root(self.uri)
             if not root:
                 root = os.path.dirname(self.uri)
-          
-            return root 
-            
+
+            return root
+
         return None
 
-    def open_file(self, filename, line=None, open_in_next_tab=False):        
+    def open_file(self, filename, line=None, open_in_next_tab=False):
         return self.request_to_open_file.emit(filename, line, open_in_next_tab)
 
     @property
@@ -164,7 +164,7 @@ class Editor(SignalManager):
     def feedback_popup(self):
         from .feedback import FeedbackPopup
         return FeedbackPopup(self.view)
-                
+
     def message(self, message, timeout=1500):
         popup = self.feedback_popup
         popup.show(message, timeout)
@@ -172,25 +172,25 @@ class Editor(SignalManager):
 
     def push_escape(self, callback, *args):
         self.push_escape_callback.emit(callback, args)
-        
+
 class EditorManager(object):
     def __init__(self):
         self.editors = []
         self.style_manager = gtksourceview2.style_scheme_manager_get_default()
         self.lang_manager = gtksourceview2.language_manager_get_default()
-        
+
         self.plugin_manager = PluginManager()
         prefs.register_dialog('Plugins', self.plugin_manager.show_plugins_prefs, 'plugin',
             'extension')
-            
+
         prefs.register_dialog('Key configuration', self.show_key_preferences, 'key', 'bind', 'shortcut')
 
         prefs.register_dialog('Editor settings', self.show_editor_preferences,
             'editor', 'font', 'style', 'margin', 'line', 'tab', 'whitespace')
-        
+
         self.escape_stack = []
         self.escape_map = {}
-        
+
         self.session = None
 
         load_shortcuts()
@@ -200,24 +200,24 @@ class EditorManager(object):
         self.plugin_manager.load_core_plugin(snaked.core.quick_open)
 
     def register_app_shortcuts(self):
-        register_shortcut('quit', '<ctrl>q', 'Application', 'Quit')        
+        register_shortcut('quit', '<ctrl>q', 'Application', 'Quit')
         register_shortcut('close-window', '<ctrl>w', 'Window', 'Closes window')
         register_shortcut('save', '<ctrl>s', 'File', 'Saves file')
         register_shortcut('new-file', '<ctrl>n', 'File',
             'Open dialog to choose new file directory and name')
         register_shortcut('show-preferences', '<ctrl>p', 'Window', 'Open preferences dialog')
-        
+
     def open(self, filename, line=None, open_in_next_tab=False):
         editor = Editor()
         self.editors.append(editor)
         editor.session = self.session
-        
+
         connect_all(self, editor)
 
         idle(self.set_editor_prefs, editor, filename)
         idle(self.set_editor_shortcuts, editor)
         idle(self.plugin_manager.editor_created, editor)
-        
+
         self.manage_editor(editor, open_in_next_tab)
 
         idle(editor.load_file, filename, line)
@@ -228,26 +228,26 @@ class EditorManager(object):
     @lazy_property
     def lang_prefs(self):
         return prefs.load_json_settings('langs.conf', {})
-    
+
     def set_editor_prefs(self, editor, filename):
         if filename:
             lang = self.lang_manager.guess_language(filename, None)
             editor.buffer.set_language(lang)
         else:
             lang = None
-            
+
         editor.lang = lang.get_id() if lang else 'default'
-        
+
         pref = prefs.CompositePreferences(self.lang_prefs.get(editor.lang, {}),
             self.lang_prefs.get('default', {}), prefs.default_prefs.get(editor.lang, {}),
             prefs.default_prefs['default'])
-        
+
         style_scheme = self.style_manager.get_scheme(pref['style'])
         editor.buffer.set_style_scheme(style_scheme)
-        
+
         font = pango.FontDescription(pref['font'])
         editor.view.modify_font(font)
-        
+
         editor.view.set_auto_indent(pref['auto-indent'])
         editor.view.set_indent_on_tab(pref['indent-on-tab'])
         editor.view.set_insert_spaces_instead_of_tabs(not pref['use-tabs'])
@@ -267,7 +267,7 @@ class EditorManager(object):
 
         if not self.editors:
             snaked.core.quick_open.activate(self.get_fake_editor())
-        
+
     @Editor.change_title
     def on_editor_change_title(self, editor, title):
         self.set_editor_title(editor, title)
@@ -275,7 +275,7 @@ class EditorManager(object):
     @Editor.request_close
     def on_editor_close_request(self, editor):
         self.close_editor(editor)
-    
+
     @Editor.request_to_open_file
     def on_request_to_open_file(self, editor, filename, line, open_in_next_tab):
         for e in self.editors:
@@ -299,26 +299,26 @@ class EditorManager(object):
         for e in self.editors:
             if e is not editor:
                 idle(self.set_editor_prefs, e, e.uri)
-        
+
     def new_file_action(self, editor):
         from snaked.core.gui import new_file
         new_file.show_create_file(editor)
-        
+
     def quit(self, editor):
         if self.session:
             self.save_session(self.session, editor)
-            
+
         map(self.plugin_manager.editor_closed, self.editors)
-        
+
         self.plugin_manager.quit()
-        
+
         if gtk.main_level() > 0:
             gtk.main_quit()
 
     def get_session_settings(self, session):
         from .prefs import load_json_settings
         return load_json_settings('%s.session' % session, {})
-                    
+
     def save_session(self, session, active_editor=None):
         from .prefs import save_json_settings
         settings = self.get_session_settings(session)
@@ -331,10 +331,10 @@ class EditorManager(object):
         key = (callback,) + tuple(map(id, args))
         if key in self.escape_map:
             return
-            
+
         self.escape_map[key] = True
         self.escape_stack.append((key, callback, map(weakref.ref, args)))
-        
+
     def process_escape(self, editor):
         while self.escape_stack:
             key, cb, args = self.escape_stack.pop()
@@ -343,19 +343,19 @@ class EditorManager(object):
             if not any(a is None for a in realargs):
                 cb(*realargs)
                 return False
-                
+
         return False
 
     def show_key_preferences(self, editor):
         from snaked.core.gui.shortcuts import ShortcutsDialog
         dialog = ShortcutsDialog()
         dialog.show(editor)
-        
+
     def show_preferences(self, editor):
         from snaked.core.gui.prefs import PreferencesDialog
         dialog = PreferencesDialog()
         dialog.show(editor)
-        
+
     def show_editor_preferences(self, editor):
         from snaked.core.gui.editor_prefs import PreferencesDialog
         dialog = PreferencesDialog(self.lang_prefs)
@@ -369,7 +369,7 @@ class EditorManager(object):
     def get_fake_editor(self):
         self.fake_editor = FakeEditor(self)
         return self.fake_editor
-        
+
 
 class FakeEditor(object):
     def __init__(self, manager):
@@ -389,6 +389,6 @@ class FakeEditor(object):
 
     def on_dialog_escape(self, dialog):
         self.manager.quit(None)
-        
+
     def message(self, message, timeout=None):
         print message
