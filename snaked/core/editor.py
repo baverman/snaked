@@ -160,6 +160,9 @@ class Editor(SignalManager):
         self.buffer.place_cursor(iterator)
         self.view.scroll_to_iter(iterator, 0.001, use_align=True, xalign=1.0)
 
+    def scroll_to_cursor(self):
+        self.view.scroll_to_mark(self.buffer.get_insert(), 0.001, use_align=True, xalign=1.0)
+
     @lazy_property
     def feedback_popup(self):
         from .feedback import FeedbackPopup
