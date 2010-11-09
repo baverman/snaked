@@ -145,14 +145,26 @@ class Editor(SignalManager):
 
     @property
     def cursor(self):
+        """Return buffer's cursor iter
+        
+        :rtype: gtk.TextIter
+        """
         return self.buffer.get_iter_at_mark(self.buffer.get_insert())
 
     @property
     def text(self):
+        """Return buffer's content as utf-8 encoded string
+        
+        :rtype: str
+        """
         return self.buffer.get_text(*self.buffer.get_bounds())
 
     @property
     def utext(self):
+        """Return buffer's content as unicode string
+        
+        :rtype: unicode
+        """
         return unicode(self.buffer.get_text(*self.buffer.get_bounds()), 'utf-8')
 
     def goto_line(self, line):

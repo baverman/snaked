@@ -1,5 +1,3 @@
-import os.path
-
 import xml.sax.handler
 import rope.base.pynames
 

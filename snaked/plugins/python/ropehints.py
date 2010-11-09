@@ -127,6 +127,10 @@ class HintProvider(object):
     
     @property
     def project(self):
+        """Return rope project
+        
+        :rtype: rope.base.project.Project
+        """
         return self._project()
 
     def get_function_param_type(self, pyfunc, name):
@@ -136,34 +140,6 @@ class HintProvider(object):
         If there is no any type hints None is returned
         """
         return None
-
-    def get_module_attribute(self, pymodule, name):
-        """Resolves module/package attribute's PyName"""
-        return None
-
-    def get_class_attributes(self, pyclass):
-        """Returns additional atributes for pyclass"""
-        return {}
-
-    def get_type(self, type_name):
-        pycore = self.project.pycore
-        module, sep, name = type_name.strip('()').rpartition('.')
-        if module:
-            module = pycore.get_module(module)
-            try:
-                pyname = module[name]
-            except exceptions.AttributeNotFoundError:
-                pyname = None
-        else:
-            pyname = pycore.get_module(name)
-        
-        return pyname
-
-
-class ScopeHintProvider(HintProvider):
-    def __init__(self, project, scope_matcher):
-        super(ScopeHintProvider, self).__init__(project)
-        self.matcher = scope_matcher
 
     def get_scope_path(self, scope):
         result = []
@@ -179,6 +155,36 @@ class ScopeHintProvider(HintProvider):
             current_scope = current_scope.parent
         
         return '.'.join(result)
+
+    def get_module_attribute(self, pymodule, name):
+        """Resolves module/package attribute's PyName"""
+        return None
+
+    def get_class_attributes(self, pyclass):
+        """Returns additional atributes for pyclass"""
+        return {}
+
+    def get_type(self, type_name, scope=None):
+        pycore = self.project.pycore
+        module, sep, name = type_name.strip('()').rpartition('.')
+        if module:
+            module = pycore.get_module(module)
+            try:
+                pyname = module[name]
+            except exceptions.AttributeNotFoundError:
+                pyname = None
+        elif scope:
+            pyname = scope.lookup(name)
+        else:
+            pyname = pycore.get_module(name)
+        
+        return pyname
+
+
+class ScopeHintProvider(HintProvider):
+    def __init__(self, project, scope_matcher):
+        super(ScopeHintProvider, self).__init__(project)
+        self.matcher = scope_matcher
         
     def get_function_param_type(self, pyfunc, name):
         scope_path = self.get_scope_path(pyfunc.get_scope())
@@ -272,6 +278,9 @@ class CompositeHintProvider(HintProvider):
             'snaked.plugins.python.ropehints.CompositeHintProvider()')
 
         self.add_hint_provider(ScopeHintProvider(project, self.db)) 
+        
+        from .dochints import DocStringHintProvider
+        self.add_hint_provider(DocStringHintProvider(project)) 
     
     def add_hint_provider(self, provider):
         self.hint_provider.insert(0, provider)

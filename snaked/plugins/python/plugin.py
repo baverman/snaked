@@ -25,12 +25,13 @@ class RopeProjectManager(object):
 
     def refresh_hints(self):
         self.project.pycore.module_cache.forget_all_data()
+        self.project.pycore.hintdb = CompositeHintProvider(self.project)
+
         if self.hints_filename and os.path.exists(self.hints_filename):
             namespace = {}
             execfile(self.hints_filename, namespace)
             if 'init' in namespace:
                 try:
-                    self.project.pycore.hintdb = CompositeHintProvider(self.project)
                     namespace['init'](self.project.pycore.hintdb)
                 except:
                     import traceback
