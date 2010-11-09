@@ -277,6 +277,12 @@ class CompositeHintProvider(HintProvider):
         self.db.add_param_hint('ropehints\.init$', 'provider$',
             'snaked.plugins.python.ropehints.CompositeHintProvider()')
 
+        self.db.add_param_hint('re\.compile$', 'return', 're.RegexObject()')
+        self.db.add_param_hint('re\.search$', 'return', 're.MatchObject()')
+        self.db.add_param_hint('re\.match$', 'return', 're.MatchObject()')
+        self.db.add_attribute_hint('re$', 'RegexObject$', 'snaked.plugins.python.stub.RegexObject')
+        self.db.add_attribute_hint('re$', 'MatchObject$', 'snaked.plugins.python.stub.MatchObject')
+
         self.add_hint_provider(ScopeHintProvider(project, self.db)) 
         
         from .dochints import DocStringHintProvider
