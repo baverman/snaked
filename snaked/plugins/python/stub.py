@@ -88,7 +88,7 @@ class RegexObject:
         """
 
     def sub(repl, string, count=0):
-        """Return the string obtained by replacing the leftmost non-overlapping occurrences
+        r"""Return the string obtained by replacing the leftmost non-overlapping occurrences
         of *pattern* in *string* by the replacement *repl*.  If the pattern isn't found,
         *string* is returned unchanged.  *repl* can be a string or a function; if it is
         a string, any backslash escapes in it are processed.  That is, ``\n`` is

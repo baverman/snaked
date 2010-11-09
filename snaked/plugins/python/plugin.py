@@ -58,7 +58,9 @@ class Plugin(object):
 
     def init_completion(self):
         provider = self.completion_provider
-        self.editor.view.get_completion().add_provider(provider)
+        completion = self.editor.view.get_completion()
+        completion.add_provider(provider)
+        #completion.get_info_window().set_sizing(300, 400, False, False)
         
     @lazy_property
     def project_manager(self):
