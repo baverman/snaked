@@ -4,7 +4,7 @@ class RegexObject:
         self.groups = 0
         self.groupindex = {}
         self.pattern = ""
-                
+
     def match(string, pos=None, endpos=None):
         """If zero or more characters at the beginning of *string* match this regular
         expression, return a corresponding :class:`MatchObject` instance.  Return
@@ -46,12 +46,12 @@ class RegexObject:
         The optional *pos* and *endpos* parameters have the same meaning as for the
         :meth:`~RegexObject.match` method.
         """
-        
+
         return MatchObject()
 
     def split(string, maxsplit=0):
         """Split *string* by the occurrences of *pattern*.
-        
+
         If capturing parentheses are
         used in *pattern*, then the text of all groups in the pattern are also returned
         as part of the resulting list. If *maxsplit* is nonzero, at most *maxsplit*
@@ -66,10 +66,10 @@ class RegexObject:
             >>> re.split('\W+', 'Words, words, words.', 1)
             ['Words', 'words, words.']
         """
-        
+
     def findall(string, pos=None, endpos=None):
         """Return all non-overlapping matches of *pattern* in *string*, as a list of strings.
-           
+
         The *string* is scanned left-to-right, and matches are returned in
         the order found.  If one or more groups are present in the pattern, return a
         list of groups; this will be a list of tuples if the pattern has more than
@@ -80,7 +80,7 @@ class RegexObject:
     def finditer(string, pos=None, endpos=None):
         """Return an :term:`iterator` yielding :class:`MatchObject` instances over all
         non-overlapping matches for the RE *pattern* in *string*.
-   
+
         The *string* is
         scanned left-to-right, and matches are returned in the order found.  Empty
         matches are included in the result unless they touch the beginning of another
@@ -136,7 +136,7 @@ class RegexObject:
         """Perform the same operation as :func:`sub`, but return a tuple ``(new_string,
         number_of_subs_made)``.
         """
-    
+
 class MatchObject:
     def __init__(self):
         self.pos = 0
@@ -230,7 +230,7 @@ class MatchObject:
           >>> m.groups('0')   # Now, the second group defaults to '0'.
           ('24', '0')
         """
-        
+
     def groupdict(default):
         """
         Return a dictionary containing all the *named* subgroups of the match, keyed by
@@ -241,7 +241,7 @@ class MatchObject:
           >>> m.groupdict()
           {'first_name': 'Malcom', 'last_name': 'Reynolds'}
         """
-        
+
         return {}
 
     def start(group=None):
@@ -264,8 +264,8 @@ class MatchObject:
           >>> m = re.search("remove_this", email)
           >>> email[:m.start()] + email[m.end():]
           'tony@tiger.net'
-        """        
-        
+        """
+
     def end(group=None):
         """see :method:`start`"""
 
