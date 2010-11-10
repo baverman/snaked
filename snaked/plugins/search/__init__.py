@@ -181,7 +181,7 @@ def get_matcher(editor, search, ignore_case, regex):
                 idle(active_widgets[editor].entry.grab_focus)
             return None
     else:
-        return re.compile(unicode(re.escape(search)), flags)
+        return re.compile(re.escape(unicode(search)), flags)
 
 def mark_occurences(editor, search, ignore_case, regex):
     matcher = get_matcher(editor, search, ignore_case, regex)
