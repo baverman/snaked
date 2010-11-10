@@ -28,7 +28,7 @@ def pangonify_rst(text):
     paragraph = ''
     break_paragraph = False
 
-    def add_paragrph():
+    def add_paragraph():
         r = result
         if paragraph:
             if break_paragraph:
@@ -41,10 +41,10 @@ def pangonify_rst(text):
 
     for l in trimmed:
         if not l.strip():
-            result, paragraph, break_paragraph = add_paragrph()
+            result, paragraph, break_paragraph = add_paragraph()
         else:
             if l.startswith('  '):
-                result, paragraph, break_paragraph = add_paragrph()
+                result, paragraph, break_paragraph = add_paragraph()
                 break_paragraph = True
                 result += "<tt>%s</tt>" % markup_escape_text(l)
                 result += '\n'
@@ -52,7 +52,7 @@ def pangonify_rst(text):
                 paragraph += markup_escape_text(l) + ' '
 
     if paragraph:
-        result, _, _ = add_paragrph()
+        result, _, _ = add_paragraph()
 
     return result
 
