@@ -66,6 +66,8 @@ def get_attribute_scope_path(obj):
         return obj.pycore.modname(obj.resource)
     elif isinstance(obj, (PyClass,)):
         return get_attribute_scope_path(obj.get_module()) + '.' + obj.get_name()
+    else:
+        return ''
         
 def get_attribute_with_hints(func, what):
     def inner(self, name):
@@ -112,7 +114,8 @@ def get_attributes_with_hints(func):
         except AttributeError:
             return result
 
-        result.update(hintdb.get_class_attributes(self))
+        scope_path = get_attribute_scope_path(self)
+        hintdb.get_class_attributes(scope_path, self, result)
         
         return result
     
