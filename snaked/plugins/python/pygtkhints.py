@@ -61,19 +61,11 @@ class PyGtkHintProvider(HintProvider):
 
         self.gtk_aware_classes[scope_path] = glade_file, True
 
-    def get_class_attributes(self, pyclass):
-        scope_path = get_attribute_scope_path(pyclass)
-        try:
-            return self.cache[scope_path]
-        except KeyError:
-            pass
-
-        if scope_path not in self.gtk_aware_classes:
-            self.cache[scope_path] = {}
-        else:
+    def get_class_attributes(self, scope_path, pyclass, attrs):
+        if scope_path in self.gtk_aware_classes:
             self.process_glade(scope_path)
-
-        return self.cache[scope_path]
+            for k, v in self.cache[scope_path].iteritems():
+                attrs[k] = v
 
     def add_class(self, scope, glade_file):
         self.gtk_aware_classes[scope] = glade_file, False

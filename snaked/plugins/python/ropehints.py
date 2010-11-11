@@ -163,9 +163,8 @@ class HintProvider(object):
         """Resolves module/package attribute's PyName"""
         return None
 
-    def get_class_attributes(self, pyclass):
+    def get_class_attributes(self, scope_path, pyclass, attrs):
         """Returns additional atributes for pyclass"""
-        return {}
 
     def get_type(self, type_name, scope=None):
         pycore = self.project.pycore
@@ -219,10 +218,7 @@ class ScopeHintProvider(HintProvider):
         
         return pyname
 
-    def get_class_attributes(self, pyclass):
-        attrs = {}
-
-        scope_path = get_attribute_scope_path(pyclass)
+    def get_class_attributes(self, scope_path, pyclass, attrs):
         for name, type_name in self.matcher.find_class_attributes(scope_path):
             type = self.get_type(type_name)
             if type:
@@ -231,8 +227,6 @@ class ScopeHintProvider(HintProvider):
                     attrs[name] = ReplacedName(obj, type)
                 else:
                     attrs[name] = type
-
-        return attrs
         
 
 class ReScopeMatcher(object):
@@ -274,6 +268,8 @@ class CompositeHintProvider(HintProvider):
     def __init__(self, project):
         super(CompositeHintProvider, self).__init__(project)
         
+        self.class_attributes_cache = {}
+        
         self.hint_provider = []
         
         self.db = ReScopeMatcher()
@@ -313,9 +309,13 @@ class CompositeHintProvider(HintProvider):
             
         return None
         
-    def get_class_attributes(self, pyclass):
-        attrs = {}
+    def get_class_attributes(self, scope_path, pyclass, attrs):
+        try:
+            return self.class_attributes_cache[scope_path]
+        except KeyError:
+            pass
+            
         for p in self.hint_provider:
-            attrs.update(p.get_class_attributes(pyclass))
+            p.get_class_attributes(scope_path, pyclass, attrs)
         
-        return attrs
+        self.class_attributes_cache[scope_path] = attrs

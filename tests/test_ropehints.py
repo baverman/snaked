@@ -115,8 +115,8 @@ def test_doc_string_hints():
     project = get_project()
     project.pycore.hintdb = DocStringHintProvider(project)
 
-    proposals = get_proposals(project, 475)
+    proposals = get_proposals(project, 471)
     assert ['superstar', 'star'] == [p.name for p in proposals]
 
-    proposals = get_proposals(project, 487)
+    proposals = get_proposals(project, 483)
     assert ['hill'] == [p.name for p in proposals]
