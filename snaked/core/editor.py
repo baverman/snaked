@@ -5,7 +5,7 @@ import gtk
 import gtksourceview2
 import pango
 
-from ..util import save_file, idle, get_project_root, lazy_property
+from ..util import save_file, idle, get_project_root, lazy_property, single_ref
 from ..signals import SignalManager, Signal, connect_all, connect_external
 
 import prefs
@@ -146,7 +146,7 @@ class Editor(SignalManager):
     @property
     def cursor(self):
         """Return buffer's cursor iter
-        
+
         :rtype: gtk.TextIter
         """
         return self.buffer.get_iter_at_mark(self.buffer.get_insert())
@@ -154,7 +154,7 @@ class Editor(SignalManager):
     @property
     def text(self):
         """Return buffer's content as utf-8 encoded string
-        
+
         :rtype: str
         """
         return self.buffer.get_text(*self.buffer.get_bounds())
@@ -162,7 +162,7 @@ class Editor(SignalManager):
     @property
     def utext(self):
         """Return buffer's content as unicode string
-        
+
         :rtype: unicode
         """
         return unicode(self.buffer.get_text(*self.buffer.get_bounds()), 'utf-8')
@@ -175,14 +175,14 @@ class Editor(SignalManager):
     def scroll_to_cursor(self):
         self.view.scroll_to_mark(self.buffer.get_insert(), 0.001, use_align=True, xalign=1.0)
 
-    @lazy_property
+    @single_ref
     def feedback_popup(self):
         from .feedback import FeedbackPopup
-        return FeedbackPopup(self.view)
+        return FeedbackPopup()
 
     def message(self, message, timeout=1500):
         popup = self.feedback_popup
-        popup.show(message, timeout)
+        popup.show(self, message, timeout)
         self.push_escape(popup.hide, popup.escape)
 
     def push_escape(self, callback, *args):
