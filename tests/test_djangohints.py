@@ -10,10 +10,10 @@ from rope.contrib.codeassist import code_assist
 from snaked.plugins.python.djangohints import DjangoHintProvider
 
 def provide_django_hints_for(project):
-    project.pycore.hintdb = DjangoHintProvider(project)
+    project.pycore.hintdb = DjangoHintProvider(project, 'test_djangohints')
 
 def get_proposals(project, source, offset=None, **kwargs):
-    head = 'from django_models_for_test import *\n'
+    head = 'from djangotest.models import *\n'
     source = head + source
 
     if offset is None:
@@ -43,3 +43,14 @@ def test_common_field_names_must_be_in_proposals_for_model_instance(project):
     assert 'body' in result
     assert 'blog' in result
     assert 'blog_id' in result
+
+def test_proposals_for_objects_finder(project):
+    provide_django_hints_for(project)
+    
+    assert 'objects' in pset(get_proposals(project, 'Blog.'))
+    
+    result = pset(get_proposals(project, 'Blog.objects.'))
+    assert 'all' in result
+    assert 'get' in result
+    assert 'filter' in result
+    
