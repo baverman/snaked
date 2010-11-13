@@ -167,10 +167,12 @@ class Plugin(object):
             
         if resource:
             uri = resource.real_path
+            self.editor.add_spot()
             editor = self.editor.open_file(uri, line - 1, True)
             editor.ropeproject_root = project.snaked_project_root 
         else:
             if line:
+                self.editor.add_spot()
                 self.editor.goto_line(line)
             else:
                 self.editor.message("Unknown definition")

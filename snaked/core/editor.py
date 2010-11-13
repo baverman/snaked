@@ -29,6 +29,7 @@ class Editor(SignalManager):
     file_saved = Signal()
     push_escape_callback = Signal(object, object)
     plugins_changed = Signal()
+    add_spot_request = Signal()
 
     def __init__(self):
         self.uri = None
@@ -187,6 +188,10 @@ class Editor(SignalManager):
 
     def push_escape(self, callback, *args):
         self.push_escape_callback.emit(callback, args)
+
+    def add_spot(self):
+        self.add_spot_request.emit()
+
 
 class EditorManager(object):
     def __init__(self):
@@ -395,27 +400,28 @@ class EditorManager(object):
             editor = spota[0]()
             itera = editor.buffer.get_iter_at_mark(spota[1])
             iterb = editor.buffer.get_iter_at_mark(spotb[1])
-            
+
             return abs(itera.get_line() - iterb.get_line()) < 7
-        
+
         return False
-    
+
     def spot_is_valid(self, spot):
         editor = spot[0]()
         if editor:
             return not spot[1].get_deleted()
-        
-        return False 
-    
+
+        return False
+
     def add_spot_with_feedback(self, editor):
         self.add_spot(editor)
         editor.message('Spot added')
-        
+
+    @Editor.add_spot_request
     def add_spot(self, editor):
         spot = (weakref.ref(editor), editor.buffer.create_mark(None, editor.cursor))
-        
+
         self.spot_history = [s for s in self.spot_history if self.spot_is_valid(s)]
-        
+
         for s in self.spot_history:
             if self.spots_are_similar(s, spot):
                 editor.buffer.delete_mark(s[1])
@@ -430,7 +436,7 @@ class EditorManager(object):
         for spot in self.spot_history:
             if not self.spot_is_valid(spot):
                 continue
-                
+
             editor = spot[0]()
             if editor:
                 if back_to:
@@ -438,15 +444,15 @@ class EditorManager(object):
 
                 editor.buffer.place_cursor(editor.buffer.get_iter_at_mark(spot[1]))
                 editor.scroll_to_cursor()
-                
+
                 if editor is not back_to:
                     self.focus_editor(editor)
-                
+
                 return
-        
+
         if back_to:
-            back_to.message('Spot history is empty')    
-        
+            back_to.message('Spot history is empty')
+
 
 class FakeEditor(object):
     def __init__(self, manager):

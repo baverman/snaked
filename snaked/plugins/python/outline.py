@@ -60,6 +60,7 @@ class OutlineDialog(BuilderAware):
         (model, iter) = self.outline_tree.get_selection().get_selected()
         if iter:
             self.hide()
+            self.editor().add_spot()
             self.editor().goto_line(model.get_value(iter, 2))
         else:
             self.editor().message('You need select item')
