@@ -23,7 +23,8 @@ def delete_line(editor):
 
 def smart_select(editor):
     from smart_select import get_smart_select
-    editor.buffer.select_range(*get_smart_select(editor))
+    start, end = get_smart_select(editor)
+    editor.buffer.select_range(end, start)
     
 def show_offset(editor):
     editor.message('offset: %d\ncolumn: %d' % (
