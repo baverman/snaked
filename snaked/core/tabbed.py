@@ -96,6 +96,9 @@ class TabbedEditorManager(snaked.core.editor.EditorManager):
         self.activator.bind_to_name('fullscreen', self.fullscreen, [True])
         self.activator.bind_to_name('toggle-tabs-visibility', self.toggle_tabs)
 
+        self.activator.bind_to_name('place-spot', self.add_spot_with_feedback)
+        self.activator.bind_to_name('goto-last-spot', self.goto_last_spot)
+
         self.activator.bind('Escape', self.process_escape)
 
     def quit(self, editor):

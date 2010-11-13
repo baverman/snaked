@@ -205,6 +205,7 @@ class EditorManager(object):
 
         self.escape_stack = []
         self.escape_map = {}
+        self.spot_history = []
 
         self.session = None
 
@@ -221,6 +222,9 @@ class EditorManager(object):
         register_shortcut('new-file', '<ctrl>n', 'File',
             'Open dialog to choose new file directory and name')
         register_shortcut('show-preferences', '<ctrl>p', 'Window', 'Open preferences dialog')
+
+        register_shortcut('place-spot', '<alt>t', 'Edit', 'Place spot at current cursor location')
+        register_shortcut('goto-last-spot', '<alt>q', 'Edit', 'Quick jump to last placed spot')
 
     def open(self, filename, line=None, open_in_next_tab=False):
         editor = Editor()
@@ -274,7 +278,7 @@ class EditorManager(object):
         editor.view.set_right_margin_position(pref['right-margin'])
         editor.view.set_show_right_margin(pref['show-right-margin'])
         editor.view.set_wrap_mode(gtk.WRAP_WORD if pref['wrap-text'] else gtk.WRAP_NONE)
-        editor.view.set_pixels_below_lines(pref['line-spacing'])
+        editor.view.set_pixels_above_lines(pref['line-spacing'])
 
     @Editor.editor_closed(idle=True)
     def on_editor_closed(self, editor):
@@ -386,6 +390,63 @@ class EditorManager(object):
         self.fake_editor = FakeEditor(self)
         return self.fake_editor
 
+    def spots_are_similar(self, spota, spotb):
+        if spota[0] == spotb[0]:
+            editor = spota[0]()
+            itera = editor.buffer.get_iter_at_mark(spota[1])
+            iterb = editor.buffer.get_iter_at_mark(spotb[1])
+            
+            return abs(itera.get_line() - iterb.get_line()) < 7
+        
+        return False
+    
+    def spot_is_valid(self, spot):
+        editor = spot[0]()
+        if editor:
+            return not spot[1].get_deleted()
+        
+        return False 
+    
+    def add_spot_with_feedback(self, editor):
+        self.add_spot(editor)
+        editor.message('Spot added')
+        
+    def add_spot(self, editor):
+        spot = (weakref.ref(editor), editor.buffer.create_mark(None, editor.cursor))
+        
+        self.spot_history = [s for s in self.spot_history if self.spot_is_valid(s)]
+        
+        for s in self.spot_history:
+            if self.spots_are_similar(s, spot):
+                editor.buffer.delete_mark(s[1])
+
+        self.spot_history.insert(0, spot)
+
+        while len(self.spot_history) > 30:
+            spot = self.spot_history.pop()
+            editor.buffer.delete_mark(spot[1])
+
+    def goto_last_spot(self, back_to=None):
+        for spot in self.spot_history:
+            if not self.spot_is_valid(spot):
+                continue
+                
+            editor = spot[0]()
+            if editor:
+                if back_to:
+                    self.add_spot(back_to)
+
+                editor.buffer.place_cursor(editor.buffer.get_iter_at_mark(spot[1]))
+                editor.scroll_to_cursor()
+                
+                if editor is not back_to:
+                    self.focus_editor(editor)
+                
+                return
+        
+        if back_to:
+            back_to.message('Spot history is empty')    
+        
 
 class FakeEditor(object):
     def __init__(self, manager):

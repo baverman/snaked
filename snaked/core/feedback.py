@@ -1,5 +1,4 @@
 import gtk
-import weakref
 from gobject import timeout_add, source_remove
 
 class EscapeObject(object): pass
