@@ -20,19 +20,19 @@ class Snippet(object):
         def replace_stops(match):
             idx = int(match.group(1))
             replace = replaces.get(idx, u'')
-            
+
             start = delta[0] + match.start()
             delta[0] += len(replace) - match.end() + match.start()
             end = delta[0] + match.end()
-            
+
             tab_offsets[idx] = start, end
-            
+
             return replace
-        
+
         def replace_inserts(match):
             idx = int(match.group(1))
             replace = replaces.get(idx, u'')
-            
+
             start = delta[0] + match.start()
             dt = len(replace) - match.end() + match.start()
             delta[0] += dt
@@ -48,12 +48,12 @@ class Snippet(object):
             return replace
 
         body = matcher.sub(replace_stops, self.body)
-        
+
         delta[0] = 0
         body = re.sub(ur'\$(\d+)', replace_inserts, body)
-        
+
         return body, tab_offsets, insert_offsets
-        
+
 
 def parse_snippets_from(filename):
     pl = ''

@@ -35,7 +35,8 @@ class Editor(SignalManager):
         self.uri = None
         self.session = None
         self.saveable = True
-
+        self.lang = None
+        
         sw = gtk.ScrolledWindow()
         sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
 
