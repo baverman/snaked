@@ -18,7 +18,7 @@ def test_parse_snippets_from():
     assert 'imp' in result
     assert result['imp'].comment == 'Module import'
     assert result['imp'].snippet == 'imp'
-    assert result['imp'].body == 'import ${1:module}'
+    assert result['imp'].body == ['import ${1:module}']
     
     assert 'try Try/Except' in result
     assert result['try Try/Except'].snippet == 'try'

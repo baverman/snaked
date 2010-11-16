@@ -7,12 +7,16 @@ class Snippet(object):
         self.comment = ''
         self.body = []
 
-    def get_body_and_offsets(self):
+    def get_body_and_offsets(self, indent=u'', expand_tabs=False, tab_width=4):
         tab_offsets = {}
         insert_offsets = {}
         replaces = {}
         matcher = re.compile(ur'\$\{(\d+)(:(.*?))?\}')
-        for m in matcher.finditer(self.body):
+        
+        body = (u'\n' + indent).join(
+            s.expandtabs(tab_width) if expand_tabs else s for s in self.body)
+        
+        for m in matcher.finditer(body):
             if m.group(3):
                 replaces[int(m.group(1))] = m.group(3)
 
@@ -47,7 +51,7 @@ class Snippet(object):
 
             return replace
 
-        body = matcher.sub(replace_stops, self.body)
+        body = matcher.sub(replace_stops, body)
 
         delta[0] = 0
         body = re.sub(ur'\$(\d+)', replace_inserts, body)
@@ -76,8 +80,5 @@ def parse_snippets_from(filename):
             csnippet.body.append(l[1:])
 
         pl = l
-
-    for s in snippets.values():
-        s.body = u'\n'.join(s.body)
 
     return snippets
