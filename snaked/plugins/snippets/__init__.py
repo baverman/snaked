@@ -7,6 +7,7 @@ import gtk, gobject
 from gtksourceview2 import CompletionProvider, CompletionProposal
 from gtksourceview2 import COMPLETION_ACTIVATION_USER_REQUESTED
 
+from snaked.util import idle
 from .parser import parse_snippets_from
 
 loaded_snippets = {}
@@ -33,6 +34,8 @@ def editor_opened(editor):
 
     editor.view.connect('key-press-event', on_view_key_press_event,
         contexts, weakref.ref(editor))
+
+    editor.buffer.connect_after('changed', on_buffer_changed)
 
 def load_snippets_for(ctx):
     snippets = parse_snippets_from(existing_snippet_contexts[ctx])
@@ -81,18 +84,19 @@ def on_view_key_press_event(view, event, contexts, editor_ref):
         buffer = view.get_buffer()
         cursor = get_iter_at_cursor(buffer)
 
+        matches = []
+        for ctx in contexts:
+            matches.extend(get_matches(cursor, ctx))
+        
+        if matches:
+            return expand_snippet(view, contexts, matches)
+
         if buffer in stop_managers:
             sm = stop_managers[buffer]
             if sm.cursor_in_snippet_range(cursor):
                 return sm.goto_next_stop(editor_ref())
             else:
                 del stop_managers[buffer]
-
-        matches = []
-        for ctx in contexts:
-            matches.extend(get_matches(cursor, ctx))
-
-        return expand_snippet(view, contexts, matches)
     elif event.keyval == gtk.keysyms.ISO_Left_Tab:
         buffer = view.get_buffer()
         cursor = get_iter_at_cursor(buffer)
@@ -105,6 +109,18 @@ def on_view_key_press_event(view, event, contexts, editor_ref):
                 del stop_managers[buffer]
 
     return False
+
+def on_buffer_changed(buffer):
+    if buffer in stop_managers:
+        cursor = get_iter_at_cursor(buffer)
+        sm = stop_managers[buffer]
+        if sm.cursor_in_snippet_range(cursor):
+            if sm.snippet_collapsed():
+                del stop_managers[buffer]
+            else:    
+                idle(sm.replace_inserts)
+        else:
+            del stop_managers[buffer]
 
 def find_all_snippets(contexts, match):
     result = []
@@ -130,9 +146,6 @@ def expand_snippet(view, contexts, matches):
 
 match_ws = re.compile(u'(?u)^[ \t]*')
 def get_whitespace(start):
-    if start.is_end():
-        return u''
-
     match = match_ws.search(line_text(start))
     if match:
         return match.group(0)
@@ -181,8 +194,6 @@ def show_proposals(view, iter, contexts):
 class StopManager(object):
     def __init__(self, buffer, offset, stop_offsets, insert_offsets):
         self.buffer = buffer
-        self.stop_offsets = stop_offsets
-        self.insert_offsets = insert_offsets
 
         self.start_mark = buffer.create_mark(None, buffer.get_iter_at_offset(offset), True)
         self.end_mark = buffer.create_mark(None, get_iter_at_cursor(buffer))
@@ -215,6 +226,10 @@ class StopManager(object):
 
     def cursor_in_snippet_range(self, cursor):
         return self.in_range(cursor, *self.get_iter_pair(self.start_mark, self.end_mark))
+
+    def snippet_collapsed(self):
+        s, e = self.get_iter_pair(self.start_mark, self.end_mark)
+        return s.equal(e)
 
     def in_range(self, cursor, start, end):
         return cursor.in_range(start, end) or cursor.equal(end)
@@ -253,9 +268,33 @@ class StopManager(object):
 
         return False
 
-    def remove(self, editor):
-        editor.message('Snippet was completed')
-        del stop_managers[self.buffer]
+    def replace_inserts(self):
+        cursor = get_iter_at_cursor(self.buffer)
+        if not cursor.equal(self.buffer.get_iter_at_mark(self.end_mark)):
+            idx = self.get_current_stop_idx(cursor)
+            if idx is not None:
+                if idx in self.insert_marks:
+                    txt = self.buffer.get_text(*self.get_iter_pair(*self.stop_marks[idx]))
+                    s, e = self.insert_marks[idx]
+                    self.buffer.handler_block_by_func(on_buffer_changed)
+                    self.buffer.begin_user_action()
+                    self.buffer.delete(*self.get_iter_pair(s, e))
+                    self.buffer.insert(self.buffer.get_iter_at_mark(s), txt)
+                    self.buffer.end_user_action()
+                    self.buffer.handler_unblock_by_func(on_buffer_changed)
+
+                return
+
+        self.remove()
+
+    def remove(self, editor=None):
+        if editor:
+            editor.message('Snippet was completed')
+
+        try:
+            del stop_managers[self.buffer]
+        except KeyError:
+            pass
 
 
 class SnippetProposal(gobject.GObject, CompletionProposal):
