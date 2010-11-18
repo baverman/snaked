@@ -104,9 +104,8 @@ def replace(editor, bounds, text):
     editor.buffer.delete(*bounds)
     editor.buffer.insert_at_cursor(text)
     editor.buffer.end_user_action()
-
+    editor.goto_line(line + 1)
     editor.view.window.thaw_updates()
-    idle(editor.goto_line, line + 1)
 
 def insert(editor, iter, text):
     editor.buffer.begin_user_action()

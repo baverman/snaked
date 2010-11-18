@@ -172,7 +172,7 @@ class Editor(SignalManager):
     def goto_line(self, line):
         iterator = self.buffer.get_iter_at_line(line - 1)
         self.buffer.place_cursor(iterator)
-        self.view.scroll_to_iter(iterator, 0.001, use_align=True, xalign=1.0)
+        self.view.scroll_to_mark(self.buffer.get_insert(), 0.001, use_align=True, xalign=1.0)
 
     def scroll_to_cursor(self):
         self.view.scroll_to_mark(self.buffer.get_insert(), 0.001, use_align=True, xalign=1.0)
@@ -421,8 +421,8 @@ class EditorManager(object):
             editor.scroll_to_cursor()
 
             if new_spot:
-                self.add_spot_to_history(new_spot)            
-            
+                self.add_spot_to_history(new_spot)
+
             if editor is not back_to:
                 self.focus_editor(editor)
 
@@ -436,8 +436,7 @@ class EditorSpot(object):
     def __init__(self, editor):
         self.editor = weakref.ref(editor)
         self.mark = editor.buffer.create_mark(None, editor.cursor)
-        self.mark.set_visible(True)
-    
+
     @property
     def iter(self):
         return self.mark.get_buffer().get_iter_at_mark(self.mark)
@@ -450,7 +449,9 @@ class EditorSpot(object):
             and abs(self.iter.get_line() - spot.iter.get_line()) < 7
 
     def __del__(self):
-        self.mark.get_buffer().delete_mark(self.mark)
+        buffer = self.mark.get_buffer()
+        if buffer:
+            buffer.delete_mark(self.mark)
 
 
 class FakeEditor(object):
