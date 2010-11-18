@@ -54,3 +54,10 @@ def test_proposals_for_objects_finder(project):
     assert 'get' in result
     assert 'filter' in result
     
+def test_manager_get_return_type_must_resolve_to_appropriate_model(project):
+    provide_django_hints_for(project)
+
+    result = pset(get_proposals(project, 'Blog.objects.get().'))
+    assert 'name' in result
+    assert 'id' in result
+    assert 'bposts' in result

@@ -3,6 +3,7 @@ import sys
 
 import rope.base.pyobjects
 import rope.base.pynames
+from rope.base import exceptions
 
 from .ropehints import HintProvider, get_attribute_scope_path
 
@@ -12,12 +13,12 @@ def get_path_and_package(module_path, project_root):
         path = os.path.dirname(module_path)
         if path == module_path:
             break
-        
+
         module_path = path
-        
+
         if module_path == project_root:
             break
-        
+
         if os.path.exists(os.path.join(module_path, '__init__.py')):
             packages.append(os.path.basename(module_path))
         else:
@@ -36,7 +37,7 @@ def load_django_module(pymodule, project_root):
     syspath, module = get_path_and_package(path, project_root)
     if syspath not in sys.path:
         sys.path.append(syspath)
-        
+
     __import__(module)
 
     loaded_django_modules[path] = sys.modules[module]
@@ -46,9 +47,9 @@ def load_django_module(pymodule, project_root):
 class DjangoHintProvider(HintProvider):
     def __init__(self, project, settings):
         super(DjangoHintProvider, self).__init__(project)
-        
+
         self.settings = settings
-    
+
     def get_class_attributes(self, scope_path, pyclass, attrs):
         """:type pyclass: rope.base.pyobjectsdef.PyClass"""
 
@@ -69,20 +70,60 @@ class DjangoHintProvider(HintProvider):
             if f.__class__.__name__ == 'ForeignKey':
                 attrs[f.attname] = rope.base.pynames.DefinedName(rope.base.pyobjects.PyObject(None))
 
-        attrs['objects'] = self.get_type('django.db.models.manager.Manager')
+        attrs['objects'] = DjangoObjectsName(model, pyclass,
+            self.get_type('django.db.models.manager.Manager'))
+
 
 class DjangoObjectsName(rope.base.pynames.PyName):
-    def __init__(self, pyobject):
-        self.pyobject = pyobject
+    def __init__(self, model, pyclass, name):
+        self._orig_name = name
+        self.model = model
+        self.model_type = pyclass
 
     def get_object(self):
-        return self.pyobject
+        return DjangoObjectsObject(self.model, self.model_type, self._orig_name.get_object())
 
 
-class DjangoObjectsObject(rope.base.pyobjects.PyObject):
-    def __init__(self, pycore, model):
-        self.pycore = pycore
-        self.model = model
+def proxy(obj):
+    cls = obj.__class__
+    class Cls(cls):
+        def __init__(self, obj):
+            self._orig = obj
+
+        def __getattribute__(self, name):
+            obj = cls.__getattribute__(self, '_orig')
+            print 'getattr', obj, name
+            return cls.__getattribute__(obj, name)
+
+    return Cls(obj)
+
+class GetHolder:
+    def __init__(self, result):
+        self.result = result
+
+    def get(self, *args):
+        return self.result
+
+class DjangoObjectsObject(object):
+    def __init__(self, model, pyclass, obj):
+        self._model = model
+        self.model_type = pyclass
+        self._orig_object = obj
+        self.type = obj.type
 
     def get_attributes(self):
-        return {}
+        attrs = self._orig_object.get_attributes()
+        attrs['get'].pyobject.returned = GetHolder(self.model_type)
+        return attrs
+
+    def __getattr__(self, name):
+        return getattr(self._orig_object, name)
+
+    def get_attribute(self, name):
+        try:
+            return self.get_attributes()[name]
+        except KeyError:
+            raise exceptions.AttributeNotFoundError('Attribute %s not found' % name)
+
+    def __getitem__(self, key):
+        return self.get_attribute(key)

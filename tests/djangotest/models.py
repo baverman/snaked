@@ -6,3 +6,6 @@ class Blog(models.Model):
 class Post(models.Model):
     blog = models.ForeignKey(Blog, related_name='bposts')
     body = models.TextField()
+    
+def func():
+    return Blog()
