@@ -36,7 +36,7 @@ class Editor(SignalManager):
         self.session = None
         self.saveable = True
         self.lang = None
-        
+
         sw = gtk.ScrolledWindow()
         sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
 
@@ -396,63 +396,61 @@ class EditorManager(object):
         self.fake_editor = FakeEditor(self)
         return self.fake_editor
 
-    def spots_are_similar(self, spota, spotb):
-        if spota[0] == spotb[0]:
-            editor = spota[0]()
-            itera = editor.buffer.get_iter_at_mark(spota[1])
-            iterb = editor.buffer.get_iter_at_mark(spotb[1])
-
-            return abs(itera.get_line() - iterb.get_line()) < 7
-
-        return False
-
-    def spot_is_valid(self, spot):
-        editor = spot[0]()
-        if editor:
-            return not spot[1].get_deleted()
-
-        return False
-
     def add_spot_with_feedback(self, editor):
         self.add_spot(editor)
         editor.message('Spot added')
 
     @Editor.add_spot_request
     def add_spot(self, editor):
-        spot = (weakref.ref(editor), editor.buffer.create_mark(None, editor.cursor))
+        self.add_spot_to_history(EditorSpot(editor))
 
-        self.spot_history = [s for s in self.spot_history if self.spot_is_valid(s)]
-
-        for s in self.spot_history:
-            if self.spots_are_similar(s, spot):
-                editor.buffer.delete_mark(s[1])
+    def add_spot_to_history(self, spot):
+        self.spot_history = [s for s in self.spot_history
+            if s.is_valid() and not s.similar_to(spot)]
 
         self.spot_history.insert(0, spot)
 
         while len(self.spot_history) > 30:
-            spot = self.spot_history.pop()
-            editor.buffer.delete_mark(spot[1])
+            self.spot_history.pop()
 
     def goto_last_spot(self, back_to=None):
-        for spot in self.spot_history:
-            if not self.spot_is_valid(spot):
-                continue
+        new_spot = EditorSpot(back_to) if back_to else None
+        for spot in (s for s in self.spot_history if s.is_valid() and not s.similar_to(new_spot)):
+            editor = spot.editor()
+            editor.buffer.place_cursor(spot.iter)
+            editor.scroll_to_cursor()
 
-            editor = spot[0]()
-            if editor:
-                if back_to:
-                    self.add_spot(back_to)
+            if new_spot:
+                self.add_spot_to_history(new_spot)            
+            
+            if editor is not back_to:
+                self.focus_editor(editor)
 
-                editor.buffer.place_cursor(editor.buffer.get_iter_at_mark(spot[1]))
-                editor.scroll_to_cursor()
-
-                if editor is not back_to:
-                    self.focus_editor(editor)
-
-                return
+            return
 
         if back_to:
             back_to.message('Spot history is empty')
+
+
+class EditorSpot(object):
+    def __init__(self, editor):
+        self.editor = weakref.ref(editor)
+        self.mark = editor.buffer.create_mark(None, editor.cursor)
+        self.mark.set_visible(True)
+    
+    @property
+    def iter(self):
+        return self.mark.get_buffer().get_iter_at_mark(self.mark)
+
+    def is_valid(self):
+        return not self.mark.get_deleted()
+
+    def similar_to(self, spot):
+        return spot and self.mark.get_buffer() is spot.mark.get_buffer() \
+            and abs(self.iter.get_line() - spot.iter.get_line()) < 7
+
+    def __del__(self):
+        self.mark.get_buffer().delete_mark(self.mark)
 
 
 class FakeEditor(object):

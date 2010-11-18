@@ -30,8 +30,6 @@ def editor_opened(editor):
         if ctx not in loaded_snippets:
             load_snippets_for(ctx)
 
-        #editor.view.get_completion().add_provider(completion_providers[ctx])
-
     editor.view.connect('key-press-event', on_view_key_press_event,
         contexts, weakref.ref(editor))
 
@@ -87,7 +85,7 @@ def on_view_key_press_event(view, event, contexts, editor_ref):
         matches = []
         for ctx in contexts:
             matches.extend(get_matches(cursor, ctx))
-        
+
         if matches:
             return expand_snippet(view, contexts, matches)
 
@@ -97,6 +95,7 @@ def on_view_key_press_event(view, event, contexts, editor_ref):
                 return sm.goto_next_stop(editor_ref())
             else:
                 del stop_managers[buffer]
+
     elif event.keyval == gtk.keysyms.ISO_Left_Tab:
         buffer = view.get_buffer()
         cursor = get_iter_at_cursor(buffer)
@@ -117,7 +116,7 @@ def on_buffer_changed(buffer):
         if sm.cursor_in_snippet_range(cursor):
             if sm.snippet_collapsed():
                 del stop_managers[buffer]
-            else:    
+            else:
                 idle(sm.replace_inserts)
         else:
             del stop_managers[buffer]
@@ -259,7 +258,7 @@ class StopManager(object):
                     self.buffer.place_cursor(self.buffer.get_iter_at_mark(self.start_mark))
                 else:
                     self.buffer.place_cursor(self.buffer.get_iter_at_mark(self.end_mark))
-                
+
                 self.remove(editor)
                 return True
 
