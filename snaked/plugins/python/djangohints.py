@@ -3,6 +3,8 @@ import sys
 
 import rope.base.pyobjects
 import rope.base.pynames
+import rope.base.builtins
+
 from rope.base import exceptions
 
 from .ropehints import HintProvider, get_attribute_scope_path
@@ -114,6 +116,13 @@ class DjangoObjectsObject(object):
     def get_attributes(self):
         attrs = self._orig_object.get_attributes()
         attrs['get'].pyobject.returned = GetHolder(self.model_type)
+        attrs['filter'].pyobject.returned = GetHolder(self)
+        attrs['exclude'].pyobject.returned = GetHolder(self)
+        attrs['extra'].pyobject.returned = GetHolder(self)
+        attrs['order_by'].pyobject.returned = GetHolder(self)
+        attrs['select_related'].pyobject.returned = GetHolder(self)
+        attrs['all'].pyobject.returned = GetHolder(rope.base.builtins.get_list(self.model_type))
+
         return attrs
 
     def __getattr__(self, name):
