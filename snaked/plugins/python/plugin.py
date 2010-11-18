@@ -167,8 +167,7 @@ class Plugin(object):
             
         if resource:
             uri = resource.real_path
-            self.editor.add_spot()
-            editor = self.editor.open_file(uri, line - 1, True)
+            editor = self.editor.open_file(uri, line - 1)
             editor.ropeproject_root = project.snaked_project_root 
         else:
             if line:

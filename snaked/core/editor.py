@@ -1,5 +1,6 @@
 import os.path
 import weakref
+import time
 
 import gtk
 import gtksourceview2
@@ -17,7 +18,7 @@ import snaked.core.quick_open
 
 class Editor(SignalManager):
     editor_closed = Signal()
-    request_to_open_file = Signal(str, object, bool, return_type=object)
+    request_to_open_file = Signal(str, object, return_type=object)
     request_close = Signal()
     settings_changed = Signal()
     get_title = Signal(return_type=str)
@@ -37,6 +38,8 @@ class Editor(SignalManager):
         self.saveable = True
         self.lang = None
 
+        self.last_cursor_move = None
+
         sw = gtk.ScrolledWindow()
         sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
 
@@ -46,13 +49,12 @@ class Editor(SignalManager):
         self.view.set_buffer(self.buffer)
         sw.add(self.view)
 
-
         self.widget = gtk.VBox(False, 0)
         self.widget.pack_start(sw)
 
         self.widget.show_all()
 
-        connect_all(self, buffer=self.buffer)
+        connect_all(self, buffer=self.buffer, view=self.view)
 
     def update_title(self):
         modified = '*' if self.buffer.get_modified() else ''
@@ -142,8 +144,8 @@ class Editor(SignalManager):
 
         return None
 
-    def open_file(self, filename, line=None, open_in_next_tab=False):
-        return self.request_to_open_file.emit(filename, line, open_in_next_tab)
+    def open_file(self, filename, line=None):
+        return self.request_to_open_file.emit(filename, line)
 
     @property
     def cursor(self):
@@ -193,6 +195,21 @@ class Editor(SignalManager):
     def add_spot(self):
         self.add_spot_request.emit()
 
+    @connect_external('view', 'move-cursor')
+    def on_cursor_moved(self, view, step_size, count, extend_selection):
+        if not extend_selection:
+            if step_size in (gtk.MOVEMENT_PAGES, gtk.MOVEMENT_BUFFER_ENDS):
+                if self.last_cursor_move is None or time.time() - self.last_cursor_move > 7:
+                    self.add_spot()
+
+                self.last_cursor_move = time.time()
+            elif step_size in (gtk.MOVEMENT_VISUAL_POSITIONS, ):
+                self.last_cursor_move = None
+
+    @connect_external('buffer', 'changed')
+    def on_buffer_changed(self, buffer):
+        self.last_cursor_move = None
+
 
 class EditorManager(object):
     def __init__(self):
@@ -231,8 +248,12 @@ class EditorManager(object):
 
         register_shortcut('place-spot', '<alt>t', 'Edit', 'Place spot at current cursor location')
         register_shortcut('goto-last-spot', '<alt>q', 'Edit', 'Quick jump to last placed spot')
+        register_shortcut('goto-next-spot', '<ctrl><alt>Right', 'Edit',
+            'Quick jump to next spot in history')
+        register_shortcut('goto-prev-spot', '<ctrl><alt>Left', 'Edit',
+            'Quick jump to previous spot in history')
 
-    def open(self, filename, line=None, open_in_next_tab=False):
+    def open(self, filename, line=None):
         editor = Editor()
         self.editors.append(editor)
         editor.session = self.session
@@ -243,7 +264,7 @@ class EditorManager(object):
         idle(self.set_editor_shortcuts, editor)
         idle(self.plugin_manager.editor_created, editor)
 
-        self.manage_editor(editor, open_in_next_tab)
+        self.manage_editor(editor)
 
         idle(editor.load_file, filename, line)
         idle(self.plugin_manager.editor_opened, editor)
@@ -303,15 +324,19 @@ class EditorManager(object):
         self.close_editor(editor)
 
     @Editor.request_to_open_file
-    def on_request_to_open_file(self, editor, filename, line, open_in_next_tab):
+    def on_request_to_open_file(self, editor, filename, line):
+        self.add_spot(editor)
+
         for e in self.editors:
             if e.uri == filename:
                 self.focus_editor(e)
+
                 if line is not None:
                     e.goto_line(line + 1)
+
                 break
         else:
-            e = self.open(filename, line, open_in_next_tab)
+            e = self.open(filename, line)
 
         return e
 
@@ -402,7 +427,7 @@ class EditorManager(object):
 
     @Editor.add_spot_request
     def add_spot(self, editor):
-        self.add_spot_to_history(EditorSpot(editor))
+        self.add_spot_to_history(EditorSpot(self, editor))
 
     def add_spot_to_history(self, spot):
         self.spot_history = [s for s in self.spot_history
@@ -414,26 +439,46 @@ class EditorManager(object):
             self.spot_history.pop()
 
     def goto_last_spot(self, back_to=None):
-        new_spot = EditorSpot(back_to) if back_to else None
-        for spot in (s for s in self.spot_history if s.is_valid() and not s.similar_to(new_spot)):
-            editor = spot.editor()
-            editor.buffer.place_cursor(spot.iter)
-            editor.scroll_to_cursor()
-
+        new_spot = EditorSpot(self, back_to) if back_to else None
+        spot = self.get_last_spot(new_spot)
+        if spot:
+            spot.goto(back_to)
             if new_spot:
                 self.add_spot_to_history(new_spot)
+        else:
+            if back_to:
+                back_to.message('Spot history is empty')
 
-            if editor is not back_to:
-                self.focus_editor(editor)
+    def get_last_spot(self, exclude_spot=None, exclude_editor=None):
+        for s in self.spot_history:
+            if s.is_valid() and not s.similar_to(exclude_spot) and s.editor() is not exclude_editor:
+                return s
 
-            return
+        return None
 
-        if back_to:
-            back_to.message('Spot history is empty')
+    def goto_next_prev_spot(self, editor, is_next):
+        current_spot = EditorSpot(self, editor)
+        if is_next:
+            seq = self.spot_history
+        else:
+            seq = reversed(self.spot_history)
 
+        prev_spot = None
+        for s in (s for s in seq if s.is_valid()):
+            if s.similar_to(current_spot):
+                if prev_spot:
+                    prev_spot.goto(editor)
+                else:
+                    editor.message('No more spots to go')
+                return
+
+            prev_spot = s
+
+        self.goto_last_spot(editor)
 
 class EditorSpot(object):
-    def __init__(self, editor):
+    def __init__(self, manager, editor):
+        self.manager = manager
         self.editor = weakref.ref(editor)
         self.mark = editor.buffer.create_mark(None, editor.cursor)
 
@@ -452,6 +497,14 @@ class EditorSpot(object):
         buffer = self.mark.get_buffer()
         if buffer:
             buffer.delete_mark(self.mark)
+
+    def goto(self, back_to=None):
+        editor = self.editor()
+        editor.buffer.place_cursor(self.iter)
+        editor.scroll_to_cursor()
+
+        if editor is not back_to:
+            self.manager.focus_editor(editor)
 
 
 class FakeEditor(object):

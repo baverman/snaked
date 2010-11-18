@@ -3,7 +3,6 @@ name = 'External tools'
 desc = 'Allows one to define own commands'
 
 import weakref
-
 import gtk
 
 from snaked.util import idle

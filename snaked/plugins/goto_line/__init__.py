@@ -46,6 +46,7 @@ def on_entry_activate(sender, editor, widget):
     idle(hide, editor, widget)
     try:
         line = int(sender.get_text())
+        editor.add_spot()
         idle(editor.goto_line, line)
     except ValueError:
         pass

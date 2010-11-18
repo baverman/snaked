@@ -1,3 +1,5 @@
+import time
+
 import gtk
 
 from snaked.core.shortcuts import ContextShortcutActivator, register_shortcut
@@ -6,6 +8,8 @@ import snaked.core.editor
 class TabbedEditorManager(snaked.core.editor.EditorManager):
     def __init__(self, show_tabs=True):
         super(TabbedEditorManager, self).__init__()
+        
+        self.last_switch_time = None
 
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.connect('delete-event', self.on_delete_event)
@@ -41,12 +45,9 @@ class TabbedEditorManager(snaked.core.editor.EditorManager):
 
         return (None,)
 
-    def manage_editor(self, editor, open_in_next_tab):
+    def manage_editor(self, editor):
         label = gtk.Label('Unknown')
-        pos = -1
-        if open_in_next_tab and self.note.get_current_page() > -1:
-            pos = self.note.get_current_page() + 1
-        self.note.insert_page(editor.widget, label, pos)
+        self.note.insert_page(editor.widget, label, -1)
         self.focus_editor(editor)
         editor.view.grab_focus()
        
@@ -98,6 +99,8 @@ class TabbedEditorManager(snaked.core.editor.EditorManager):
 
         self.activator.bind_to_name('place-spot', self.add_spot_with_feedback)
         self.activator.bind_to_name('goto-last-spot', self.goto_last_spot)
+        self.activator.bind_to_name('goto-next-spot', self.goto_next_prev_spot, True)
+        self.activator.bind_to_name('goto-prev-spot', self.goto_next_prev_spot, False)
 
         self.activator.bind('Escape', self.process_escape)
 
@@ -115,10 +118,22 @@ class TabbedEditorManager(snaked.core.editor.EditorManager):
         self.update_top_level_title()
 
     def on_page_removed(self, note, child, idx):
+        for e in self.editors:
+            if e.widget is child:
+                spot = self.get_last_spot(None, e)
+                if spot:
+                    note.set_current_page(note.page_num(spot.editor().widget))
+                    return
+
         if idx > 0:
             note.set_current_page(idx - 1)
         
     def switch_to(self, editor, dir):
+        if self.last_switch_time is None or time.time() - self.last_switch_time > 5:
+            self.add_spot(editor)
+            
+        self.last_switch_time = time.time()
+        
         idx = ( self.note.get_current_page() + dir ) % self.note.get_n_pages()
         self.note.set_current_page(idx)
 
