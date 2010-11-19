@@ -74,10 +74,20 @@ def test_manager_finder_methods_return_type_must_resolve_to_manager_itself(proje
     result = pset(get_proposals(project, 'Blog.objects.select_related().'))
     assert 'filter' in result
     
-def test_manager_all_method_return_type_must_resolve_to_list_of_model(project):
+def test_query_set_item_getting_and_iterating_must_resolve_to_model_type(project):
     provide_django_hints_for(project)
 
     result = pset(get_proposals(project, 'Blog.objects.all()[0].'))
+    assert 'name' in result
+    assert 'id' in result
+    assert 'bposts' in result
+
+    result = pset(get_proposals(project, 'Blog.objects.filter()[0].'))
+    assert 'name' in result
+    assert 'id' in result
+    assert 'bposts' in result
+
+    result = pset(get_proposals(project, 'for r in Blog.objects.filter():\n    r.'))
     assert 'name' in result
     assert 'id' in result
     assert 'bposts' in result

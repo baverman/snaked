@@ -115,13 +115,20 @@ class DjangoObjectsObject(object):
 
     def get_attributes(self):
         attrs = self._orig_object.get_attributes()
+        
         attrs['get'].pyobject.returned = GetHolder(self.model_type)
         attrs['filter'].pyobject.returned = GetHolder(self)
         attrs['exclude'].pyobject.returned = GetHolder(self)
         attrs['extra'].pyobject.returned = GetHolder(self)
         attrs['order_by'].pyobject.returned = GetHolder(self)
         attrs['select_related'].pyobject.returned = GetHolder(self)
-        attrs['all'].pyobject.returned = GetHolder(rope.base.builtins.get_list(self.model_type))
+        attrs['all'].pyobject.returned = GetHolder(self)
+
+        attrs['__getitem__'] = rope.base.pynames.DefinedName(
+            SimpleFunction(self.model_type, ['index']))
+
+        attrs['__iter__'] = rope.base.pynames.DefinedName(
+            SimpleFunction(rope.base.builtins.get_iterator(self.model_type)))
 
         return attrs
 
@@ -136,3 +143,20 @@ class DjangoObjectsObject(object):
 
     def __getitem__(self, key):
         return self.get_attribute(key)
+
+    def __contains__(self, key):
+        return key in self.get_attributes()
+
+        
+class SimpleFunction(rope.base.pyobjects.AbstractFunction):
+
+    def __init__(self, returned=None, argnames=[]):
+        rope.base.pyobjects.AbstractFunction.__init__(self)
+        self.argnames = argnames
+        self.returned = returned
+
+    def get_returned_object(self, args):
+        return self.returned
+
+    def get_param_names(self, special_args=True):
+        return self.argnames
