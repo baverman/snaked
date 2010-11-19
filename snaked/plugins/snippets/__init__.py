@@ -58,21 +58,20 @@ def discover_snippet_contexts():
                 if ext == '.snippets' and os.path.isfile(path):
                     existing_snippet_contexts[nm] = path
 
-def get_matches(iter, ctx):
+def get_match(iter, ctx):
     names = snippets_match_hash.get(ctx, {})
     if not names:
-        return []
+        return None
 
-    matches = []
     for cnt in sorted(names, reverse=True):
         end = iter.copy()
         end.backward_chars(cnt)
 
         match = end.get_slice(iter)
         if match in names[cnt]:
-            matches.append(match)
+            return match
 
-    return matches
+    return None
 
 def get_iter_at_cursor(buffer):
     return buffer.get_iter_at_mark(buffer.get_insert())
@@ -82,12 +81,14 @@ def on_view_key_press_event(view, event, contexts, editor_ref):
         buffer = view.get_buffer()
         cursor = get_iter_at_cursor(buffer)
 
-        matches = []
+        matches = {}
         for ctx in contexts:
-            matches.extend(get_matches(cursor, ctx))
+            match = get_match(cursor, ctx)
+            if match:
+                matches[ctx] = find_all_snippets(ctx, match)
 
         if matches:
-            return expand_snippet(view, contexts, matches)
+            return expand_snippet(view, matches)
 
         if buffer in stop_managers:
             sm = stop_managers[buffer]
@@ -121,18 +122,14 @@ def on_buffer_changed(buffer):
         else:
             del stop_managers[buffer]
 
-def find_all_snippets(contexts, match):
-    result = []
-    for ctx in contexts:
-        result.extend(s for s in loaded_snippets[ctx].values() if s.snippet == match)
+def find_all_snippets(ctx, match):
+    return [s for s in loaded_snippets[ctx].values() if s.snippet == match]
 
-    return result
-
-def expand_snippet(view, contexts, matches):
+def expand_snippet(view, matches):
     if not matches:
         return False
     elif len(matches) == 1:
-        snippets = find_all_snippets(contexts, matches[0])
+        snippets = matches.values()[0]
         if not snippets:
             return False
 
@@ -140,7 +137,7 @@ def expand_snippet(view, contexts, matches):
             insert_snippet(view, get_iter_at_cursor(view.get_buffer()), snippets[0])
             return True
 
-    show_proposals(view, get_iter_at_cursor(view.get_buffer()), contexts)
+    show_proposals(view, get_iter_at_cursor(view.get_buffer()), matches.keys())
     return True
 
 match_ws = re.compile(u'(?u)^[ \t]*')
@@ -330,9 +327,9 @@ class SnippetsCompletionProvider(gobject.GObject, CompletionProvider):
         return COMPLETION_ACTIVATION_USER_REQUESTED
 
     def do_populate(self, context):
-        matches = get_matches(context.get_iter(), self.ctx)
+        match = get_match(context.get_iter(), self.ctx)
 
-        snippets = [s for s in loaded_snippets[self.ctx].values() if s.snippet in matches]
+        snippets = [s for s in loaded_snippets[self.ctx].values() if s.snippet == match]
         if snippets:
             context.add_proposals(self, [SnippetProposal(s) for s in snippets], True)
             self.last_view = weakref.ref(context.props.completion.props.view)
