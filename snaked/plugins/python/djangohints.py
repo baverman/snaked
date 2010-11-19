@@ -66,11 +66,14 @@ class DjangoHintProvider(HintProvider):
 
         for name in model._meta.get_all_field_names():
             f = model._meta.get_field_by_name(name)[0]
-            if name not in attrs:
-                attrs[name] = rope.base.pynames.DefinedName(rope.base.pyobjects.PyObject(None))
 
             if f.__class__.__name__ == 'ForeignKey':
+                related_model_name = f.rel.to.__module__ + '.' + f.rel.to.__name__
+                attrs[name] = rope.base.pynames.DefinedName(
+                    rope.base.pyobjects.PyObject(self.get_type(related_model_name).get_object()))
                 attrs[f.attname] = rope.base.pynames.DefinedName(rope.base.pyobjects.PyObject(None))
+            else:
+                attrs[name] = rope.base.pynames.DefinedName(rope.base.pyobjects.PyObject(None))
 
         attrs['objects'] = DjangoObjectsName(model, pyclass,
             self.get_type('django.db.models.manager.Manager'))
@@ -115,7 +118,7 @@ class DjangoObjectsObject(object):
 
     def get_attributes(self):
         attrs = self._orig_object.get_attributes()
-        
+
         attrs['get'].pyobject.returned = GetHolder(self.model_type)
         attrs['filter'].pyobject.returned = GetHolder(self)
         attrs['exclude'].pyobject.returned = GetHolder(self)
@@ -147,7 +150,7 @@ class DjangoObjectsObject(object):
     def __contains__(self, key):
         return key in self.get_attributes()
 
-        
+
 class SimpleFunction(rope.base.pyobjects.AbstractFunction):
 
     def __init__(self, returned=None, argnames=[]):

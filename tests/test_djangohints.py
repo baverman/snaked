@@ -46,14 +46,14 @@ def test_common_field_names_must_be_in_proposals_for_model_instance(project):
 
 def test_proposals_for_objects_finder(project):
     provide_django_hints_for(project)
-    
+
     assert 'objects' in pset(get_proposals(project, 'Blog.'))
-    
+
     result = pset(get_proposals(project, 'Blog.objects.'))
     assert 'all' in result
     assert 'get' in result
     assert 'filter' in result
-    
+
 def test_manager_get_return_type_must_resolve_to_appropriate_model(project):
     provide_django_hints_for(project)
 
@@ -70,10 +70,10 @@ def test_manager_finder_methods_return_type_must_resolve_to_manager_itself(proje
 
     result = pset(get_proposals(project, 'Blog.objects.exclude().'))
     assert 'filter' in result
-    
+
     result = pset(get_proposals(project, 'Blog.objects.select_related().'))
     assert 'filter' in result
-    
+
 def test_query_set_item_getting_and_iterating_must_resolve_to_model_type(project):
     provide_django_hints_for(project)
 
@@ -88,6 +88,14 @@ def test_query_set_item_getting_and_iterating_must_resolve_to_model_type(project
     assert 'bposts' in result
 
     result = pset(get_proposals(project, 'for r in Blog.objects.filter():\n    r.'))
+    assert 'name' in result
+    assert 'id' in result
+    assert 'bposts' in result
+
+def test_foreign_fields_must_be_resolved_to_model_type(project):
+    provide_django_hints_for(project)
+
+    result = pset(get_proposals(project, 'Post().blog.'))
     assert 'name' in result
     assert 'id' in result
     assert 'bposts' in result
