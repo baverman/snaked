@@ -24,9 +24,9 @@ class PreferencesDialog(BuilderAware):
         sm = gtksourceview2.style_scheme_manager_get_default()
         for style_id in sm.get_scheme_ids():
             self.styles.append((style_id, ))
-            
+
         self.checks = ['use-tabs', 'show-right-margin', 'show-line-numbers', 'wrap-text',
-            'highlight-current-line', 'show-whitespace']
+            'highlight-current-line', 'show-whitespace', 'remove-trailing-space']
 
         for name in self.checks:
             getattr(self, name.replace('-', '_')).connect(
@@ -37,9 +37,9 @@ class PreferencesDialog(BuilderAware):
         self.line_spacing.connect('value-changed', self.on_spin_changed, 'line-spacing')
 
         self.font.connect('font-set', self.on_font_set, 'font')
-        
+
     def show(self, editor):
-        self.editor = weakref.ref(editor)        
+        self.editor = weakref.ref(editor)
         editor.request_transient_for.emit(self.window)
         self.select_lang(editor.lang)
         self.refresh_lang_settings()
@@ -50,14 +50,14 @@ class PreferencesDialog(BuilderAware):
             if name == lang_id:
                 self.langs_view.set_cursor((i,))
                 self.langs_view.scroll_to_cell((i,), None, True, 0.5, 0)
-                return 
-                
+                return
+
         self.langs_view.set_cursor((0,))
-    
+
     def get_current_lang_id(self):
         (model, iter) = self.langs_view.get_selection().get_selected()
         return self.langs.get_value(iter, 0)
-    
+
     def get_lang_prefs(self, lang_id):
         if lang_id == 'default':
             return prefs.CompositePreferences(self.prefs.get('default', {}),
@@ -74,30 +74,30 @@ class PreferencesDialog(BuilderAware):
         else:
             return prefs.CompositePreferences(self.prefs.get('default', {}),
                 prefs.default_prefs.get(lang_id, {}), prefs.default_prefs['default'])
-     
+
     def set_checkbox(self, pref, name):
         getattr(self, name.replace('-', '_')).set_active(pref[name])
-        
+
     def refresh_lang_settings(self, *args):
         pref = self.get_lang_prefs(self.get_current_lang_id())
-        
+
         for name in self.checks:
-            self.set_checkbox(pref, name)        
-        
+            self.set_checkbox(pref, name)
+
         self.select_style(pref['style'])
-        
+
         self.margin_width.set_value(pref['right-margin'])
         self.tab_width.set_value(pref['tab-width'])
         self.line_spacing.set_value(pref['line-spacing'])
-            
+
         self.font.set_font_name(pref['font'])
-        
+
     def select_style(self, style_id, try_classic=True):
         for i, (name,) in enumerate(self.styles):
             if name == style_id:
                 self.style_cb.set_active(i)
-                return 
-        
+                return
+
         if try_classic:
             return self.select_style('classic', False)
 
@@ -126,14 +126,14 @@ class PreferencesDialog(BuilderAware):
                     pass
             else:
                 self.prefs.setdefault(lang_id, {})[name] = value
-            
+
             self.editor().settings_changed.emit()
 
     def on_style_cb_changed(self, *args):
         (style_id,) = self.styles[self.style_cb.get_active()]
         lang_id = self.get_current_lang_id()
         self.update_pref_value(lang_id, 'style', style_id)
-        
+
     def on_checkbox_toggled(self, widget, name):
         self.update_pref_value(self.get_current_lang_id(), name, widget.get_active())
 
@@ -148,6 +148,6 @@ class PreferencesDialog(BuilderAware):
             del self.prefs[self.get_current_lang_id()]
         except KeyError:
             pass
-        
+
         self.refresh_lang_settings()
         self.editor().settings_changed.emit()
