@@ -500,7 +500,7 @@ class EditorSpot(object):
         return self.mark.get_buffer().get_iter_at_mark(self.mark)
 
     def is_valid(self):
-        return not self.mark.get_deleted()
+        return self.editor() and not self.mark.get_deleted()
 
     def similar_to(self, spot):
         return spot and self.mark.get_buffer() is spot.mark.get_buffer() \
