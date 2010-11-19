@@ -19,10 +19,12 @@ default_prefs = {
         'highlight-current-line': True,
         'show-whitespace': False,
         'line-spacing': 0,
+        'remove-trailing-space': False,
     },
     'python': {
         'use-tabs': False,
         'show-right-margin': True,
+        'remove-trailing-space': True,
     }
 }
 
@@ -53,14 +55,14 @@ def save_json_settings(name, value):
 class CompositePreferences(object):
     def __init__(self, *prefs):
         self.prefs = prefs
-    
+
     def __getitem__(self, key):
         for p in self.prefs:
             try:
                 return p[key]
             except KeyError:
                 pass
-                
+
         raise KeyError('There is no %s in preferences' % key)
 
 def get_settings_path(name):
@@ -68,14 +70,14 @@ def get_settings_path(name):
     path = os.path.join(config_dir, 'snaked')
     if not os.path.exists(path):
         os.makedirs(path, mode=0755)
-        
+
     return os.path.join(path, name)
-    
+
 
 class KVSettings(object):
     def __init__(self, name):
         self.db = anydbm.open(get_settings_path(name), 'c')
-    
+
     def get_key(self, key):
         if isinstance(key, unicode):
             return key.decode('utf-8')
@@ -84,13 +86,13 @@ class KVSettings(object):
 
     def __getitem__(self, key):
         return self.db[self.get_key(key)]
-    
+
     def __contains__(self, key):
         return self.db.has_key(self.get_key(key))
-    
+
     def __setitem__(self, key, value):
         self.db[self.get_key(key)] = value
-    
+
     def __del__(self):
         self.db.close()
 
@@ -100,12 +102,12 @@ class ListSettings(object):
 
     def exists(self):
         return os.path.exists(self.path)
-    
+
     def load(self):
         try:
             return [l.strip() for l in open(self.path)]
         except IOError:
             return []
-    
+
     def store(self, data):
         open(self.path, 'w').write('\n'.join(data))
