@@ -72,21 +72,24 @@ class DjangoHintProvider(HintProvider):
                 attrs[name] = rope.base.pynames.DefinedName(
                     rope.base.pyobjects.PyObject(self.get_type(related_model_name).get_object()))
                 attrs[f.attname] = rope.base.pynames.DefinedName(rope.base.pyobjects.PyObject(None))
+            elif f.__class__.__name__ == 'RelatedObject':
+                related_model_name = f.model.__module__ + '.' + f.model.__name__
+                attrs[name] = DjangoObjectsName(self.get_type(related_model_name).get_object(),
+                    self.get_type('django.db.models.manager.Manager'))
             else:
                 attrs[name] = rope.base.pynames.DefinedName(rope.base.pyobjects.PyObject(None))
 
-        attrs['objects'] = DjangoObjectsName(model, pyclass,
+        attrs['objects'] = DjangoObjectsName(pyclass,
             self.get_type('django.db.models.manager.Manager'))
 
 
 class DjangoObjectsName(rope.base.pynames.PyName):
-    def __init__(self, model, pyclass, name):
+    def __init__(self, pyclass, name):
         self._orig_name = name
-        self.model = model
         self.model_type = pyclass
 
     def get_object(self):
-        return DjangoObjectsObject(self.model, self.model_type, self._orig_name.get_object())
+        return DjangoObjectsObject(self.model_type, self._orig_name.get_object())
 
 
 def proxy(obj):
@@ -110,8 +113,7 @@ class GetHolder:
         return self.result
 
 class DjangoObjectsObject(object):
-    def __init__(self, model, pyclass, obj):
-        self._model = model
+    def __init__(self, pyclass, obj):
         self.model_type = pyclass
         self._orig_object = obj
         self.type = obj.type

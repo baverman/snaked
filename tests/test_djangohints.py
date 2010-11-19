@@ -99,3 +99,16 @@ def test_foreign_fields_must_be_resolved_to_model_type(project):
     assert 'name' in result
     assert 'id' in result
     assert 'bposts' in result
+
+def test_foreign_set_must_be_resolved_to_model_manager(project):
+    provide_django_hints_for(project)
+
+    result = pset(get_proposals(project, 'Blog().bposts.all()[0].'))
+    assert 'body' in result
+    assert 'blog' in result
+    assert 'blog_id' in result
+
+    result = pset(get_proposals(project, 'for r in Blog().bposts.filter():\n    r.'))
+    assert 'body' in result
+    assert 'blog' in result
+    assert 'blog_id' in result
