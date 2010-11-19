@@ -214,6 +214,13 @@ class Editor(SignalManager):
     def on_buffer_changed(self, buffer):
         self.last_cursor_move = None
 
+    @connect_external('view', 'button-press-event')
+    def on_button_press_event(self, view, event):
+        if event.button == 1:
+            return True
+
+        return False
+
 
 class EditorManager(object):
     def __init__(self):
