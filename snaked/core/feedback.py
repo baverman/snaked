@@ -7,10 +7,10 @@ class FeedbackPopup(object):
     def __init__(self):
 
         self.window = gtk.Window(gtk.WINDOW_POPUP)
-        self.window.set_border_width(5)
         self.window.set_property('allow-shrink', True)
 
         self.bar = gtk.EventBox()
+        self.bar.set_border_width(5)
 
         box = gtk.EventBox()
 
@@ -36,6 +36,8 @@ class FeedbackPopup(object):
 
     def show(self, editor, text, timeout=1500):
         self.remove_timeout()
+        if self.escape:
+            self.hide()
 
         self.label.set_text(text)
         self.window.resize(*self.window.size_request())
