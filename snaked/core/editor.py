@@ -287,11 +287,10 @@ class EditorManager(object):
         return prefs.load_json_settings('langs.conf', {})
 
     def set_editor_prefs(self, editor, filename):
+        lang = None
         if filename:
             lang = self.lang_manager.guess_language(filename, None)
             editor.buffer.set_language(lang)
-        else:
-            lang = None
 
         editor.lang = lang.get_id() if lang else 'default'
 

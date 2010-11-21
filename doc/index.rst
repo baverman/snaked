@@ -57,6 +57,7 @@ Content
    install
    start
    plugins
+   python
    contacts
 
 .. _snaked: http://github.com/baverman/snaked

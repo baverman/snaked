@@ -184,6 +184,10 @@ class HintProvider(object):
 
 
 class ScopeHintProvider(HintProvider):
+    """Working horse of type hinting
+
+
+    """
     def __init__(self, project, scope_matcher):
         super(ScopeHintProvider, self).__init__(project)
         self.matcher = scope_matcher
@@ -229,7 +233,38 @@ class ScopeHintProvider(HintProvider):
                     attrs[name] = type
 
 
-class ReScopeMatcher(object):
+class ScopeMatcher(object):
+    """Abstract matcher class for :class:`ScopeHintProvider`"""
+
+    def find_attribute_type_for(self, scope_path, name):
+        """
+        Return matched scope attribute type
+
+        :param scope_path: module name (``program.module.name``)
+        :param name: module attribute name
+        """
+        raise NotImplementedError()
+
+    def find_param_type_for(self, scope_path, name):
+        """
+        Return matched function param or return value type
+
+        :param scope_path: function or method scope path (``module.Class.method`` or ``module.func``)
+        :param name: function param name or `return` in case matching function return value type
+        """
+        raise NotImplementedError()
+
+    def find_class_attributes(self, scope_path):
+        """
+        Return matched class attributes types
+
+        :param scope_path: module.ClassName
+        :return: iterator of (attribute, type) tuples
+        """
+        raise NotImplementedError()
+
+
+class ReScopeMatcher(ScopeMatcher):
     def __init__(self):
         self.attribute_hints = []
         self.param_hints = []
@@ -265,6 +300,22 @@ class ReScopeMatcher(object):
 
 
 class CompositeHintProvider(HintProvider):
+    """Default snaked's hint provider
+
+    It is created automatically for each rope project and passed to ``.ropeproject/ropehints.py``
+    ``init`` function as first parameter.
+
+    Contains build-in :class:`ScopeHintProvider` with it's scope matcher accessed via ``self.db``
+    and :class:`DocStringHintProvider`.
+
+    Also provides hints for ``re`` module. Custom providers can be
+    added via :func:`add_hint_provider`::
+
+        def init(provider):
+            from snaked.plugins.python.djangohints import DjangoHintProvider
+            provider.add_hint_provider(DjangoHintProvider(provider, 'settings'))
+
+    """
     def __init__(self, project):
         super(CompositeHintProvider, self).__init__(project)
 
@@ -288,6 +339,10 @@ class CompositeHintProvider(HintProvider):
         self.add_hint_provider(DocStringHintProvider(project))
 
     def add_hint_provider(self, provider):
+        """Inserts provider into collection.
+
+        Last added provider has max priority.
+        """
         self.hint_provider.insert(0, provider)
 
     def get_function_param_type(self, pyfunc, name):

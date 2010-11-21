@@ -1,7 +1,16 @@
 Python plugin
 =============
 
-This plugin requires `rope <http://rope.sourceforge.net/>`_ for it's work.
+Strictly for the sake of this plugin I started Snaked's development. It requires
+`rope <http://rope.sourceforge.net/>`_ for it's work.
+
+Pretty editor title formating
+-----------------------------
+
+Package modules are presented like `package.module` or `package` instead
+`module.py` or `__init__.py`. Very useful extension to distinguish similar file
+names. Must have for every Pytonier.
+
 
 .. _python-goto-definition:
 
@@ -19,8 +28,7 @@ handles symbols in quotes and comments. Like::
       pass
 
 To see ``param`` class you need to place cursor on ``SomeClass`` and hit ``F3``.
-Or if rope can infer ``param`` type you can place cursor there and hit
-``F3``.
+Or if rope can infer ``param`` type you can place cursor there and hit ``F3``.
 
 
 .. _python-autocomplete:
@@ -55,8 +63,8 @@ Type hints
 ----------
 
 This is the most exiting Snaked's part. It allows to provide additional type
-information to rope for better type inferring and as consequence better completion
-and code navigation.
+information to rope for better type inferring and as consequence better
+completion and code navigation.
 
 What hints can be provided:
 
@@ -66,30 +74,50 @@ What hints can be provided:
 
 * Replacing module attribute.
 
+* Adding attributes to class.
+
 
 Usage
 *****
 
-There is special file for describing hints: ``.ropeproject/hints`` in the your
-project root. With following format::
+* ScopeHintProvider -- matches current scope with regex
 
-   scope_regex name_regex substitute
+There is special file to configure hints: ``.ropeproject/ropehints.py`` in your
+project root. It is ordinary python file which must define function
+``init(provider)``, where ``provider`` is default project hint provider with
+build-in scope matcher and doc string hint support.
 
-For example::
+Take note, without configured hints you have doc string hint provider anyway.
 
-   .* editor$ snaked.core.editor.Editor()  # All function params with 'editor'
-                                           # name will be of type
-                                           # snaked.core.editor.Editor
+For example snaked's ``ropehints.py``::
 
-   flask$ request$ flask.wrappers.Request()   # flask.request will be of Request
-                                              # type, so you can autocomplete
-                                              # it's content.
+   from snaked.plugins.python.pygtkhints import PyGtkHintProvider
 
-   werkzeug$ Request$ werkzeug.wrappers.Request  # allows rope to see
-                                                 # werkzeug.Request
+   def init(provider):
+       provider.db.add_param_hint('.*', 'editor$', 'snaked.core.editor.Editor()')
+       provider.db.add_param_hint('snaked\.plugins\..*?\.init$', 'manager$',
+           'snaked.core.plugins.ShortcutsHolder()')
+       provider.db.add_param_hint('snaked.core.editor.FakeEditor.__init__$', 'manager$',
+           'snaked.core.editor.EditorManager()')
 
-   flask$ g$ app.Context() # flask global context now resolves into your
-                           # application class.
+       pygtk_hints = PyGtkHintProvider(provider.project)
+       pygtk_hints.add_class('snaked.core.gui.prefs.PreferencesDialog',
+           'snaked/core/gui/prefs.glade')
 
+       pygtk_hints.add_class('snaked.plugins.external_tools.prefs.PreferencesDialog',
+           'snaked/plugins/external_tools/prefs.glade')
 
-There is also short video: http://github.com/downloads/baverman/snaked/hints.mkv
+       provider.add_hint_provider(pygtk_hints)
+
+Snaked's hint providers
+***********************
+.. module:: snaked.plugins.python.ropehints
+
+.. autoclass:: CompositeHintProvider
+   :members:
+
+.. autoclass:: ScopeHintProvider
+   :members:
+
+.. autoclass:: ScopeMatcher
+   :members:

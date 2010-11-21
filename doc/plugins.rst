@@ -21,8 +21,8 @@ Provides features for easy text editing.
 
 * ``<ctrl>d`` deletes line under cursor with copying it into clipboard.
 
-* ``<ctrl><alt>o`` shows cursor offset position. Huh? Simply I need offset
-  when write tests (parsing, code analyzing, etc.).
+* ``<ctrl><alt>o`` shows cursor offset and cursor column position.
+  Huh? Simply I need offset when write tests (parsing, code analyzing, etc.).
 
 * ``<alt>w`` smart select. Selects semantic blocks. Just try it. Have you ever
   need to select whole function definition or string in quotes or function
@@ -46,7 +46,7 @@ That's all for now. Planed feature functionality:
 * Vim-like above line symbols copying (``<ctrl>y``).
 
 * Vim-like... Over 9000 other features. In order of first need. Maybe implement
-  vim mode? Damn. 
+  vim mode? Damn.
 
 
 Goto Dir
@@ -64,69 +64,16 @@ Goto Line
 Hash Comment
 ------------
 
-Comments and uncomments code with hashes. Useful for languages with appropriate comment
-symbols. Default key ``<ctrl>slash``.
-
-
-Python
-------
-
-Strictly for the sake of this plugin I started Snaked's development. It features:
-
-* Pretty editor title formating. Package modules are presented like
-  `package.module` or `package` instead `module.py` or `__init__.py`. Very
-  useful extension to distinguish similar file names. Must have for every
-  Pytonier.
-
-* :ref:`Goto python definition <python-goto-definition>`.
-
-* :ref:`Code autocomplete <python-autocomplete>`
-
-* :ref:`Outline navigation <python-outline>`
-
-* :ref:`Type hints <python-type-hints>`. Provide rope with additional info about
-  types for better inference, refactoring and code completion.
+Comments and uncomments code with hashes. Useful for languages with appropriate
+comment symbols. Default key ``<ctrl>slash``.
 
 
 Python Flakes
 -------------
 
-Background python code linter. Highlights problems like unused or undefined imports or
-variables. Also gives feedback about syntax errors. Quite handy plugin.
-
-
-.. _quick-open:
-
-Quick Open
-----------
-
-Heart of project navigation. Really quick (and responsive), I worked hard for
-that. With easy project selection. It searches files only in current project
-following these matching rules:
-
-* filename starts with search term.
-
-* filename contains search term
-
-* file path contains search term
-
-* fuzzy match. if search term contains slashes it matches similar file paths. For
-  example ``pl/py`` will match ``plugin/python/__init__.py`` or
-  ``plugin/name/python.py``
-
-Shortcuts
-*********
-
-* ``<ctrl>Enter`` opens selected item with default system editor. This important
-  feature is missed in many other editors. For example you may open glade file
-  as xml in Snaked (``Enter``) or show it in Glade Designer (``<ctrl>Enter``).
-
-* At very bottom there is project combo box, it allows switch between project
-  paths being searched. ``<alt>Up`` and ``<alt>Down`` keys change its value.
-
-* ``<ctrl>p`` popups project combo box for easy selecting from large list.
-
-* ``<ctrl>o`` shows standard file choose dialog.
+Background python code linter. Highlights problems like unused or undefined
+imports or variables. Also gives feedback about syntax errors. Quite handy
+plugin.
 
 
 Save positions
@@ -138,10 +85,59 @@ Remembers current file position on editor close and restores it on open.
 Search
 ------
 
-Plugin for text searching. It isn't too much powerful at this moment.
+Simply search, like in other editors.
 
-``<ctrl>f`` shows dialog. ``Escape`` hides it. ``<ctrl>j``, ``<ctrl>k`` shows
-next/previous match.
+.. image:: /images/search.*
 
-I'm still thinking about replace implementation. All variants are too monstrous.
-Best way seems ``%s/search/replace/g``. Have any ideas? :ref:`Share it <contacts>`.
+
+Replace entry supports back references (``\1`` or ``\g<name>``) for regular
+expression groups in search field.
+
+Shortcuts
+*********
+
+* ``<ctrl>f`` shows dialog.
+
+* ``Escape`` hides it.
+
+* ``Enter`` in search or replace text entry do actual searching.
+
+* ``<ctrl>j``, ``<ctrl>k`` navigate to next/previous match.
+
+* ``<ctrl>h`` highlights selection occurrences.
+
+To control `ignore case`, `regex` checkboxes and activate `Replace`/`Replace
+all` buttons you can use mnemonics: ``<alt>c``, ``<alt>x``, ``<alt>p`` and
+``<alt>a``.
+
+
+.. _external-tools:
+
+External tools
+--------------
+
+Plugin allows to run commands optionally piping selection or whole buffer's
+content to it and process it's stdout.
+
+.. image:: /images/external-tools.*
+
+
+* ``Name``: tool's name. You can use underscore ("_") to define mnemonic key and
+  pango markup.
+
+* ``Langs``: comma separated list of languages for which this tool is intended.
+  Leave field empty if tool should be available in all editors.
+
+* ``Command``: Shell command to execute. Following variables are supported:
+
+  * ``%f`` — current filename
+  * ``%d`` — current filename's directory
+  * ``%p`` — current project directory
+
+  Take note, you have not to quote it.
+
+* ``Stdin`` and ``Stdout`` should be self-explanatory.
+
+Default key to activate run menu is ``<alt>x``. Actual tool can be run by
+pressing it's mnemonic key or selecting it with cursor keys an hitting
+``Enter``.

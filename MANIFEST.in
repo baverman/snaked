@@ -1,4 +1,5 @@
 recursive-include snaked *.glade
+recursive-include snaked *.snippets
 include README.rst
 include LICENSE
 include CHANGES

@@ -39,6 +39,7 @@ And each file will be opened in own tab.
 
 One can switch tabs on ``<alt>Left``/``<alt>Right`` keys.
 
+.. _quick-open:
 
 Project navigation
 ------------------
@@ -55,9 +56,53 @@ below. It is used for preferences finding and python outline navigation also.
 Behavior is very simple: you type several characters of subject to find,
 "``se``" in my case and dialog shows variants to select. ``Up``/``Down``
 navigate between items, ``Enter`` activates selection, ``<alt>s`` focuses search
-entry again.
+entry again. Also if there is only the one item you can press ``Enter`` without
+need to put focus on list view.
 
-Quick Open provides :ref:`additional functionality <quick-open>`:
+`Quick Open` searches files only in current project
+following these matching rules:
+
+* filename starts with search term.
+
+* filename contains search term
+
+* file path contains search term
+
+* fuzzy match. if search term contains slashes it matches similar file paths. For
+  example ``pl/py`` will match ``plugin/python/__init__.py`` or
+  ``plugin/name/python.py``
+
+If search entry is empty, `browser mode` is activated. With it you can investigate
+project structure in more common way: ``Enter`` opens directory content and
+``Backspace`` returns to upper level.
+
+Shortcuts
+*********
+
+* ``<ctrl>Enter`` opens selected item with default system editor. This important
+  feature is missed in many other editors. For example you may open glade file
+  as xml in Snaked (``Enter``) or show it in Glade Designer (``<ctrl>Enter``).
+
+* At very bottom there is project combo box, it allows switch between project
+  paths being searched. ``<alt>Up`` and ``<alt>Down`` keys change its value.
+
+* ``<ctrl>p`` popups project combo box for easy selecting from large list.
+
+* ``<ctrl>o`` shows standard file choose dialog.
+
+* ``<ctrl>Delete`` deletes current project from list.
+
+
+Creating new file
+-----------------
+
+Standard GTK open dialog is too frustrating and hard to use from keyboard, so
+I implemented file create panel.
+
+.. image:: /images/create-new-file.*
+
+It provides folder autocomplete as you type. With ``Tab`` key you can cycle
+through proposals. ``Esc`` hides dialog, ``Enter`` opens editor with created file.
 
 
 Sessions
@@ -79,7 +124,6 @@ Also there is ability to select session at snaked start::
 
    snaked --select-session
 
-
 Think about sessions like some sort of workspaces which are separate you tasks.
 One session for task or project or whatever.
 
@@ -92,7 +136,7 @@ Preferences dialog is shown on ``<ctrl>p`` key:
 .. image:: /images/prefs.*
 
 It is alike Eclipse's quick settings. You need to type what you want to
-configure (`font`, `key`, etc.) and select wanted item. 
+configure (`font`, `key`, etc.) and select wanted item.
 
 There are only three core configuration dialogs.
 
@@ -120,7 +164,7 @@ use it automatically.
 Plugins
 *******
 
-Simple list with available extension. Check to enable, uncheck to disable,
+Simple list with available extensions. Check to enable, uncheck to disable,
 nothing more. If plugin will provide it's own configuration dialog it will
 appear in preferences.
 
@@ -139,9 +183,10 @@ least now).
   was associated with editor. There is only python provider now.
 
 * ``<ctrl>c`` / ``<ctrl>v`` / ``<ctrl>x`` -- standard copy/paste/cut editor
-  shortcuts. Also there are common ``<ctrl>Insert`` / ``<shift>Insert`` / ``<shift>Delete``.
+  shortcuts. Also there are common ``<ctrl>Insert`` / ``<shift>Insert`` /
+  ``<shift>Delete``.
 
 * ``<ctrl>z`` / ``<ctrl>y`` -- undo/redo
 
-* ``<alt>Up`` / ``<alt>Down`` -- moves selection up or down. Very useful feature,
-  especially with smart select.
+* ``<alt>Up`` / ``<alt>Down`` -- moves selection up or down. Very useful
+  feature,   especially with smart select.
