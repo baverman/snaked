@@ -1,53 +1,38 @@
 Snaked changelog
 ================
 
+v0.4.1
+------
+
+- Editor option to enable spell check on file open
+- Fix: in external tool dialog user can edit entries without any selected tool at all.
+
+
 v0.4
 ----
 
 - Shared rope projects.
-
 - Hide tab bar on <Alt>F11.
-
 - Switch tabs on additional "standard" <Ctrl>PageUp/PageDown keys.
-
 - External tool plugin.
-
 - Automatic character encoding detection.
-
 - Highlight selection on <Ctrl>H.
-
 - Quick open dialog responsitivity improved.
-
 - Browser mode in quick open dialog.
-
 - All search dialogs allow activate the one item by Enter key in search entry.
-
 - Hints config format changed. Now it is ordinary python module.
-
 - Pygtk hint provider allows to complete attributes and signal handlers parameters based on glade file.
-
 - Show cursor column on <Ctrl><Alt>O
-
 - Regex support in search plugin. Replace is also implemented.
-
 - Editor's line spacing option.
-
 - Doc string hint provider. One can place type hints directly in python code.
-
 - Hints for re.RegexObject and re.MatchObject.
-
 - Django hint provider. Supported ORM fields, managers (objects and related sets) and query sets.
-
 - Spot navigation.
-
 - Snippets plugin.
-
 - Auto remove trailing space on file save.
-
 - Disable left mouse button click in text view window.
-
 - Spell check on F7
-
 - Rewrap text on right margin with <alt>f.
 
 
@@ -55,19 +40,11 @@ v0.3.7
 ------
 
 - Session selector. (via running ``snaked --select-session``)
-
 - Per session recent projects.
-
 - Show pydoc on ``<ctrl>Enter``.
-
 - Fullscreen mode toggle on F11 in tabbed interface.
-
 - Recent projects deleting from Quick Open dialog on ``<ctrl>Delete``.
-
 - Quick project selection from large recent projects list on ``<ctrl>p`` in Quick Open.
-
 - Quick Open allows to open any file by pressing ``<ctrl>o``
-
 - After closing last tab Quick Open dialog will be shown.
-
 - Recursive type hints.
