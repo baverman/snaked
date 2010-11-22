@@ -9,6 +9,10 @@ from rope.base import exceptions
 
 from .ropehints import HintProvider, get_attribute_scope_path
 
+def add_django_support(composite_provider, settings='settings'):
+    return composite_provider.add_hint_provider(
+        DjangoHintProvider(composite_provider.project, settings))
+
 def get_path_and_package(module_path, project_root):
     packages = [os.path.basename(module_path).rpartition('.')[0]]
     while True:

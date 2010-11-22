@@ -90,7 +90,7 @@ Take note, without configured hints you have doc string hint provider anyway.
 
 Snaked's hint providers
 ***********************
-.. module:: snaked.plugins.python.ropehints
+.. currentmodule:: snaked.plugins.python.ropehints
 
 .. autoclass:: CompositeHintProvider
    :members:
@@ -99,7 +99,34 @@ Snaked's hint providers
    :members: __init__
 
 
+.. currentmodule:: snaked.plugins.python.dochints
+
+.. autoclass:: DocStringHintProvider
+
 Snaked's scope matchers
 ***********************
+.. currentmodule:: snaked.plugins.python.ropehints
+
 .. autoclass:: ReScopeMatcher
    :members:
+
+Django hints
+************
+
+Look at image:
+
+.. image:: /images/django-hints.*
+
+Cool, isn't it? Simply add django support into your ``.ropeproject/ropehints.py``::
+
+   def init(provider):
+       from snaked.plugins.python.djangohints import add_django_support
+       add_django_support(provider)
+
+.. note::
+   Django hints were developed against django 0.97 (yeah, I maintain such old
+   project) codebase and not tested on current versions. Get me know if you
+   will have any issues.
+
+PyGtk hints
+***********

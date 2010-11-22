@@ -3,6 +3,22 @@ import re
 from .ropehints import HintProvider
 
 class DocStringHintProvider(HintProvider):
+    """Allows to hint functions/method parameters and return values types through doc strings
+
+    This is build-in provider so you have no do any addition steps to enable it.
+
+    Hints can be provided using Sphinx syntax::
+
+        def func(text):
+            '''
+            :type text: str
+            :rtype: str
+            '''
+            # now in func body 'text' parameter's type is resolved into 'str'
+
+        # And all rest code now knows ``func`` return type is also 'str'
+
+    """
     def __init__(self, project):
         super(DocStringHintProvider, self).__init__(project)
         self.cache = {}

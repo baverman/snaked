@@ -412,7 +412,9 @@ class CompositeHintProvider(HintProvider):
 
         Last added provider has max priority.
         """
+
         self.hint_provider.insert(0, provider)
+        return provider
 
     def get_function_param_type(self, pyfunc, name):
         for p in self.hint_provider:

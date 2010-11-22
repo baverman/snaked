@@ -8,8 +8,11 @@ from ropetest import testutils
 from rope.contrib.codeassist import code_assist
 
 from snaked.plugins.python.djangohints import DjangoHintProvider
+from snaked.plugins.python.ropehints import CompositeHintProvider
 
 def provide_django_hints_for(project):
+    #project.pycore.hintdb = CompositeHintProvider(project)
+    #project.pycore.hintdb.add_hint_provider(DjangoHintProvider(project, 'test_djangohints'))
     project.pycore.hintdb = DjangoHintProvider(project, 'test_djangohints')
 
 def get_proposals(project, source, offset=None, **kwargs):
@@ -109,6 +112,14 @@ def test_foreign_set_must_be_resolved_to_model_manager(project):
     assert 'blog_id' in result
 
     result = pset(get_proposals(project, 'for r in Blog().bposts.filter():\n    r.'))
+    assert 'body' in result
+    assert 'blog' in result
+    assert 'blog_id' in result
+
+    result = pset(get_proposals(project,
+        'for blog in Blog.objects.filter(name="blog"):\n'
+        '   for post in blog.bposts.all():\n'
+        '       post.'))
     assert 'body' in result
     assert 'blog' in result
     assert 'blog_id' in result
