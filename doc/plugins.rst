@@ -31,6 +31,8 @@ Provides features for easy text editing.
   gtksourceview2 selection moving (``<alt>Up``, ``<alt>Down``) it allows forget
   about copy-paste.
 
+* ``<alt>f`` reformats selection to current right margin width.
+
 That's all for now. Planed feature functionality:
 
 * Smart string literals edit.

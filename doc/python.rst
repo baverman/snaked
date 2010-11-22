@@ -130,3 +130,26 @@ Cool, isn't it? Simply add django support into your ``.ropeproject/ropehints.py`
 
 PyGtk hints
 ***********
+
+Image again:
+
+.. image:: /images/pygtk-hints.*
+
+Who is there? ``BuilderAwere`` is a simple wrapper which delegates missing
+attributes to GtkBuilder. ``Window`` is ``BuilderAware`` class constructed from
+glade file. ``vbox1`` is a GtkVBox defined in glade file and PyGtk hint provider
+resolves class attributes from it.
+
+Besides that, goto definition (``F3``) opens glade file and place cursor at ``vbox1``
+declaration.
+
+And more, if there are any signal handlers in glade file they parameters also will
+be resolved.
+
+You only need to add pygtk support and assign glade file to class via ``ropehints.py``::
+
+   def init(provider):
+       from snaked.plugins.python.pygtkhints import add_gtk_support
+
+       pygtk = add_gtk_support(provider)
+       pygtk.add_class('gui.Window', 'main.glade')
