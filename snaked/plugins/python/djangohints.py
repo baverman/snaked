@@ -61,13 +61,14 @@ class DjangoHintProvider(HintProvider):
 
         if not any('django.db.models.base.Model' in get_attribute_scope_path(c)
                 for c in pyclass.get_superclasses()):
-            return
+            return {}
 
         os.environ['DJANGO_SETTINGS_MODULE'] = self.settings
 
         module = load_django_module(pyclass.get_module(), self.project.address)
         model = getattr(module, pyclass.get_name())()
 
+        attrs = {}
         for name in model._meta.get_all_field_names():
             f = model._meta.get_field_by_name(name)[0]
 
@@ -85,6 +86,8 @@ class DjangoHintProvider(HintProvider):
 
         attrs['objects'] = DjangoObjectsName(pyclass,
             self.get_type('django.db.models.manager.Manager'))
+
+        return attrs
 
 
 class DjangoObjectsName(rope.base.pynames.PyName):

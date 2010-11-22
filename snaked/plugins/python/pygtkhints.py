@@ -3,7 +3,19 @@ import rope.base.pynames
 
 import gobject
 
-from .ropehints import HintProvider, get_attribute_scope_path
+from .ropehints import HintProvider
+
+def add_gtk_support(composite_provider):
+    existing_modules = composite_provider.project.prefs['extension_modules']
+
+    for m in ('gtk._gtk', 'gtk.gdk', 'gobject._gobject', 'pango'):
+        if m not in existing_modules:
+            existing_modules.append(m)
+
+    composite_provider.project.prefs['extension_modules'] = existing_modules
+
+    return composite_provider.add_hint_provider(PyGtkHintProvider(composite_provider.project))
+
 
 class ResourceAsModule(object):
     def __init__(self, resource):
@@ -54,6 +66,7 @@ class PyGtkHintProvider(HintProvider):
         for id, cls, line in handler.objects:
             type = self.get_type(self.get_pygtk_class_name(cls))
             attrs[id] = GladeName(type.get_object(), ResourceAsModule(resource), line)
+
         self.cache[scope_path] = attrs
 
         for name, (cls, signal) in handler.signals.iteritems():
@@ -62,10 +75,13 @@ class PyGtkHintProvider(HintProvider):
         self.gtk_aware_classes[scope_path] = glade_file, True
 
     def get_class_attributes(self, scope_path, pyclass, attrs):
+        attrs = {}
         if scope_path in self.gtk_aware_classes:
             self.process_glade(scope_path)
             for k, v in self.cache[scope_path].iteritems():
                 attrs[k] = v
+
+        return attrs
 
     def add_class(self, scope, glade_file):
         self.gtk_aware_classes[scope] = glade_file, False
@@ -97,17 +113,17 @@ class PyGtkHintProvider(HintProvider):
             cls, signal = self.handlers[class_scope][pyfunc.get_name()]
         except KeyError:
             return {}
-        
+
         attrs = {}
-        
+
         names = pyfunc.get_param_names(False)
         if pyfunc.get_kind() in ('method', 'classmethod'):
             names = names[1:]
-        
+
         if names:
             attrs[names[0]] = self.get_type(self.get_pygtk_class_name(cls)).get_object()
             names = names[1:]
-            
+
         if names:
             for i, t in enumerate(gobject.signal_query(signal, str(cls))[-1]):
                 try:
@@ -118,7 +134,7 @@ class PyGtkHintProvider(HintProvider):
                         attrs[names[i]] = None
                 except IndexError:
                     break
-                    
+
         return attrs
 
 

@@ -115,7 +115,7 @@ def get_attributes_with_hints(func):
             return result
 
         scope_path = get_attribute_scope_path(self)
-        hintdb.get_class_attributes(scope_path, self, result)
+        result.update(hintdb.get_class_attributes(scope_path, self, result))
 
         return result
 
@@ -165,6 +165,7 @@ class HintProvider(object):
 
     def get_class_attributes(self, scope_path, pyclass, attrs):
         """Returns additional atributes for pyclass"""
+        return {}
 
     def get_type(self, type_name, scope=None):
         pycore = self.project.pycore
@@ -226,6 +227,7 @@ class ScopeHintProvider(HintProvider):
         return pyname
 
     def get_class_attributes(self, scope_path, pyclass, attrs):
+        attrs = {}
         for name, type_name in self.matcher.find_class_attributes(scope_path):
             type = self.get_type(type_name)
             if type:
@@ -235,6 +237,7 @@ class ScopeHintProvider(HintProvider):
                 else:
                     attrs[name] = type
 
+        return attrs
 
 class ScopeMatcher(object):
     """Abstract matcher class for :class:`ScopeHintProvider`"""
@@ -441,7 +444,9 @@ class CompositeHintProvider(HintProvider):
         except KeyError:
             pass
 
+        new_attrs = {}
         for p in self.hint_provider:
-            p.get_class_attributes(scope_path, pyclass, attrs)
+            new_attrs.update(p.get_class_attributes(scope_path, pyclass, attrs))
 
-        self.class_attributes_cache[scope_path] = attrs
+        self.class_attributes_cache[scope_path] = new_attrs
+        return new_attrs
