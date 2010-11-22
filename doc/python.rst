@@ -80,8 +80,6 @@ What hints can be provided:
 Usage
 *****
 
-* ScopeHintProvider -- matches current scope with regex
-
 There is special file to configure hints: ``.ropeproject/ropehints.py`` in your
 project root. It is ordinary python file which must define function
 ``init(provider)``, where ``provider`` is default project hint provider with
@@ -89,25 +87,6 @@ build-in scope matcher and doc string hint support.
 
 Take note, without configured hints you have doc string hint provider anyway.
 
-For example snaked's ``ropehints.py``::
-
-   from snaked.plugins.python.pygtkhints import PyGtkHintProvider
-
-   def init(provider):
-       provider.db.add_param_hint('.*', 'editor$', 'snaked.core.editor.Editor()')
-       provider.db.add_param_hint('snaked\.plugins\..*?\.init$', 'manager$',
-           'snaked.core.plugins.ShortcutsHolder()')
-       provider.db.add_param_hint('snaked.core.editor.FakeEditor.__init__$', 'manager$',
-           'snaked.core.editor.EditorManager()')
-
-       pygtk_hints = PyGtkHintProvider(provider.project)
-       pygtk_hints.add_class('snaked.core.gui.prefs.PreferencesDialog',
-           'snaked/core/gui/prefs.glade')
-
-       pygtk_hints.add_class('snaked.plugins.external_tools.prefs.PreferencesDialog',
-           'snaked/plugins/external_tools/prefs.glade')
-
-       provider.add_hint_provider(pygtk_hints)
 
 Snaked's hint providers
 ***********************
@@ -117,7 +96,10 @@ Snaked's hint providers
    :members:
 
 .. autoclass:: ScopeHintProvider
-   :members:
+   :members: __init__
 
-.. autoclass:: ScopeMatcher
+
+Snaked's scope matchers
+***********************
+.. autoclass:: ReScopeMatcher
    :members:

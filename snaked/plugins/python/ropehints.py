@@ -186,9 +186,12 @@ class HintProvider(object):
 class ScopeHintProvider(HintProvider):
     """Working horse of type hinting
 
-
+    Common usage is in conjunction with :class:`ReScopeMatcher` (also see examples there)
     """
     def __init__(self, project, scope_matcher):
+        """:param project: rope project
+        :param scope_matcher: one of :class:`ScopeMatcher` implementations.
+        """
         super(ScopeHintProvider, self).__init__(project)
         self.matcher = scope_matcher
 
@@ -243,7 +246,6 @@ class ScopeMatcher(object):
         :param scope_path: module name (``program.module.name``)
         :param name: module attribute name
         """
-        raise NotImplementedError()
 
     def find_param_type_for(self, scope_path, name):
         """
@@ -252,7 +254,6 @@ class ScopeMatcher(object):
         :param scope_path: function or method scope path (``module.Class.method`` or ``module.func``)
         :param name: function param name or `return` in case matching function return value type
         """
-        raise NotImplementedError()
 
     def find_class_attributes(self, scope_path):
         """
@@ -261,22 +262,88 @@ class ScopeMatcher(object):
         :param scope_path: module.ClassName
         :return: iterator of (attribute, type) tuples
         """
-        raise NotImplementedError()
 
 
 class ReScopeMatcher(ScopeMatcher):
+    """:class:`ScopeHintProvider` matcher based on regular expressions
+
+    Matching is done with ``re.match`` function (pay attention to differences with ``re.search``)
+
+    See :func:`add_attribute_hint`, :func:`add_param_hint`, :func:`add_class_attribute`.
+
+    """
     def __init__(self):
         self.attribute_hints = []
         self.param_hints = []
         self.class_attributes = []
 
     def add_attribute_hint(self, scope, name, object_type):
+        """Add attribute type hint for module scope
+
+        Can be used to provide module attributes types, for example in case or complex
+        module loading (werkzeug) or complex runtime behavior (flask). Here is example
+        ``.ropeproject/ropehints.py``::
+
+            def init(provider):
+                provider.db.add_attribute_hint('flask$', 'request$', 'flask.wrappers.Request()')
+                provider.db.add_attribute_hint('werkzeug$', 'Request$', 'werkzeug.wrappers.Request')
+
+        What happens here? ``flask.request`` is magic proxy to isolate thread contexts from each other.
+        In runtime it is ``flask.wrappers.Request`` object (in default flask setup), so first line
+        adds this missing information. But this is not enough. ``flask.wrappers.Request`` is a child
+        of ``werkzeug.Request`` which can not be resolved because of werkzeug's module
+        loading system. So there is second line adding necessary mapping: module attribute
+        ``werkzeug.Request`` should be ``werkzeug.wrappers.Request`` indeed. Take note about
+        parentheses, ``flask.request`` is instance so type declared with them as opposite to
+        ``werkzeug.Request`` which is class.
+        """
         self.attribute_hints.append((re.compile(scope), re.compile(name), object_type))
 
     def add_param_hint(self, scope, name, object_type):
+        """Add function/method parameter or return value type hint.
+
+        Very useful in case of mass type hinting. For example part of snaked's ``ropehints.py``::
+
+            def init(provider):
+                provider.db.add_param_hint('.*', 'editor$', 'snaked.core.editor.Editor()')
+                provider.db.add_param_hint('snaked\.plugins\..*?\.init$', 'manager$',
+                    'snaked.core.plugins.ShortcutsHolder()')
+
+        Snaked consist of many small functions passing around current text buffer (named ``editor``)
+        as parameter and first line allows to provide such type hint. Second line resolves all plugins
+        ``init`` function's ``manager`` parameter.
+
+        Or take look at Django's view function's request resolving::
+
+                provider.db.add_param_hint('.*\.views\..*', 'request$', 'django.http.HttpRequest()')
+
+        If name is ``return`` type hint is provided for function's return value type. Following
+        example shows it::
+
+            provider.db.add_param_hint('re\.compile$', 'return$', 're.RegexObject()')
+            provider.db.add_param_hint('re\.search$', 'return$', 're.MatchObject()')
+            provider.db.add_param_hint('re\.match$', 'return$', 're.MatchObject()')
+            provider.db.add_attribute_hint('re$', 'RegexObject$', 'snaked.plugins.python.stub.RegexObject')
+            provider.db.add_attribute_hint('re$', 'MatchObject$', 'snaked.plugins.python.stub.MatchObject')
+
+        Take notice, ``re.compile``, ``re.search``, ``re.match`` return absent classes which are mapped
+        with :func:`add_attribute_hint` to existing stubs later.
+        """
         self.param_hints.append((re.compile(scope), re.compile(name), object_type))
 
     def add_class_attribute(self, scope, name, object_type):
+        """Add attribute type hint for class/object attribute
+
+        Example from my django project::
+
+            provider.db.add_class_attribute('django\.http\.HttpRequest$', 'cur$', 'app.Cur')
+            provider.db.add_class_attribute('django\.http\.HttpRequest$', 'render$', 'app.render')
+
+        Here are some explanations. Every ``request`` object has ``cur`` attribute
+        (I know about contexts, don't ask me why I need it) which is instance of ``app.Cur``, so
+        first line injects such info. Second line resolves ``render`` function also bounded to
+        request.
+        """
         self.class_attributes.append((re.compile(scope), name, object_type))
 
     def find_attribute_type_for(self, scope_path, name):
@@ -312,6 +379,8 @@ class CompositeHintProvider(HintProvider):
     added via :func:`add_hint_provider`::
 
         def init(provider):
+            provider.db.add_class_attribute('django\.http\.HttpRequest$', 'render$', 'app.render')
+
             from snaked.plugins.python.djangohints import DjangoHintProvider
             provider.add_hint_provider(DjangoHintProvider(provider, 'settings'))
 
@@ -327,9 +396,9 @@ class CompositeHintProvider(HintProvider):
         self.db.add_param_hint('ropehints\.init$', 'provider$',
             'snaked.plugins.python.ropehints.CompositeHintProvider()')
 
-        self.db.add_param_hint('re\.compile$', 'return', 're.RegexObject()')
-        self.db.add_param_hint('re\.search$', 'return', 're.MatchObject()')
-        self.db.add_param_hint('re\.match$', 'return', 're.MatchObject()')
+        self.db.add_param_hint('re\.compile$', 'return$', 're.RegexObject()')
+        self.db.add_param_hint('re\.search$', 'return$', 're.MatchObject()')
+        self.db.add_param_hint('re\.match$', 'return$', 're.MatchObject()')
         self.db.add_attribute_hint('re$', 'RegexObject$', 'snaked.plugins.python.stub.RegexObject')
         self.db.add_attribute_hint('re$', 'MatchObject$', 'snaked.plugins.python.stub.MatchObject')
 

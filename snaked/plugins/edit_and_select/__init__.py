@@ -34,7 +34,7 @@ def show_offset(editor):
 def wrap_text(editor):
     buf = editor.buffer
     if not buf.get_has_selection():
-        editor.message('Select text block to wrap.')
+        editor.message('Select text block to wrap')
         return
 
     import textwrap
