@@ -6,6 +6,9 @@ from snaked.util import BuilderAware, join_to_file_dir, idle
 from snaked.core import shortcuts
 import snaked.core.prefs as prefs
 
+on_dialog_created_hooks = []
+on_pref_refresh_hooks = []
+
 
 class PreferencesDialog(BuilderAware):
     def __init__(self, prefs):
@@ -37,6 +40,9 @@ class PreferencesDialog(BuilderAware):
         self.line_spacing.connect('value-changed', self.on_spin_changed, 'line-spacing')
 
         self.font.connect('font-set', self.on_font_set, 'font')
+
+        for h in on_dialog_created_hooks:
+            h(self)
 
     def show(self, editor):
         self.editor = weakref.ref(editor)
@@ -91,6 +97,9 @@ class PreferencesDialog(BuilderAware):
         self.line_spacing.set_value(pref['line-spacing'])
 
         self.font.set_font_name(pref['font'])
+
+        for h in on_pref_refresh_hooks:
+            h(self, pref)
 
     def select_style(self, style_id, try_classic=True):
         for i, (name,) in enumerate(self.styles):

@@ -37,6 +37,7 @@ class Editor(SignalManager):
         self.session = None
         self.saveable = True
         self.lang = None
+        self.prefs = {}
 
         self.last_cursor_move = None
 
@@ -124,7 +125,7 @@ class Editor(SignalManager):
             return
 
         if self.uri:
-            if self.option_remove_trailing_space:
+            if self.prefs['remove-trailing-space']:
                 from snaked.core.processors import remove_trailing_spaces
                 remove_trailing_spaces(self.buffer)
 
@@ -317,7 +318,7 @@ class EditorManager(object):
         editor.view.set_wrap_mode(gtk.WRAP_WORD if pref['wrap-text'] else gtk.WRAP_NONE)
         editor.view.set_pixels_above_lines(pref['line-spacing'])
 
-        editor.option_remove_trailing_space = pref['remove-trailing-space']
+        editor.prefs = pref
 
     @Editor.editor_closed(idle=True)
     def on_editor_closed(self, editor):

@@ -14,7 +14,7 @@ def get_package(name):
     except KeyError:
         __import__(name)
         return sys.modules[name]
-        
+
 def get_plugin(plugin):
     package_name = 'snaked.plugins.' + plugin
     return get_package(package_name)
@@ -26,6 +26,16 @@ class ShortcutsHolder(object):
 
     def add_shortcut(self, name, accel, category, desc, callback):
         self.shortcuts.append((name, accel, category, desc, callback))
+
+    def add_editor_preferences(self, on_dialog_created, on_pref_refresh, default_values):
+        import snaked.core.prefs
+        import snaked.core.gui.editor_prefs
+
+        for k, v in default_values.iteritems():
+            snaked.core.prefs.default_prefs.setdefault(k, {}).update(v)
+
+        snaked.core.gui.editor_prefs.on_dialog_created_hooks.append(on_dialog_created)
+        snaked.core.gui.editor_prefs.on_pref_refresh_hooks.append(on_pref_refresh)
 
 
 class PluginManager(object):
@@ -83,11 +93,11 @@ class PluginManager(object):
             plugin, shortcut = self.plugin_by_path[get_path_by_key(key, modifier)]
         except KeyError:
             return False
-        
+
         if self.plugin_is_for_editor(plugin, editor):
             shortcut.callback(editor, *args)
             return True
-        
+
         return False
     activate_plugin_shortcut.provide_key = True
 
@@ -138,25 +148,25 @@ class PluginManager(object):
                     p.quit()
                 except:
                     traceback.print_exc()
-    
+
     @property
     def prefs(self):
         return ListSettings('enabled-plugins.db')
-        
+
     def save_enabled_plugins(self):
         self.prefs.store(self.enabled_plugins)
-            
+
     def restore_enabled_plugins(self):
         prefs = self.prefs
         if prefs.exists():
             self.enabled_plugins = prefs.load()
         else:
             self.enabled_plugins = default_enabled_plugins
-        
+
     def unload_unnecessary_plugins(self):
         bad_plugin_names = [name for name in self.loaded_plugins
             if name not in self.enabled_plugins and name not in self.core_plugins]
-            
+
         for name in bad_plugin_names:
             p = self.loaded_plugins[name]
             if hasattr(p, 'quit'):
@@ -164,7 +174,7 @@ class PluginManager(object):
                     p.quit()
                 except:
                     traceback.print_exc()
-                    
+
             del self.loaded_plugins[name]
             self.delete_plugin_shortcuts(p)
 
@@ -173,10 +183,10 @@ class PluginManager(object):
             del self.shortcuts_by_plugins[plugin]
         except KeyError:
             pass
-           
+
         for path in [path for path, (p,_) in self.plugin_by_path.iteritems() if p is plugin]:
             del self.plugin_by_path[path]
-        
+
     def show_plugins_prefs(self, editor):
         from snaked.core.gui.plugin_prefs import PluginDialog
         dialog = PluginDialog()
