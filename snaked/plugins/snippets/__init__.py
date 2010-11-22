@@ -1,3 +1,7 @@
+author = 'Anton Bobrov<bobrov@vl.ru>'
+name = 'Snippets'
+desc = "SnipMate's clone"
+
 import os.path
 import re
 

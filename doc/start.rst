@@ -190,3 +190,33 @@ least now).
 
 * ``<alt>Up`` / ``<alt>Down`` -- moves selection up or down. Very useful
   feature,   especially with smart select.
+
+
+Spot navigation
+---------------
+
+Snaked tries to remember important editing places and allows one to
+navigate between such spots.
+
+Behavior is not fine tuned yet, but spot navigation satisfy my needs in
+bookmarks plugin.
+
+How does it work?
+*****************
+
+If you move cursor to big distance (PageUp/Down, buffer start/end, switch tab,
+goto line, goto definition or moving to spot) spot is placed. Also you can place
+spot manually by ``<alt>T``. Spots are orginized as fixed length stack.
+
+Shortcuts
+*********
+
+* ``<alt>Q`` moves to last spot and put current cursor position at top of spot stack.
+  Thereby double ``<alt>Q`` brings you back to same position.
+
+* ``<ctrl><alt>Left/Right`` moves to previous/next spot in stack.
+
+* ``<alt>T`` adds current cursor position as spot at top of stack.
+
+
+

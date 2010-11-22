@@ -143,3 +143,30 @@ content to it and process it's stdout.
 Default key to activate run menu is ``<alt>x``. Actual tool can be run by
 pressing it's mnemonic key or selecting it with cursor keys an hitting
 ``Enter``.
+
+
+Snippets
+--------
+
+It is similar to vim's SnipMate plugin which are clone of TextMate's snippets,
+you may refer to these projects for syntax documentation.
+
+User snippet files are searched in ``~/.config/snaked/snippets``. There are only
+python built-in snippets now.
+
+Missing features:
+
+* Multiple contexts, e.g. django template should have `html` and `django`
+  contexts to allow to use two snippet sets. There is only one context defined by
+  editor language now.
+
+* Variable/python commands/shell commands expansion via backticks.
+
+
+Spell check
+-----------
+
+Attaches spell checker to current editor. You need ``pygtkspell`` installed
+(look at gnome-python-extras package for your distro).
+
+Spell check is activated/deactivated by ``F7`` key.
