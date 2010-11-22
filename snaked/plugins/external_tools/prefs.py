@@ -59,12 +59,19 @@ class PreferencesDialog(BuilderAware):
     @property
     def current_tool(self):
         (model, iter) = self.tools_view.get_selection().get_selected()
-        return self.tools.get_value(iter, 0)
+        if iter:
+            return self.tools.get_value(iter, 0)
+        else:
+            return None
 
     @property
     def settings(self):
         name = self.current_tool
-        if self.isnew(name):
+        if name is None:
+            self.vbox1.hide()
+            self.editor().message('You need to select any tool', 2000)
+            return {}
+        elif self.isnew(name):
             return self.dirty_settings
         else:
             return self.tool_settings.setdefault(name, {})
@@ -96,6 +103,7 @@ class PreferencesDialog(BuilderAware):
 
     def on_tools_view_cursor_changed(self, *args):
         name = self.current_tool
+        self.vbox1.show()
         prefs = CompositePreferences(self.settings, default_prefs)
 
         if self.isnew(name):
@@ -108,6 +116,12 @@ class PreferencesDialog(BuilderAware):
 
         for n in ('stdin', 'stdout'):
             self.set_cb(getattr(self, n+'_cb'), prefs[n])
+
+    def on_tools_view_toggle_cursor_row(self, *args):
+        if self.current_tool is None:
+            self.vbox1.show()
+        else:
+            self.vbox1.hide()
 
     def on_add_btn_clicked(self, *args):
         name = self.get_name(self.dirty_settings.get('name', ''))
@@ -135,6 +149,9 @@ class PreferencesDialog(BuilderAware):
 
     def delete_tool(self, *args):
         name = self.current_tool
+        if name is None:
+            return
+
         if self.isnew(name):
             self.editor().message('Lolwhat?')
             return
