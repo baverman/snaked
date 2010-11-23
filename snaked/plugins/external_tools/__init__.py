@@ -30,7 +30,7 @@ def get_run_menu(prefs, editor):
             continue
 
         if prefs[tool]['langs'].strip() and editor.lang not in map(str.strip,
-                to_str(prefs[tool]['langs'].split(','))):
+                to_str(prefs[tool]['langs']).split(',')):
             continue
 
         any_items = True
