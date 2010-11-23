@@ -1,6 +1,13 @@
 Snaked changelog
 ================
 
+v0.4.4
+------
+
+- fix epic bug on python2.6: json unmarshaling incompatibilities (as against
+  with python2.7) tend to unicode convert errors.
+
+
 v0.4.3
 ------
 
