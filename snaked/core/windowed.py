@@ -3,9 +3,9 @@ import weakref
 import gtk
 
 import snaked.core.shortcuts
-import snaked.core.editor
+import snaked.core.manager
 
-class WindowedEditorManager(snaked.core.editor.EditorManager):
+class WindowedEditorManager(snaked.core.manager.EditorManager):
     def __init__(self):
         super(WindowedEditorManager, self).__init__()
         self.windows = weakref.WeakKeyDictionary()
@@ -18,26 +18,26 @@ class WindowedEditorManager(snaked.core.editor.EditorManager):
         window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         window.set_default_size(800, 550)
         window.add(editor.widget)
-        
+
         editor.view.grab_focus()
-        
+
         weak_editor = weakref.ref(editor)
         def ctx():
             return (weak_editor(), )
-        
+
         activator = snaked.core.shortcuts.ContextShortcutActivator(window, ctx)
         self.windows[editor] = window
         self.activators[editor] = activator
 
         window.connect('destroy', self.on_window_destroy, weak_editor)
         window.show_all()
-       
+
     def focus_editor(self, editor):
         self.windows[editor].present()
-        
+
     def set_editor_title(self, editor, title):
         self.windows[editor].set_title(title)
-        
+
     def close_editor(self, editor):
         self.windows[editor].destroy()
 
