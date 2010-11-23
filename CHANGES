@@ -1,6 +1,16 @@
 Snaked changelog
 ================
 
+v0.4.2
+------
+
+- fix onscreen cursor placement in python smart indent and snippets plugin
+- fix unicode convert function in external tools plugin
+- Multiple editor contexts allow one to assign several snippet sets to file
+  for example.
+- Snippet proposal provider can be activated by ctrl+space.
+
+
 v0.4.1
 ------
 
