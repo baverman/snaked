@@ -111,9 +111,15 @@ def insert(editor, iter, text):
     editor.buffer.insert(iter, text)
     editor.buffer.end_user_action()
 
-def process_stdout(editor, stdout, id):
+def process_stdout(editor, stdout, stderr, id):
+    if id != 'show-feedback' and stderr:
+        editor.message(stderr, 5000)
+
     if id == 'show-feedback':
-        editor.message(stdout, 3000)
+        msg = stdout + stderr
+        if not msg:
+            msg = 'Empty command output'
+        editor.message(msg, 5000)
     elif id == 'replace-selection':
         replace(editor, editor.buffer.get_selection_bounds(), stdout)
     elif id == 'replace-buffer':
@@ -162,7 +168,4 @@ def run(editor, name, prefs):
     stdout, stderr = Popen(command_to_run, stdout=PIPE, stderr=PIPE,
         stdin=PIPE if stdin else None).communicate(stdin)
 
-    if stderr:
-        editor.message(stderr, 5000)
-
-    process_stdout(editor, stdout, prefs['stdout'])
+    process_stdout(editor, stdout, stderr, prefs['stdout'])
