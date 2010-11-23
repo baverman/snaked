@@ -17,11 +17,11 @@ class RopeProjectManager(object):
         self.hints_monitor = None
 
         if project.ropefolder:
-            self.hints_filename = os.path.join(project.ropefolder.real_path, 'ropehints.py')        
+            self.hints_filename = os.path.join(project.ropefolder.real_path, 'ropehints.py')
             self.hints_monitor = gio.File(self.hints_filename).monitor_file()
             weak_connect(self.hints_monitor, 'changed', self, 'on_hints_file_changed')
 
-            self.refresh_hints()            
+            self.refresh_hints()
 
     def refresh_hints(self):
         self.project.pycore.module_cache.forget_all_data()
@@ -36,17 +36,17 @@ class RopeProjectManager(object):
                 except:
                     import traceback
                     traceback.print_exc()
-            
+
     def on_hints_file_changed(self, filemonitor, file, other_file, event):
-        if event in (gio.FILE_MONITOR_EVENT_CHANGES_DONE_HINT, gio.FILE_MONITOR_EVENT_CREATED):        
+        if event in (gio.FILE_MONITOR_EVENT_CHANGES_DONE_HINT, gio.FILE_MONITOR_EVENT_CREATED):
             self.refresh_hints()
-            
+
     def close(self):
         if self.hints_monitor:
             self.hints_monitor.cancel()
             self.hints_monitor = None
         self.project.close()
-        
+
     def __del__(self):
         self.close()
 
@@ -61,7 +61,7 @@ class Plugin(object):
         completion = self.editor.view.get_completion()
         completion.add_provider(provider)
         #completion.get_info_window().set_sizing(300, 400, False, False)
-        
+
     @lazy_property
     def project_manager(self):
         root = getattr(self.editor, 'ropeproject_root', self.editor.project_root)
@@ -74,44 +74,44 @@ class Plugin(object):
             kwargs = {}
         else:
             kwargs = dict(ropefolder=None)
-        
+
         from rope.base.project import Project
         project = Project(root, **kwargs)
         project.snaked_project_root = root
-        
+
         pm = RopeProjectManager(project)
         project_managers[root] = pm
         return pm
-    
+
     @lazy_property
     def completion_provider(self):
         import complete
         return complete.RopeCompletionProvider(self)
 
     def get_rope_resource(self, project, uri=None):
-        from rope.base import libutils, exceptions    
+        from rope.base import libutils, exceptions
         uri = uri or self.editor.uri
         try:
             return libutils.path_to_resource(project, uri)
         except exceptions.ResourceNotFoundError:
             return None
-            
+
     def get_source_and_offset(self):
         offset = self.editor.cursor.get_offset()
         source = self.editor.text
-        
+
         if not isinstance(source, unicode):
             source = source.decode('utf8')
-        
+
         return source, offset
 
     def get_fuzzy_location(self, project, source, offset):
         from rope.base import worder, exceptions
-        
+
         word_finder = worder.Worder(source, True)
         expression = word_finder.get_primary_at(offset)
         expression = expression.replace('\\\n', ' ').replace('\n', ' ')
-        
+
         names = expression.split('.')
         pyname = None
         try:
@@ -121,13 +121,13 @@ class Plugin(object):
                 obj = pyname.get_object()
         except (exceptions.ModuleNotFoundError, exceptions.AttributeNotFoundError):
             return None, None
-   
+
         if not pyname:
             try:
                 resource = obj._get_init_dot_py()
             except AttributeError:
                 resource = obj.get_resource()
-            
+
             if not resource:
                 return None, None
             else:
@@ -136,7 +136,7 @@ class Plugin(object):
             resource, line = pyname.get_definition_location()
             if hasattr(resource, 'resource'):
                 resource = resource.resource
-            
+
         return resource, line
 
     def goto_definition(self):
@@ -144,8 +144,8 @@ class Plugin(object):
 
         project.validate()
 
-        current_resource = self.get_rope_resource(project) 
-        
+        current_resource = self.get_rope_resource(project)
+
         from rope.contrib import codeassist
 
         source, offset = self.get_source_and_offset()
@@ -161,14 +161,14 @@ class Plugin(object):
 
         if resource is None and line is None:
             resource, line = self.get_fuzzy_location(project, source, offset)
-        
+
         if resource and resource.real_path == current_resource.real_path:
             resource = None
-            
+
         if resource:
             uri = resource.real_path
             editor = self.editor.open_file(uri, line - 1)
-            editor.ropeproject_root = project.snaked_project_root 
+            editor.ropeproject_root = project.snaked_project_root
         else:
             if line:
                 self.editor.add_spot()
@@ -180,11 +180,11 @@ class Plugin(object):
     def on_textview_key_press_event(self, sender, event):
         if event.keyval != gtk.keysyms.Return:
             return False
-            
+
         cursor = self.editor.cursor
         line_start = cursor.copy()
         line_start.set_line(line_start.get_line())
-        
+
         text = line_start.get_text(cursor).strip()
         if text and text[-1] == ':':
             end = line_start.copy()
@@ -196,39 +196,38 @@ class Plugin(object):
                 tab = u' ' * self.editor.view.get_tab_width()
             else:
                 tab = u'\t'
-                
+
             self.editor.buffer.begin_user_action()
             self.editor.buffer.insert(cursor, u'\n' + ws + tab)
             self.editor.buffer.end_user_action()
-            
-            if cursor.is_end():
-                idle(self.editor.view.scroll_to_iter, cursor, 0.001, use_align=True, xalign=1.0)
-            
+
+            idle(self.editor.view.scroll_mark_onscreen, self.editor.buffer.get_insert())
+
             return True
-        
+
         return False
 
     @connect_external('view', 'backspace')
     def on_textview_backspace(self, *args):
         cursor = self.editor.cursor
-        
+
         if cursor.starts_line():
             return False
-        
+
         start = cursor.copy()
         start.set_line(start.get_line())
-            
+
         text = start.get_text(cursor)
-        
+
         if text.strip():
             return False
-            
+
         delete_from = cursor.copy()
-        if text[-1] == u'\t': 
+        if text[-1] == u'\t':
             delete_from.backward_char()
         else:
             delete_from.backward_chars(self.editor.view.get_tab_width() - 1)
-        
+
         if delete_from.get_line() != start.get_line():
             delete_from = start
 
@@ -245,19 +244,19 @@ class Plugin(object):
         project = self.project_manager.project
         project.validate()
 
-        current_resource = self.get_rope_resource(project) 
-        
+        current_resource = self.get_rope_resource(project)
+
         from rope.contrib import codeassist
         from snaked.util.pairs_parser import get_brackets
- 
+
         source, offset = self.get_source_and_offset()
-        
+
         brackets = get_brackets(source, offset)
         if brackets:
             br, spos, epos = brackets
             if br == '(':
                 offset = spos - 1
-            
+
         try:
             doc = codeassist.get_doc(project, source, offset, resource=current_resource, maxfixes=3)
         except Exception, e:
@@ -265,7 +264,7 @@ class Plugin(object):
             traceback.print_exc()
             self.editor.message(str(e), 5000)
             return
-        
+
         if doc:
             self.editor.message(doc.strip(), 20000)
         else:

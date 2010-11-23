@@ -92,12 +92,12 @@ def on_view_key_press_event(view, event, contexts, editor_ref):
                 matches[ctx] = find_all_snippets(ctx, match)
 
         if matches:
-            return expand_snippet(view, matches)
+            return expand_snippet(editor_ref, matches)
 
         if buffer in stop_managers:
             sm = stop_managers[buffer]
             if sm.cursor_in_snippet_range(cursor):
-                return sm.goto_next_stop(editor_ref())
+                return sm.goto_next_stop()
             else:
                 del stop_managers[buffer]
 
@@ -108,7 +108,7 @@ def on_view_key_press_event(view, event, contexts, editor_ref):
         if buffer in stop_managers:
             sm = stop_managers[buffer]
             if sm.cursor_in_snippet_range(cursor):
-                return sm.goto_next_stop(editor_ref(), True)
+                return sm.goto_next_stop(True)
             else:
                 del stop_managers[buffer]
 
@@ -129,7 +129,7 @@ def on_buffer_changed(buffer):
 def find_all_snippets(ctx, match):
     return [s for s in loaded_snippets[ctx].values() if s.snippet == match]
 
-def expand_snippet(view, matches):
+def expand_snippet(editor_ref, matches):
     if not matches:
         return False
     elif len(matches) == 1:
@@ -138,10 +138,10 @@ def expand_snippet(view, matches):
             return False
 
         if len(snippets) == 1:
-            insert_snippet(view, get_iter_at_cursor(view.get_buffer()), snippets[0])
+            insert_snippet(editor_ref, editor_ref().cursor, snippets[0])
             return True
 
-    show_proposals(view, get_iter_at_cursor(view.get_buffer()), matches.keys())
+    show_proposals(editor_ref().view, editor_ref().cursor, matches.keys())
     return True
 
 match_ws = re.compile(u'(?u)^[ \t]*')
@@ -163,8 +163,10 @@ def line_text(iter):
 
     return iter.get_text(end)
 
-def insert_snippet(view, iter, snippet):
-    buffer = view.get_buffer()
+def insert_snippet(editor_ref, iter, snippet):
+    editor = editor_ref()
+    buffer = editor.buffer
+    view = editor.view
 
     expand_tabs = view.get_insert_spaces_instead_of_tabs()
     tab_width = view.get_tab_width()
@@ -183,7 +185,7 @@ def insert_snippet(view, iter, snippet):
     buffer.insert_at_cursor(body)
     buffer.end_user_action()
 
-    stop_managers[buffer] = StopManager(buffer, offset, stop_offsets, insert_offsets)
+    stop_managers[buffer] = StopManager(editor_ref, offset, stop_offsets, insert_offsets)
 
 def show_proposals(view, iter, contexts):
     completion = view.get_completion()
@@ -192,24 +194,24 @@ def show_proposals(view, iter, contexts):
 
 
 class StopManager(object):
-    def __init__(self, buffer, offset, stop_offsets, insert_offsets):
-        self.buffer = buffer
-
-        self.start_mark = buffer.create_mark(None, buffer.get_iter_at_offset(offset), True)
-        self.end_mark = buffer.create_mark(None, get_iter_at_cursor(buffer))
+    def __init__(self, editor_ref, offset, stop_offsets, insert_offsets):
+        buf = self.buffer = editor_ref().buffer
+        self.editor_ref = editor_ref
+        self.start_mark = buf.create_mark(None, buf.get_iter_at_offset(offset), True)
+        self.end_mark = buf.create_mark(None, get_iter_at_cursor(buf))
 
         self.stop_marks = {}
         for i in sorted(stop_offsets):
             s, e = stop_offsets[i]
-            s = buffer.create_mark(None, buffer.get_iter_at_offset(offset + s), True)
-            e = buffer.create_mark(None, buffer.get_iter_at_offset(offset + e))
+            s = buf.create_mark(None, buf.get_iter_at_offset(offset + s), True)
+            e = buf.create_mark(None, buf.get_iter_at_offset(offset + e))
             self.stop_marks[i] = s, e
 
         self.insert_marks = {}
         for i in sorted(insert_offsets):
             s, e = insert_offsets[i]
-            s = buffer.create_mark(None, buffer.get_iter_at_offset(offset + s), True)
-            e = buffer.create_mark(None, buffer.get_iter_at_offset(offset + e))
+            s = buf.create_mark(None, buf.get_iter_at_offset(offset + s), True)
+            e = buf.create_mark(None, buf.get_iter_at_offset(offset + e))
             self.insert_marks[i] = s, e
 
         try:
@@ -219,6 +221,7 @@ class StopManager(object):
 
     def goto_stop(self, idx):
         self.buffer.select_range(*reversed(self.get_iter_pair(*self.stop_marks[idx])))
+        self.editor_ref().view.scroll_mark_onscreen(self.buffer.get_insert())
 
     def get_iter_pair(self, start_mark, end_mark):
         return (self.buffer.get_iter_at_mark(start_mark),
@@ -241,7 +244,7 @@ class StopManager(object):
 
         return None
 
-    def goto_next_stop(self, editor, back=False):
+    def goto_next_stop(self, back=False):
         if self.buffer.get_has_selection():
             cursor = self.buffer.get_selection_bounds()[1]
         else:
@@ -260,7 +263,8 @@ class StopManager(object):
                 else:
                     self.buffer.place_cursor(self.buffer.get_iter_at_mark(self.end_mark))
 
-                self.remove(editor)
+                self.editor_ref().view.scroll_mark_onscreen(self.buffer.get_insert())
+                self.remove()
                 return True
 
             self.goto_stop(idx)
@@ -287,9 +291,8 @@ class StopManager(object):
 
         self.remove()
 
-    def remove(self, editor=None):
-        if editor:
-            editor.message('Snippet was completed')
+    def remove(self):
+        self.editor_ref().message('Snippet was completed')
 
         try:
             del stop_managers[self.buffer]
@@ -316,7 +319,7 @@ class SnippetsCompletionProvider(gobject.GObject, CompletionProvider):
     def __init__(self, ctx):
         gobject.GObject.__init__(self)
         self.ctx = ctx
-        self.last_view = None
+        self.last_editor_ref = None
 
     def do_get_name(self):
         return '%s snippets' % self.ctx
@@ -336,12 +339,12 @@ class SnippetsCompletionProvider(gobject.GObject, CompletionProvider):
         snippets = [s for s in loaded_snippets[self.ctx].values() if s.snippet == match]
         if snippets:
             context.add_proposals(self, [SnippetProposal(s) for s in snippets], True)
-            self.last_view = weakref.ref(context.props.completion.props.view)
+            self.last_editor_ref = context.props.completion.props.view.editor_ref
         else:
             context.add_proposals(self, [], True)
 
     def do_activate_proposal(self, proposal, iter):
-        insert_snippet(self.last_view(), iter, proposal.snippet)
+        insert_snippet(self.last_editor_ref, iter, proposal.snippet)
         return True
 
 gobject.type_register(SnippetsCompletionProvider)
