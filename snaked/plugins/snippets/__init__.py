@@ -306,10 +306,10 @@ class SnippetProposal(gobject.GObject, CompletionProposal):
         self.snippet = snippet
 
     def do_get_label(self):
-        return self.snippet.snippet + (' ' + self.snippet.variant) if self.snippet.variant else ''
+        return self.snippet.snippet + ((' ' + self.snippet.variant) if self.snippet.variant else '')
 
     def do_get_text(self):
-        return self.snippet.snippet + (' ' + self.snippet.variant) if self.snippet.variant else ''
+        return self.snippet.snippet + ((' ' + self.snippet.variant) if self.snippet.variant else '')
 
     def do_get_info(self):
         return self.snippet.comment
