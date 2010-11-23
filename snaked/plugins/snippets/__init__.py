@@ -26,10 +26,10 @@ def editor_opened(editor):
         existing_snippet_contexts.clear()
         discover_snippet_contexts()
 
-    if editor.lang not in existing_snippet_contexts:
+    if not any(ctx in existing_snippet_contexts for ctx in editor.contexts):
         return
 
-    contexts = [editor.lang]
+    contexts = editor.contexts
     for ctx in contexts:
         if ctx not in loaded_snippets:
             load_snippets_for(ctx)

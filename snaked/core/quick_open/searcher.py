@@ -2,10 +2,10 @@ import re
 
 def get_pattern(what):
     parts = what.split('/')
-    
+
     if len(parts) <= 1:
         return None
-    
+
     rexp = r'(/|^)' + r'[^/]+/'.join(map(re.escape, parts))
     return re.compile(rexp)
 
@@ -20,13 +20,13 @@ def name_match(what):
         return what in name
 
     return inner
-    
+
 def path_match(what):
     def inner(name, path):
         return what in path
-    
+
     return inner
-        
+
 def fuzzy_match(what):
     pattern = get_pattern(what)
     def inner(name, path):
@@ -36,17 +36,17 @@ def fuzzy_match(what):
             return False
 
     return inner
-    
+
 def dir_is_good(name, path):
-    if name.startswith('.') and name != '.ropeproject':
+    if name.startswith('.') and name not in ('.ropeproject', '.snaked_project'):
         return False
-    
+
     return True
 
 def file_is_good(name, path):
     if any(map(name.endswith, ('.pyc', '.pyo', '.png'))):
         return False
-    
+
     return True
 
 def search(root, top, match, already_matched, tick):
@@ -60,12 +60,12 @@ def search(root, top, match, already_matched, tick):
         tick()
         fullpath = join(root, top, name)
         path = join(top, name)
-        
+
         if isdir(fullpath) and dir_is_good(name, path):
             dirs_to_visit.append(path)
         elif (name, top) not in already_matched and match(name, path) and file_is_good(name, path):
             yield name, top
-            
+
     for path in dirs_to_visit:
         for p in search(root, path, match, already_matched, tick):
             yield p

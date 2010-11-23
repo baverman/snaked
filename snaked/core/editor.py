@@ -1,6 +1,8 @@
 import os.path
 import time
 
+import weakref
+
 import gtk
 import gtksourceview2
 
@@ -28,6 +30,7 @@ class Editor(SignalManager):
         self.session = None
         self.saveable = True
         self.lang = None
+        self.contexts = []
         self.prefs = {}
 
         self.last_cursor_move = None
@@ -40,6 +43,7 @@ class Editor(SignalManager):
         self.view = gtksourceview2.View()
         self.view.set_buffer(self.buffer)
         sw.add(self.view)
+        self.view.editor_ref = weakref.ref(self)
 
         self.widget = gtk.VBox(False, 0)
         self.widget.pack_start(sw)

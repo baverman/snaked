@@ -1,3 +1,4 @@
+import os.path
 import weakref
 
 import gtk
@@ -5,7 +6,7 @@ import gtksourceview2
 import pango
 
 from ..signals import connect_all
-from ..util import idle, lazy_property
+from ..util import idle, lazy_property, create_lang_matchers_from_file, LangGuesser, get_project_root
 
 import prefs
 from .shortcuts import register_shortcut, load_shortcuts
@@ -33,6 +34,7 @@ class EditorManager(object):
         self.escape_stack = []
         self.escape_map = {}
         self.spot_history = []
+        self.lang_gussers = {}
 
         self.session = None
 
@@ -41,6 +43,7 @@ class EditorManager(object):
 
         # Init core plugins
         self.plugin_manager.load_core_plugin(snaked.core.quick_open)
+
 
     def register_app_shortcuts(self):
         register_shortcut('quit', '<ctrl>q', 'Application', 'Quit')
@@ -56,6 +59,21 @@ class EditorManager(object):
             'Quick jump to next spot in history')
         register_shortcut('goto-prev-spot', '<ctrl><alt>Left', 'Edit',
             'Quick jump to previous spot in history')
+
+    def get_lang_guesser(self, project_root):
+        try:
+            return self.lang_gussers[project_root]
+        except KeyError:
+            pass
+
+        guesser = None
+        contexts_filename = os.path.join(project_root, '.snaked_project', 'contexts')
+        if os.path.exists(contexts_filename):
+            matchers = create_lang_matchers_from_file(project_root, contexts_filename)
+            guesser = LangGuesser(matchers)
+
+        self.lang_gussers[project_root] = guesser
+        return guesser
 
     def open(self, filename, line=None):
         editor = Editor()
@@ -81,11 +99,29 @@ class EditorManager(object):
 
     def set_editor_prefs(self, editor, filename):
         lang = None
-        if filename:
-            lang = self.lang_manager.guess_language(filename, None)
-            editor.buffer.set_language(lang)
+        editor.lang = 'default'
+        editor.contexts = ['default']
 
-        editor.lang = lang.get_id() if lang else 'default'
+        if filename:
+            root = get_project_root(filename)
+            guesser = self.get_lang_guesser(root)
+            if guesser:
+                contexts = guesser.guess(os.path.abspath(filename))
+                if contexts:
+                    lang_id = contexts[0]
+                    lang = self.lang_manager.get_language(lang_id)
+                    if lang:
+                        editor.lang = lang.get_id()
+                        editor.contexts = contexts
+
+            if not lang:
+                lang = self.lang_manager.guess_language(filename, None)
+                if lang:
+                    editor.lang = lang.get_id()
+                    editor.contexts = [editor.lang]
+
+        if lang:
+            editor.buffer.set_language(lang)
 
         pref = prefs.CompositePreferences(self.lang_prefs.get(editor.lang, {}),
             self.lang_prefs.get('default', {}), prefs.default_prefs.get(editor.lang, {}),
