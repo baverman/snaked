@@ -7,15 +7,20 @@ class Snippet(object):
         self.comment = ''
         self.body = []
 
+        if variant:
+            self.label = snippet + ' ' + variant
+        else:
+            self.label = snippet
+
     def get_body_and_offsets(self, indent=u'', expand_tabs=False, tab_width=4):
         tab_offsets = {}
         insert_offsets = {}
         replaces = {}
         matcher = re.compile(ur'\$\{(\d+)(:(.*?))?\}')
-        
+
         body = (u'\n' + indent).join(
             s.expandtabs(tab_width) if expand_tabs else s for s in self.body)
-        
+
         for m in matcher.finditer(body):
             if m.group(3):
                 replaces[int(m.group(1))] = m.group(3)
@@ -65,15 +70,13 @@ def parse_snippets_from(filename):
     snippets = {}
     for l in open(filename).read().decode('utf-8').splitlines():
         if l.startswith('snippet'):
-            tag_and_variant = l.split(None, 3)[1:]
+            tag_and_variant = l.split(None, 2)[1:]
             if len(tag_and_variant) == 2:
                 tag, variant = tag_and_variant
-                key = ' '.join(tag_and_variant)
             else:
                 tag, variant = tag_and_variant[0], None
-                key = tag
             csnippet = Snippet(tag, variant)
-            snippets[key] = csnippet
+            snippets[csnippet.label] = csnippet
             if pl.startswith('#'):
                 csnippet.comment = pl[1:].strip()
         elif l.startswith('\t') and csnippet:

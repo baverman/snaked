@@ -29,10 +29,12 @@ def editor_opened(editor):
     if not any(ctx in existing_snippet_contexts for ctx in editor.contexts):
         return
 
-    contexts = editor.contexts
+    contexts = [c for c in editor.contexts if c in existing_snippet_contexts]
     for ctx in contexts:
         if ctx not in loaded_snippets:
             load_snippets_for(ctx)
+
+        editor.view.get_completion().add_provider(completion_providers[ctx])
 
     editor.view.connect('key-press-event', on_view_key_press_event,
         contexts, weakref.ref(editor))
@@ -173,9 +175,17 @@ def insert_snippet(editor_ref, iter, snippet):
     indent = unicode(get_whitespace(iter))
 
     buffer.begin_user_action()
-    start = iter.copy()
-    start.backward_chars(len(snippet.snippet))
-    buffer.delete(start, iter)
+
+    if not iter_at_whitespace(iter):
+        start = iter.copy()
+        start.backward_chars(len(snippet.snippet))
+        while not start.equal(iter):
+            txt = start.get_text(iter).decode('utf-8')
+            if snippet.snippet.startswith(txt):
+                buffer.delete(start, iter)
+                break
+
+            start.forward_char()
 
     offset = get_iter_at_cursor(buffer).get_offset()
 
@@ -306,13 +316,23 @@ class SnippetProposal(gobject.GObject, CompletionProposal):
         self.snippet = snippet
 
     def do_get_label(self):
-        return self.snippet.snippet + ((' ' + self.snippet.variant) if self.snippet.variant else '')
+        return self.snippet.label
 
     def do_get_text(self):
-        return self.snippet.snippet + ((' ' + self.snippet.variant) if self.snippet.variant else '')
+        return self.snippet.label
 
     def do_get_info(self):
         return self.snippet.comment
+
+def iter_at_whitespace(iter):
+    if iter.starts_line():
+        return True
+    else:
+        start = iter.copy()
+        start.set_line(iter.get_line())
+
+        char = start.get_text(iter).decode('utf-8')[-1]
+        return not char.isalnum() and char != '_'
 
 
 class SnippetsCompletionProvider(gobject.GObject, CompletionProvider):
@@ -334,9 +354,30 @@ class SnippetsCompletionProvider(gobject.GObject, CompletionProvider):
         return COMPLETION_ACTIVATION_USER_REQUESTED
 
     def do_populate(self, context):
-        match = get_match(context.get_iter(), self.ctx)
+        snippets = []
+        all_snippets = sorted(loaded_snippets[self.ctx].values(), key=lambda r:r.label)
+        iter = context.get_iter()
 
-        snippets = [s for s in loaded_snippets[self.ctx].values() if s.snippet == match]
+        if context.get_activation() == COMPLETION_ACTIVATION_USER_REQUESTED:
+            if iter_at_whitespace(iter):
+                snippets = all_snippets
+            else:
+                names = snippets_match_hash.get(self.ctx, {})
+                if names:
+                    already_added = {}
+                    for cnt in range(max(names), 0, -1):
+                        end = iter.copy()
+                        end.backward_chars(cnt)
+
+                        match = end.get_slice(iter)
+                        for s in (s for s in all_snippets if s not in already_added):
+                            if s.snippet.startswith(match):
+                                already_added[s] = True
+                                snippets.append(s)
+        else:
+            match = get_match(iter, self.ctx)
+            snippets = [s for s in all_snippets if match == s.snippet]
+
         if snippets:
             context.add_proposals(self, [SnippetProposal(s) for s in snippets], True)
             self.last_editor_ref = context.props.completion.props.view.editor_ref
