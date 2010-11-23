@@ -14,7 +14,7 @@ def init(manager):
 
 def to_str(data, encoding='utf-8'):
     if isinstance(data, unicode):
-        return data.decode(encoding)
+        return data.encode(encoding)
 
     return data
 
