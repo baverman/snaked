@@ -1,6 +1,13 @@
 Snaked changelog
 ================
 
+v0.4.3
+------
+
+- fix: Snaked does not run without contexts definitions
+- Preferences items for editing rope hint and rope config modules.
+
+
 v0.4.2
 ------
 
