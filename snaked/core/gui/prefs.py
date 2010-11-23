@@ -27,7 +27,8 @@ class PreferencesDialog(BuilderAware):
     def fill_dialogs(self, search):
         self.dialogs.clear()
 
-        for name, (keywords, show_func) in prefs.registered_dialogs.iteritems():
+        for name in sorted(prefs.registered_dialogs):
+            keywords, show_func = prefs.registered_dialogs[name]
             if not search or any(w.startswith(search) for w in keywords):
                 markup = '<b>%s</b>\n<small>%s</small>' % (
                     name, u' \u2022 '.join(keywords))

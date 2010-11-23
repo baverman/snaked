@@ -38,7 +38,7 @@ def fuzzy_match(what):
     return inner
 
 def dir_is_good(name, path):
-    if name.startswith('.') and name not in ('.ropeproject', '.snaked_project'):
+    if name.startswith('.'):
         return False
 
     return True

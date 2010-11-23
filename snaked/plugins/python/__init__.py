@@ -19,12 +19,15 @@ def init(manager):
     manager.add_shortcut('python-calltip', '<ctrl>Return', 'Python',
         'Shows calltips', show_calltips)
 
+    from snaked.core.prefs import register_dialog
+    register_dialog('Rope hints', edit_rope_hints, 'rope', 'hints')
+    register_dialog('Rope config', edit_rope_config, 'rope', 'config')
 
 def editor_created(editor):
     editor.connect('get-title', on_editor_get_title)
-    
+
 def editor_opened(editor):
-    from plugin import Plugin    
+    from plugin import Plugin
     h = Plugin(editor)
     handlers[editor] = h
 
@@ -46,7 +49,7 @@ def goto_definition(editor):
         h = handlers[editor]
     except KeyError:
         return
-        
+
     h.goto_definition()
 
 def show_calltips(editor):
@@ -54,36 +57,36 @@ def show_calltips(editor):
         h = handlers[editor]
     except KeyError:
         return
-        
+
     h.show_calltips()
 
 def on_editor_get_title(editor):
     if editor.uri.endswith('.py'):
         return get_python_title(editor.uri)
-    
+
     return None
 
 def get_python_title(uri):
     from os.path import dirname, basename, exists, join
-    
+
     title = basename(uri)
     packages = []
     while True:
         path = dirname(uri)
         if path == uri:
             break
-        
+
         uri = path
-        
+
         if exists(join(uri, '__init__.py')):
             packages.append(basename(uri))
         else:
             break
-            
+
     if packages:
         if title != '__init__.py':
             packages.insert(0, title.partition('.py')[0])
-            
+
         return '.'.join(reversed(packages))
     else:
         return None
@@ -93,5 +96,29 @@ def open_outline(editor):
     if not outline_dialog:
         from outline import OutlineDialog
         outline_dialog = OutlineDialog()
-    
+
     outline_dialog.show(editor)
+
+def edit_rope_hints(editor):
+    import os
+    import shutil
+    from os.path import join, exists, dirname
+
+    ropehints = join(editor.project_root, '.ropeproject', 'ropehints.py')
+    if not exists(ropehints):
+        ropedir = dirname(ropehints)
+        if not exists(ropedir):
+            os.mkdir(ropedir, 0755)
+
+        shutil.copy(join(dirname(__file__), 'ropehints_tpl.py'), ropehints)
+
+    editor.open_file(ropehints)
+
+def edit_rope_config(editor):
+    from os.path import join, exists
+    ropeconfig = join(editor.project_root, '.ropeproject', 'config.py')
+    if exists(ropeconfig):
+        editor.open_file(ropeconfig)
+    else:
+        editor.message('There is no existing rope config.\n'
+            'Try to autocomplete something. Then repeat', 5000)

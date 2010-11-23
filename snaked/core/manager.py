@@ -67,10 +67,11 @@ class EditorManager(object):
             pass
 
         guesser = None
-        contexts_filename = os.path.join(project_root, '.snaked_project', 'contexts')
-        if os.path.exists(contexts_filename):
-            matchers = create_lang_matchers_from_file(project_root, contexts_filename)
-            guesser = LangGuesser(matchers)
+        if project_root:
+            contexts_filename = os.path.join(project_root, '.snaked_project', 'contexts')
+            if os.path.exists(contexts_filename):
+                matchers = create_lang_matchers_from_file(project_root, contexts_filename)
+                guesser = LangGuesser(matchers)
 
         self.lang_gussers[project_root] = guesser
         return guesser
