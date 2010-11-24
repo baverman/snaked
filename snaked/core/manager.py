@@ -31,6 +31,9 @@ class EditorManager(object):
         prefs.register_dialog('Editor settings', self.show_editor_preferences,
             'editor', 'font', 'style', 'margin', 'line', 'tab', 'whitespace')
 
+        prefs.register_dialog('File types', self.edit_contexts, 'file', 'type', 'association')
+
+
         self.escape_stack = []
         self.escape_map = {}
         self.spot_history = []
@@ -317,6 +320,27 @@ class EditorManager(object):
             prev_spot = s
 
         self.goto_last_spot(editor)
+
+
+    def edit_contexts(self, editor):
+        import os
+        import shutil
+        from os.path import join, exists, dirname
+
+        contexts = join(editor.project_root, '.snaked_project', 'contexts')
+        if not exists(contexts):
+            snakeddir = dirname(contexts)
+            if not exists(snakeddir):
+                os.mkdir(snakeddir, 0755)
+
+            shutil.copy(join(dirname(__file__), 'contexts.template'), contexts)
+
+        e = editor.open_file(contexts)
+        e.file_saved.connect(self, 'on_context_saved')
+
+    def on_context_saved(self, editor):
+        editor.message('File type associations changed')
+        self.lang_gussers.clear()
 
 class EditorSpot(object):
     def __init__(self, manager, editor):

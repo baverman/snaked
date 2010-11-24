@@ -145,6 +145,7 @@ class Editor(SignalManager):
         return None
 
     def open_file(self, filename, line=None):
+        """:rtype: Editor"""
         return self.request_to_open_file.emit(filename, line)
 
     @property

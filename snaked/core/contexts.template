@@ -1,0 +1,14 @@
+# This config defines mappings of project files to editor contexts
+# For example contexts are token in action by choosing
+# right language or snippet set for editor.
+# Here some examples. You MUST edit it to suite your needs.
+
+# Map CHANGES file in project's root to be a 'rst' (restructured text) document.
+/CHANGES: rst
+
+# Any glade file should be treated as 'xml' file.
+*.glade: xml
+
+# Web project templates are 'html' files with additional 'mako' context,
+# which allow to enable mako snippets support simultaneously with html snippets.
+/tpl/*.html: html, mako

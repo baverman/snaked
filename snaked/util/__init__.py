@@ -116,7 +116,7 @@ def create_lang_matchers_from_file(project_root, filename):
     result = []
     for l in open(filename):
         l = l.strip()
-        if l.startswith('#'):
+        if not l or l.startswith('#'):
             continue
 
         try:
