@@ -3,6 +3,8 @@ import os.path
 import os
 import json
 
+from snaked.util import make_missing_dirs, join_to_settings_dir
+
 default_prefs = {
     'default': {
         'font': 'Monospace 11',
@@ -51,6 +53,11 @@ def save_json_settings(name, value):
     with open(filename, 'w') as f:
         json.dump(value, f, sort_keys=True, indent=4)
 
+def get_settings_path(name):
+    filename = join_to_settings_dir(name)
+    make_missing_dirs(filename)
+    return filename
+
 
 class CompositePreferences(object):
     def __init__(self, *prefs):
@@ -64,14 +71,6 @@ class CompositePreferences(object):
                 pass
 
         raise KeyError('There is no %s in preferences' % key)
-
-def get_settings_path(name):
-    config_dir = os.getenv('XDG_CONFIG_HOME', os.path.expanduser('~/.config'))
-    path = os.path.join(config_dir, 'snaked')
-    if not os.path.exists(path):
-        os.makedirs(path, mode=0755)
-
-    return os.path.join(path, name)
 
 
 class KVSettings(object):

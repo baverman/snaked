@@ -11,7 +11,7 @@ import gtk, gobject
 from gtksourceview2 import CompletionProvider, CompletionProposal
 from gtksourceview2 import COMPLETION_ACTIVATION_USER_REQUESTED
 
-from snaked.util import idle
+from snaked.util import idle, join_to_settings_dir
 from .parser import parse_snippets_from
 
 loaded_snippets = {}
@@ -53,9 +53,9 @@ def load_snippets_for(ctx, prior):
     completion_providers[ctx] = SnippetsCompletionProvider(ctx, prior)
 
 def discover_snippet_contexts():
-    dirs_to_scan = [os.path.join(os.path.dirname(__file__), 'snippets'),
-        os.path.join(os.getenv('XDG_CONFIG_HOME', os.path.expanduser('~/.config')),
-            'snaked', 'snippets')
+    dirs_to_scan = [
+        os.path.join(os.path.dirname(__file__), 'snippets'),
+        join_to_settings_dir('snippets'),
     ]
 
     for d in dirs_to_scan:

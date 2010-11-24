@@ -323,16 +323,13 @@ class EditorManager(object):
 
 
     def edit_contexts(self, editor):
-        import os
         import shutil
         from os.path import join, exists, dirname
+        from snaked.util import make_missing_dirs
 
         contexts = join(editor.project_root, '.snaked_project', 'contexts')
         if not exists(contexts):
-            snakeddir = dirname(contexts)
-            if not exists(snakeddir):
-                os.mkdir(snakeddir, 0755)
-
+            make_missing_dirs(contexts)
             shutil.copy(join(dirname(__file__), 'contexts.template'), contexts)
 
         e = editor.open_file(contexts)
@@ -341,6 +338,7 @@ class EditorManager(object):
     def on_context_saved(self, editor):
         editor.message('File type associations changed')
         self.lang_gussers.clear()
+
 
 class EditorSpot(object):
     def __init__(self, manager, editor):

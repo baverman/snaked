@@ -100,16 +100,13 @@ def open_outline(editor):
     outline_dialog.show(editor)
 
 def edit_rope_hints(editor):
-    import os
     import shutil
     from os.path import join, exists, dirname
+    from snaked.util import make_missing_dirs
 
     ropehints = join(editor.project_root, '.ropeproject', 'ropehints.py')
     if not exists(ropehints):
-        ropedir = dirname(ropehints)
-        if not exists(ropedir):
-            os.mkdir(ropedir, 0755)
-
+        make_missing_dirs(ropehints)
         shutil.copy(join(dirname(__file__), 'ropehints_tpl.py'), ropehints)
 
     editor.open_file(ropehints)

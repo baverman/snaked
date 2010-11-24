@@ -1,6 +1,6 @@
 import os
 import shutil
-from os.path import join, dirname, realpath, abspath, exists
+from os.path import join, dirname, realpath, abspath, exists, expanduser
 import re
 
 import gobject
@@ -44,6 +44,15 @@ def connect(sender, signal, obj, attr, idle=False, after=False):
 
 def join_to_file_dir(filename, *args):
     return join(dirname(filename), *args)
+
+def join_to_settings_dir(*args):
+    config_dir = os.getenv('XDG_CONFIG_HOME', os.path.expanduser('~/.config'))
+    return join(config_dir, 'snaked', *args)
+
+def make_missing_dirs(filename):
+    path = dirname(filename)
+    if not exists(path):
+        os.makedirs(path, mode=0755)
 
 def get_project_root(filename):
     path = dirname(abspath(filename))
