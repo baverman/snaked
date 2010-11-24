@@ -29,10 +29,12 @@ def editor_opened(editor):
     if not any(ctx in existing_snippet_contexts for ctx in editor.contexts):
         return
 
+    prior = 50
     contexts = [c for c in editor.contexts if c in existing_snippet_contexts]
     for ctx in contexts:
         if ctx not in loaded_snippets:
-            load_snippets_for(ctx)
+            load_snippets_for(ctx, prior)
+            prior -= 1
 
         editor.view.get_completion().add_provider(completion_providers[ctx])
 
@@ -41,14 +43,14 @@ def editor_opened(editor):
 
     editor.buffer.connect_after('changed', on_buffer_changed)
 
-def load_snippets_for(ctx):
+def load_snippets_for(ctx, prior):
     snippets = parse_snippets_from(existing_snippet_contexts[ctx])
     loaded_snippets[ctx] = snippets
     snippet_names = [s.snippet for s in snippets.values()]
     for name in snippet_names:
         snippets_match_hash.setdefault(ctx, {}).setdefault(len(name), {})[name] = True
 
-    completion_providers[ctx] = SnippetsCompletionProvider(ctx)
+    completion_providers[ctx] = SnippetsCompletionProvider(ctx, prior)
 
 def discover_snippet_contexts():
     dirs_to_scan = [os.path.join(os.path.dirname(__file__), 'snippets'),
@@ -336,16 +338,17 @@ def iter_at_whitespace(iter):
 
 
 class SnippetsCompletionProvider(gobject.GObject, CompletionProvider):
-    def __init__(self, ctx):
+    def __init__(self, ctx, priority):
         gobject.GObject.__init__(self)
         self.ctx = ctx
         self.last_editor_ref = None
+        self.priority = priority
 
     def do_get_name(self):
         return '%s snippets' % self.ctx
 
     def do_get_priority(self):
-        return 2
+        return self.priority
 
     def do_set_priority(self):
         pass

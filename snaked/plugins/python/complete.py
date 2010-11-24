@@ -93,7 +93,7 @@ class RopeCompletionProvider(gobject.GObject, CompletionProvider):
         return 'python'
 
     def do_get_priority(self):
-        return 1
+        return 100
 
     def do_set_priority(self):
         pass
