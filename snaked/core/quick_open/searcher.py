@@ -61,8 +61,9 @@ def search(root, top, match, already_matched, tick):
         fullpath = join(root, top, name)
         path = join(top, name)
 
-        if isdir(fullpath) and dir_is_good(name, path):
-            dirs_to_visit.append(path)
+        if isdir(fullpath):
+            if dir_is_good(name, path):
+                dirs_to_visit.append(path)
         elif (name, top) not in already_matched and match(name, path) and file_is_good(name, path):
             yield name, top
 
