@@ -347,7 +347,7 @@ def iter_at_whitespace(iter):
         start.set_line(iter.get_line())
 
         char = start.get_text(iter).decode('utf-8')[-1]
-        return not char.isalnum() and char != '_'
+        return char.isspace() or char in ('>', ')', '}', ']')
 
 
 class SnippetsCompletionProvider(gobject.GObject, CompletionProvider):
