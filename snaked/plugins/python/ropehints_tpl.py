@@ -9,7 +9,7 @@ Enable Django support::
 Enable PyGtk support::
 
     from snaked.plugins.python.pygtkhints import add_gtk_support
-    pygtk = add_gtk_support(provider)
+    add_gtk_support(provider)
 
 For detailed description look at http://packages.python.org/snaked/python.html#type-hints
 """
