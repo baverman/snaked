@@ -3,6 +3,7 @@ import os
 
 import xml.sax.handler
 import rope.base.pynames
+import rope.base.pyobjects
 
 import gobject
 
@@ -47,6 +48,11 @@ class GladeName(rope.base.pynames.PyName):
         return self.module, self.line
 
 
+class GladeFunction(rope.base.pyobjects.AbstractFunction):
+    def __init__(self):
+        rope.base.pyobjects.AbstractFunction.__init__(self)
+
+
 class PyGtkHintProvider(HintProvider):
     def __init__(self, project):
         super(PyGtkHintProvider, self).__init__(project)
@@ -73,11 +79,11 @@ class PyGtkHintProvider(HintProvider):
             type = self.get_type(self.get_pygtk_class_name(cls))
             attrs[id] = GladeName(type.get_object(), ResourceAsModule(glade_resource), line)
 
-        self.cache[scope_path] = attrs
-
-        for name, (cls, signal) in handler.signals.iteritems():
+        for name, (cls, signal, line) in handler.signals.iteritems():
             self.handlers.setdefault(scope_path, {})[name] = cls, signal
+            attrs[name] = GladeName(GladeFunction(), ResourceAsModule(glade_resource), line)
 
+        self.cache[scope_path] = attrs
         self.gtk_aware_classes[scope_path] = glade_file
 
     def get_glade_file_for_class(self, scope_path, pyclass):
@@ -98,14 +104,15 @@ class PyGtkHintProvider(HintProvider):
 
         return None
 
-    def get_class_attributes(self, scope_path, pyclass, attrs):
+    def get_class_attributes(self, scope_path, pyclass, orig_attrs):
         attrs = {}
         glade_file = self.get_glade_file_for_class(scope_path, pyclass)
         if glade_file:
             glade_resource = pyclass.get_module().resource.project.get_file(glade_file)
             self.process_glade(scope_path, glade_resource)
             for k, v in self.cache[scope_path].iteritems():
-                attrs[k] = v
+                if k not in orig_attrs:
+                    attrs[k] = v
 
         return attrs
 
@@ -179,7 +186,8 @@ class GladeHandler(xml.sax.handler.ContentHandler):
             self.current_object_class = attrs['class']
         elif name == 'signal':
             if self.current_object_class:
-                self.signals[attrs['handler']] = self.current_object_class, attrs['name']
+                self.signals[attrs['handler']] = (self.current_object_class, attrs['name'],
+                    self._locator.getLineNumber())
 
     def endElement(self, name):
         if name == 'object':

@@ -90,3 +90,11 @@ def test_provider_must_resolve_params_of_handlers_defined_in_glade_file_with_ext
         '   def on_window2_delete_event(self, wnd):\n'
         '       wnd.'))
     assert 'set_title' in result
+
+def test_provider_must_allow_to_implement_glade_handlers(project):
+    provide_pygtk_hints_for(project)
+
+    result = pset(get_proposals(project, 'pass\n\n'
+        '   def on'))
+
+    assert 'on_window1_delete_event' in result
