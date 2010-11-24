@@ -21,6 +21,18 @@ completion_providers = {}
 
 stop_managers = weakref.WeakKeyDictionary()
 
+def init(manager):
+    from snaked.core.prefs import register_dialog
+    register_dialog('Snippets', show_snippet_preferences, 'snippet')
+
+def show_snippet_preferences(editor):
+    if 'not_initialized' in existing_snippet_contexts:
+        existing_snippet_contexts.clear()
+        discover_snippet_contexts()
+
+    from prefs import PreferencesDialog
+    PreferencesDialog(existing_snippet_contexts).show(editor)
+
 def editor_opened(editor):
     if 'not_initialized' in existing_snippet_contexts:
         existing_snippet_contexts.clear()
@@ -43,14 +55,15 @@ def editor_opened(editor):
 
     editor.buffer.connect_after('changed', on_buffer_changed)
 
-def load_snippets_for(ctx, prior):
+def load_snippets_for(ctx, prior=None):
     snippets = parse_snippets_from(existing_snippet_contexts[ctx])
     loaded_snippets[ctx] = snippets
     snippet_names = [s.snippet for s in snippets.values()]
     for name in snippet_names:
         snippets_match_hash.setdefault(ctx, {}).setdefault(len(name), {})[name] = True
 
-    completion_providers[ctx] = SnippetsCompletionProvider(ctx, prior)
+    if prior is not None:
+        completion_providers[ctx] = SnippetsCompletionProvider(ctx, prior)
 
 def discover_snippet_contexts():
     dirs_to_scan = [
