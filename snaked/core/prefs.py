@@ -79,7 +79,7 @@ class KVSettings(object):
 
     def get_key(self, key):
         if isinstance(key, unicode):
-            return key.decode('utf-8')
+            return key.encode('utf-8')
         else:
             return key
 
