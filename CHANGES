@@ -1,6 +1,17 @@
 Snaked changelog
 ================
 
+v0.4.5
+------
+
+- tuned completion providers priority
+- Preference item to edit project file type associations
+- Preferences item to edit snippets
+- pygtk hint provider: mapping to glade file can be set in class pydoc
+- removed unneeded symlink check in quick open dialog
+- fix bsddb unicode issue
+
+
 v0.4.4
 ------
 
