@@ -13,6 +13,8 @@ def on_snippet_saved(editor, ctx):
 
 
 class PreferencesDialog(BuilderAware):
+    """glade-file: prefs.glade"""
+
     def __init__(self, existing_snippets):
         BuilderAware.__init__(self, join_to_file_dir(__file__, 'prefs.glade'))
 

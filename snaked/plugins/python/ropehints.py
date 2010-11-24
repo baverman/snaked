@@ -63,7 +63,10 @@ rope.base.oi.soi.infer_returned_object = infer_returned_object_with_hints(
 
 def get_attribute_scope_path(obj):
     if isinstance(obj, (PyModule, PyPackage)):
-        return obj.pycore.modname(obj.resource)
+        if obj.resource:
+            return obj.pycore.modname(obj.resource)
+        else:
+            return ''
     elif isinstance(obj, (PyClass,)):
         return get_attribute_scope_path(obj.get_module()) + '.' + obj.get_name()
     else:

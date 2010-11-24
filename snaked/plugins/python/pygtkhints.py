@@ -1,20 +1,26 @@
+import re
+import os
+
 import xml.sax.handler
 import rope.base.pynames
 
 import gobject
 
-from .ropehints import HintProvider
+from .ropehints import HintProvider, get_attribute_scope_path
+
+pydoc_glade_file_matcher = re.compile('(?m)^.*glade-file\s*:(.*)$')
 
 def add_gtk_support(composite_provider):
-    existing_modules = composite_provider.project.prefs['extension_modules']
+    add_gtk_extension_modules(composite_provider.project)
+    return composite_provider.add_hint_provider(PyGtkHintProvider(composite_provider.project))
 
+def add_gtk_extension_modules(project):
+    existing_modules = project.prefs['extension_modules']
     for m in ('gtk._gtk', 'gtk.gdk', 'gobject._gobject', 'pango'):
         if m not in existing_modules:
             existing_modules.append(m)
 
-    composite_provider.project.prefs['extension_modules'] = existing_modules
-
-    return composite_provider.add_hint_provider(PyGtkHintProvider(composite_provider.project))
+    project.prefs['extension_modules'] = existing_modules
 
 
 class ResourceAsModule(object):
@@ -48,60 +54,83 @@ class PyGtkHintProvider(HintProvider):
         self.cache = {}
         self.func_cache = {}
         self.handlers = {}
+        self.processed_files = {}
 
     def get_pygtk_class_name(self, gtk_class_name):
         return gtk_class_name.replace('Gtk', 'gtk.', 1) + '()'
 
-    def process_glade(self, scope_path, force=False):
-        glade_file, processed = self.gtk_aware_classes[scope_path]
+    def process_glade(self, scope_path, glade_resource, force=False):
+        glade_file = glade_resource.real_path
+        processed = self.processed_files.get(glade_file, False)
         if processed and not force:
             return
 
-        resource = self.project.get_resource(glade_file)
-
         handler = GladeHandler()
-        xml.sax.parseString(open(resource.real_path).read(), handler)
+        xml.sax.parseString(open(glade_file).read(), handler)
 
         attrs = {}
         for id, cls, line in handler.objects:
             type = self.get_type(self.get_pygtk_class_name(cls))
-            attrs[id] = GladeName(type.get_object(), ResourceAsModule(resource), line)
+            attrs[id] = GladeName(type.get_object(), ResourceAsModule(glade_resource), line)
 
         self.cache[scope_path] = attrs
 
         for name, (cls, signal) in handler.signals.iteritems():
             self.handlers.setdefault(scope_path, {})[name] = cls, signal
 
-        self.gtk_aware_classes[scope_path] = glade_file, True
+        self.gtk_aware_classes[scope_path] = glade_file
+
+    def get_glade_file_for_class(self, scope_path, pyclass):
+        try:
+            return self.gtk_aware_classes[scope_path]
+        except KeyError:
+            pass
+
+        doc = pyclass.get_doc()
+        if doc:
+            match = pydoc_glade_file_matcher.search(doc)
+            if match:
+                filename = match.group(1).strip()
+                if filename.startswith('/'):
+                    return filename[1:]
+                else:
+                    return os.path.join(os.path.dirname(pyclass.get_module().resource.path), filename)
+
+        return None
 
     def get_class_attributes(self, scope_path, pyclass, attrs):
         attrs = {}
-        if scope_path in self.gtk_aware_classes:
-            self.process_glade(scope_path)
+        glade_file = self.get_glade_file_for_class(scope_path, pyclass)
+        if glade_file:
+            glade_resource = pyclass.get_module().resource.project.get_file(glade_file)
+            self.process_glade(scope_path, glade_resource)
             for k, v in self.cache[scope_path].iteritems():
                 attrs[k] = v
 
         return attrs
 
     def add_class(self, scope, glade_file):
-        self.gtk_aware_classes[scope] = glade_file, False
+        self.gtk_aware_classes[scope] = glade_file
 
     def get_function_param_type(self, pyfunc, name):
         """Resolve function's parameters types from doc string
 
         :type pyfunc: rope.base.pyobjectsdef.PyFunction
         """
-
         scope_path = self.get_scope_path(pyfunc.get_scope())
         try:
             params = self.func_cache[scope_path]
         except KeyError:
-            class_scope = scope_path.rpartition('.')[0]
-            if class_scope not in self.gtk_aware_classes:
-                params = {}
-            else:
-                self.process_glade(class_scope)
+            pyclass = pyfunc.parent
+            class_scope = get_attribute_scope_path(pyclass)
+            glade_file = self.get_glade_file_for_class(scope_path, pyclass)
+
+            if glade_file:
+                glade_resource = pyclass.get_module().resource.project.get_file(glade_file)
+                self.process_glade(scope_path, glade_resource)
                 params = self.get_params_for_handler(class_scope, pyfunc)
+            else:
+                params = {}
 
             self.func_cache[scope_path] = params
 
