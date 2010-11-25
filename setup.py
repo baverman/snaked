@@ -8,7 +8,7 @@ setup(
     description = 'Very light and minimalist editor inspired by Scribes',
     long_description = open('README.rst').read(),
     zip_safe   = False,
-    packages = find_packages(),
+    packages = find_packages(exclude=('tests', )),
     install_requires = ['chardet'],
     include_package_data = True,
     namespace_packages = ['snaked', 'snaked.plugins'],

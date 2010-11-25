@@ -1,22 +1,13 @@
-import sys
-import os.path
-
-ROOT = os.path.dirname(os.path.dirname(__file__))
-sys.path.insert(0, ROOT)
-
 from ropetest import testutils
 from rope.contrib.codeassist import code_assist
 
 from snaked.plugins.python.djangohints import DjangoHintProvider
-from snaked.plugins.python.ropehints import CompositeHintProvider
 
 def provide_django_hints_for(project):
-    #project.pycore.hintdb = CompositeHintProvider(project)
-    #project.pycore.hintdb.add_hint_provider(DjangoHintProvider(project, 'test_djangohints'))
-    project.pycore.hintdb = DjangoHintProvider(project, 'test_djangohints')
+    project.pycore.hintdb = DjangoHintProvider(project, 'tests.test_djangohints')
 
 def get_proposals(project, source, offset=None, **kwargs):
-    head = 'from djangotest.models import *\n'
+    head = 'from tests.djangotest.models import *\n'
     source = head + source
 
     if offset is None:

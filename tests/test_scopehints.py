@@ -1,9 +1,3 @@
-import sys
-import os.path
-
-ROOT = os.path.dirname(os.path.dirname(__file__))
-sys.path.insert(0, ROOT)
-
 from ropetest import testutils
 from rope.contrib.codeassist import code_assist
 from rope.base.project import NoProject
@@ -18,7 +12,7 @@ def provide_scope_hints_for(project):
     return matcher
 
 def get_proposals(project, source, offset=None, **kwargs):
-    head = 'from scopetest import *\n\n'
+    head = 'from tests.scopetest import *\n\n'
     source = head + source
 
     if offset is None:
@@ -42,7 +36,7 @@ def pytest_funcarg__project(request):
 
 def test_func_param_hint(project):
     hintdb = provide_scope_hints_for(project)
-    hintdb.add_param_hint('module\.func$', 'lolwhat$', 'scopetest.Lolwhat()')
+    hintdb.add_param_hint('tests\.module\.func$', 'lolwhat$', 'tests.scopetest.Lolwhat()')
 
     result = pset(get_proposals(project, 'def func(lolwhat):\n    lolwhat.'))
     assert 'superstar' in result
@@ -50,7 +44,7 @@ def test_func_param_hint(project):
 
 def test_func_return(project):
     hintdb = provide_scope_hints_for(project)
-    hintdb.add_param_hint('module\.func$', 'return$', 'scopetest.Lolwhat()')
+    hintdb.add_param_hint('tests\.module\.func$', 'return$', 'tests.scopetest.Lolwhat()')
 
     result = pset(get_proposals(project, 'def func():\n    return None\n\nfunc().'))
     assert 'superstar' in result
@@ -58,7 +52,7 @@ def test_func_return(project):
 
 def test_module_attribute(project):
     hintdb = provide_scope_hints_for(project)
-    hintdb.add_attribute('re$', 'compile', 'scopetest.Lolwhat()')
+    hintdb.add_attribute('re$', 'compile', 'tests.scopetest.Lolwhat()')
 
     result = pset(get_proposals(project, 'import re\nre.compile.'))
     assert 'superstar' in result
@@ -66,7 +60,7 @@ def test_module_attribute(project):
 
 def test_class_attributes(project):
     hintdb = provide_scope_hints_for(project)
-    hintdb.add_attribute('scopetest.Lolwhat$', 'trololo', 'scopetest.Trololo()')
+    hintdb.add_attribute('tests\.scopetest\.Lolwhat$', 'trololo', 'tests.scopetest.Trololo()')
 
     result = pset(get_proposals(project, 'Lolwhat().trololo.'))
     assert 'eduard' in result
@@ -74,7 +68,7 @@ def test_class_attributes(project):
 
 def test_getting_recursive_attribute(project):
     hintdb = provide_scope_hints_for(project)
-    hintdb.add_attribute('scopetest$', 'Trololo', 'scopetest.ModifiedTrololo')
+    hintdb.add_attribute('tests\.scopetest$', 'Trololo', 'tests.scopetest.ModifiedTrololo')
 
     result = pset(get_proposals(project, 'Trololo().'))
     assert 'anatolievich' in result

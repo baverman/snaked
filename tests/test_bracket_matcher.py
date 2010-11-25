@@ -1,7 +1,3 @@
-import sys
-import os.path
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__))) 
-
 from snaked.util.pairs_parser import get_brackets, find_closing_quote_pos
 
 def test_bracket_matcher():

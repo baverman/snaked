@@ -1,9 +1,3 @@
-import sys
-import os.path
-
-ROOT = os.path.dirname(os.path.dirname(__file__))
-sys.path.insert(0, ROOT)
-
 from ropetest import testutils
 from rope.contrib.codeassist import code_assist
 from rope.base.project import NoProject
@@ -43,7 +37,6 @@ def pset(proposals):
 
 def pytest_funcarg__project(request):
     project = testutils.sample_project()
-    #print vars(project.pycore.get_module('os').resource)
     request.addfinalizer(lambda: testutils.remove_project(project))
     return project
 
@@ -96,5 +89,4 @@ def test_provider_must_allow_to_implement_glade_handlers(project):
 
     result = pset(get_proposals(project, 'pass\n\n'
         '   def on'))
-
     assert 'on_window1_delete_event' in result
