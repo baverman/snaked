@@ -11,3 +11,7 @@ class Trololo(object):
 
     def hill(self):
         pass
+
+class ModifiedTrololo(Trololo):
+    def anatolievich(self):
+        pass

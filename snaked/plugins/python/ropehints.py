@@ -118,7 +118,18 @@ def get_attributes_with_hints(func):
             return result
 
         scope_path = get_attribute_scope_path(self)
-        result.update(hintdb.get_attributes(scope_path, self, result))
+        recursion_guard = '____' + scope_path
+
+        if recursion_guard in self.__dict__:
+            return result
+
+        self.__dict__[recursion_guard] = True
+        try:
+            result.update(hintdb.get_attributes(scope_path, self, result))
+        except:
+            raise
+        finally:
+            del self.__dict__[recursion_guard]
 
         return result
 

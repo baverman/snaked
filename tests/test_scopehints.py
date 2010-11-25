@@ -71,3 +71,10 @@ def test_class_attributes(project):
     result = pset(get_proposals(project, 'Lolwhat().trololo.'))
     assert 'eduard' in result
     assert 'hill' in result
+
+def test_getting_recursive_attribute(project):
+    hintdb = provide_scope_hints_for(project)
+    hintdb.add_attribute('scopetest$', 'Trololo', 'scopetest.ModifiedTrololo')
+
+    result = pset(get_proposals(project, 'Trololo().'))
+    assert 'anatolievich' in result
