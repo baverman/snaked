@@ -153,7 +153,10 @@ class HintProvider(object):
         while current_scope is not None:
             pyobj = current_scope.pyobject
             if isinstance(pyobj, PyModule):
-                name = pyobj.pycore.modname(pyobj.resource)
+                if pyobj.resource:
+                    name = pyobj.pycore.modname(pyobj.resource)
+                else:
+                    break
             else:
                 name = pyobj.get_name()
 
@@ -201,6 +204,7 @@ class ScopeHintProvider(HintProvider):
 
     def get_function_param_type(self, pyfunc, name):
         scope_path = self.get_scope_path(pyfunc.get_scope())
+        print scope_path
         type_name = self.matcher.find_param_type_for(scope_path, name)
         if type_name:
             pyname = self.get_type(type_name)
