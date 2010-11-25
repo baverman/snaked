@@ -40,7 +40,6 @@ def test_func_param_hint(project):
     code = '''
 def func(param):
     """:type param: Trololo"""
-    doc_string_return().s
     param.'''
 
     result = pset(get_proposals(project, code))
