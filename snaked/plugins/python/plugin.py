@@ -94,7 +94,10 @@ class Plugin(object):
         try:
             return libutils.path_to_resource(project, uri)
         except exceptions.ResourceNotFoundError:
-            return None
+            from rope.base.project import NoProject
+            resource = NoProject().get_file(uri)
+            resource.read = lambda: ''
+            return resource
 
     def get_source_and_offset(self):
         offset = self.editor.cursor.get_offset()
