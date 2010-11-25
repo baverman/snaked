@@ -190,8 +190,6 @@ class ScopeHintProvider(HintProvider):
     def get_attributes(self, scope_path, pyclass, attrs):
         attrs = {}
         for name, type_name in self.matcher.find_attributes(scope_path):
-            if scope_path == 're':
-                print name, type_name
             type = self.get_type(type_name)
             if type:
                 if type_name.endswith('()'):
@@ -333,7 +331,7 @@ class CompositeHintProvider(HintProvider):
     def __init__(self, project):
         super(CompositeHintProvider, self).__init__(project)
 
-        self.class_attributes_cache = {}
+        self.attributes_cache = {}
 
         self.hint_provider = []
 
@@ -344,8 +342,8 @@ class CompositeHintProvider(HintProvider):
         self.db.add_param_hint('re\.compile$', 'return$', 're.RegexObject()')
         self.db.add_param_hint('re\.search$', 'return$', 're.MatchObject()')
         self.db.add_param_hint('re\.match$', 'return$', 're.MatchObject()')
-        self.db.add_attribute_hint('re$', 'RegexObject$', 'snaked.plugins.python.stub.RegexObject')
-        self.db.add_attribute_hint('re$', 'MatchObject$', 'snaked.plugins.python.stub.MatchObject')
+        self.db.add_attribute('re$', 'RegexObject', 'snaked.plugins.python.stub.RegexObject')
+        self.db.add_attribute('re$', 'MatchObject', 'snaked.plugins.python.stub.MatchObject')
 
         self.add_hint_provider(ScopeHintProvider(project, self.db))
 
@@ -361,34 +359,23 @@ class CompositeHintProvider(HintProvider):
         self.hint_provider.insert(0, provider)
         return provider
 
-    def get_function_param_type(self, pyfunc, name):
+    def get_function_params(self, scope_path, pyfunc):
         for p in self.hint_provider:
-            result = p.get_function_param_type(pyfunc, name)
-            if result is not None:
+            result = p.get_function_params(scope_path, pyfunc)
+            if result:
                 return result
 
-        return None
+        return {}
 
-    def get_module_attribute(self, pymodule, name):
-        for p in self.hint_provider:
-            try:
-                result = p.get_module_attribute(pymodule, name)
-                if result is not None:
-                    return result
-            except AttributeError:
-                pass
-
-        return None
-
-    def get_class_attributes(self, scope_path, pyclass, attrs):
+    def get_attributes(self, scope_path, pyclass, attrs):
         try:
-            return self.class_attributes_cache[scope_path]
+            return self.attributes_cache[scope_path]
         except KeyError:
             pass
 
         new_attrs = {}
         for p in self.hint_provider:
-            new_attrs.update(p.get_class_attributes(scope_path, pyclass, attrs))
+            new_attrs.update(p.get_attributes(scope_path, pyclass, attrs))
 
-        self.class_attributes_cache[scope_path] = new_attrs
+        self.attributes_cache[scope_path] = new_attrs
         return new_attrs

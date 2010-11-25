@@ -1,5 +1,4 @@
 import re
-import os
 
 import xml.sax.handler
 import rope.base.pynames
@@ -84,11 +83,13 @@ class PyGtkHintProvider(HintProvider):
             attrs[name] = GladeName(GladeFunction(), ResourceAsModule(glade_resource), line)
 
         self.cache[scope_path] = attrs
-        self.gtk_aware_classes[scope_path] = glade_file
+        self.processed_files[glade_file] = True
 
     def get_glade_file_for_class(self, scope_path, pyclass):
+        project = pyclass.get_module().resource.project
         try:
-            return self.gtk_aware_classes[scope_path]
+            path = self.gtk_aware_classes[scope_path]
+            return project.get_resource(path)
         except KeyError:
             pass
 
@@ -98,9 +99,9 @@ class PyGtkHintProvider(HintProvider):
             if match:
                 filename = match.group(1).strip()
                 if filename.startswith('/'):
-                    return filename[1:]
+                    return project.get_resource(filename[1:])
                 else:
-                    return os.path.join(os.path.dirname(pyclass.get_module().resource.path), filename)
+                    return pyclass.get_module().resource.parent.get_child(filename)
 
         return None
 
@@ -108,8 +109,7 @@ class PyGtkHintProvider(HintProvider):
         attrs = {}
         glade_file = self.get_glade_file_for_class(scope_path, pyclass)
         if glade_file:
-            glade_resource = pyclass.get_module().resource.project.get_file(glade_file)
-            self.process_glade(scope_path, glade_resource)
+            self.process_glade(scope_path, glade_file)
             for k, v in self.cache[scope_path].iteritems():
                 if k not in orig_attrs:
                     attrs[k] = v
@@ -127,8 +127,7 @@ class PyGtkHintProvider(HintProvider):
         glade_file = self.get_glade_file_for_class(scope_path, pyclass)
 
         if glade_file:
-            glade_resource = pyclass.get_module().resource.project.get_file(glade_file)
-            self.process_glade(scope_path, glade_resource)
+            self.process_glade(scope_path, glade_file)
             return self.get_params_for_handler(scope_path, pyfunc)
         else:
             return {}
