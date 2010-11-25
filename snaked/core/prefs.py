@@ -27,6 +27,17 @@ default_prefs = {
         'use-tabs': False,
         'show-right-margin': True,
         'remove-trailing-space': True,
+    },
+    'snippets': {
+        'use-tabs': True,
+        'remove-trailing-space': False,
+    },
+    'rst': {
+        'use-tabs': False,
+        'tab-width': 3,
+        'remove-trailing-space': False,
+        'right-margin': 80,
+        'show-right-margin': True,
     }
 }
 

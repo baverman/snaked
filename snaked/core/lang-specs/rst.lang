@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<language id="rst" _name="reStructuredText" version="2.0" _section="Markup">
+  <metadata>
+     <property name="globs">*.rst</property>
+  </metadata>
+
+  <styles>
+    <style id="comment" _name="Comment" map-to="def:comment"/>
+    <style id="data-type" _name="Data Type" map-to="def:type"/>
+    <style id="function" _name="Data Type" map-to="def:function"/>
+    <style id="preprocessor" _name="Preprocessor" map-to="def:preprocessor"/>
+    <style id="keyword" _name="Keyword" map-to="def:keyword"/>
+    <style id="string" _name="String" map-to="def:string"/>
+  </styles>
+
+  <definitions>
+    <context id="line" style-ref="data-type">
+	    <match>^[ \t]*[-=*]{3,}[ \t]*$</match>
+    </context>
+    <context id="emphasis" style-ref="preprocessor">
+      <match>(\*[^*\n]*\*)</match>
+    </context>
+    <context id="strong-emphasis" style-ref="data-type">
+      <match>(\*\*[^*\n]*\*\*)</match>
+    </context>
+    <context id="link" style-ref="string">
+      <match>`[^`]*`_</match>
+    </context>
+    <context id="reference" style-ref="string">
+      <match>\[[^[]*\]_</match>
+    </context>
+    <context id="list-item" style-ref="keyword">
+      <match>(^ *\*[ \t]+)|(^ *[0-9]+\.[ \t]+)</match>
+    </context>
+    <context id="automatic-link" style-ref="string">
+      <match>(&lt;[A-Za-z._0-9]+@[A-Za-z0-9]+.[A-Za-z]+&gt;)|(&lt;[a-z]+://[^ \n]+&gt;)</match>
+    </context>
+    <context id="python-code-block" extend-parent="false">
+      <start>::$</start>
+      <end>^[^ \t].*$</end>
+      <include>
+  			<context ref="python:python" />
+      </include>
+    </context>
+    <context id="inline-code" style-ref="string">
+      <match>``[^``]*``</match>
+    </context>
+    <context id="directive" style-ref="function" end-at-line-end="true">
+      <start>^\.\. </start>
+      <end>$</end>
+    </context>
+    <context id="rst">
+      <include>
+        <context ref="line"/>
+        <context ref="emphasis"/>
+        <context ref="strong-emphasis"/>
+        <context ref="link"/>
+        <context ref="reference"/>
+        <context ref="list-item"/>
+        <context ref="automatic-link"/>
+        <context ref="python-code-block"/>
+        <context ref="inline-code"/>
+        <context ref="directive"/>
+      </include>
+    </context>
+  </definitions>
+</language>

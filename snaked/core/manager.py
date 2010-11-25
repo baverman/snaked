@@ -6,7 +6,8 @@ import gtksourceview2
 import pango
 
 from ..signals import connect_all
-from ..util import idle, lazy_property, create_lang_matchers_from_file, LangGuesser, get_project_root
+from ..util import (idle, lazy_property, create_lang_matchers_from_file,
+    LangGuesser, get_project_root, join_to_file_dir)
 
 import prefs
 from .shortcuts import register_shortcut, load_shortcuts
@@ -21,6 +22,7 @@ class EditorManager(object):
         self.editors = []
         self.style_manager = gtksourceview2.style_scheme_manager_get_default()
         self.lang_manager = gtksourceview2.language_manager_get_default()
+        self.modify_lang_search_path(self.lang_manager)
 
         self.plugin_manager = PluginManager()
         prefs.register_dialog('Plugins', self.plugin_manager.show_plugins_prefs, 'plugin',
@@ -339,6 +341,15 @@ class EditorManager(object):
         editor.message('File type associations changed')
         self.lang_gussers.clear()
 
+    def modify_lang_search_path(self, manager):
+        search_path = manager.get_search_path()
+        user_path = os.path.expanduser('~')
+        for i, p in enumerate(search_path):
+            if not p.startswith(user_path):
+                break
+
+        search_path.insert(i, join_to_file_dir(__file__, 'lang-specs'))
+        manager.set_search_path(search_path)
 
 class EditorSpot(object):
     def __init__(self, manager, editor):

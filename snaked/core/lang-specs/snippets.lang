@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<language id="snippets" _name="Snippets" version="2.0" _section="Markup">
+  <metadata>
+    <property name="globs">*.snippets</property>
+    <property name="line-comment-start">#</property>
+  </metadata>
+
+  <styles>
+    <style id="keyword"           _name="Keyword"               map-to="def:keyword"/>
+    <style id="stop"            _name="String"                map-to="def:string"/>
+    <style id="string"              _name="Stop"                  map-to="def:identifier"/>
+    <style id="comment"           _name="Comment"               map-to="def:comment"/>
+    <style id="snippet"           _name="Snippet"               map-to="def:type"/>
+  </styles>
+
+  <definitions>
+    <context id="snippets" class="no-spell-check">
+      <include>
+        <context style-ref="comment">
+        	<match>^#.*$</match>
+        </context>
+
+        <context id="snippet">
+            <match>^(snippet)\s+(\S+)(.*)$</match>
+            <include>
+                <context sub-pattern="1" style-ref="keyword"/>
+                <context sub-pattern="2" style-ref="snippet"/>
+                <context sub-pattern="3" style-ref="comment"/>
+            </include>
+        </context>
+
+        <context id="var" style-ref="keyword">
+            <match>\$\d+</match>
+        </context>
+
+        <context id="stop" style-ref="stop">
+            <start>\$\{\d+</start>
+            <end>\}</end>
+            <include>
+				<context ref="var" />
+            </include>
+        </context>
+
+      </include>
+    </context>
+  </definitions>
+</language>

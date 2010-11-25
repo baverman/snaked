@@ -46,7 +46,7 @@ def join_to_file_dir(filename, *args):
     return join(dirname(filename), *args)
 
 def join_to_settings_dir(*args):
-    config_dir = os.getenv('XDG_CONFIG_HOME', os.path.expanduser('~/.config'))
+    config_dir = os.getenv('XDG_CONFIG_HOME', expanduser('~/.config'))
     return join(config_dir, 'snaked', *args)
 
 def make_missing_dirs(filename):
