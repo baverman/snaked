@@ -119,29 +119,19 @@ class PyGtkHintProvider(HintProvider):
     def add_class(self, scope, glade_file):
         self.gtk_aware_classes[scope] = glade_file
 
-    def get_function_param_type(self, pyfunc, name):
-        """Resolve function's parameters types from doc string
+    def get_function_params(self, scope_path, pyfunc):
+        """:type pyfunc: rope.base.pyobjectsdef.PyFunction"""
 
-        :type pyfunc: rope.base.pyobjectsdef.PyFunction
-        """
-        scope_path = self.get_scope_path(pyfunc.get_scope())
-        try:
-            params = self.func_cache[scope_path]
-        except KeyError:
-            pyclass = pyfunc.parent
-            class_scope = get_attribute_scope_path(pyclass)
-            glade_file = self.get_glade_file_for_class(scope_path, pyclass)
+        pyclass = pyfunc.parent
+        scope_path = get_attribute_scope_path(pyclass)
+        glade_file = self.get_glade_file_for_class(scope_path, pyclass)
 
-            if glade_file:
-                glade_resource = pyclass.get_module().resource.project.get_file(glade_file)
-                self.process_glade(scope_path, glade_resource)
-                params = self.get_params_for_handler(class_scope, pyfunc)
-            else:
-                params = {}
-
-            self.func_cache[scope_path] = params
-
-        return params.get(name, None)
+        if glade_file:
+            glade_resource = pyclass.get_module().resource.project.get_file(glade_file)
+            self.process_glade(scope_path, glade_resource)
+            return self.get_params_for_handler(scope_path, pyfunc)
+        else:
+            return {}
 
     def get_params_for_handler(self, class_scope, pyfunc):
         """:type pyfunc: rope.base.pyobjectsdef.PyFunction"""
@@ -152,24 +142,24 @@ class PyGtkHintProvider(HintProvider):
 
         attrs = {}
 
+        idx = 0
         names = pyfunc.get_param_names(False)
         if pyfunc.get_kind() in ('method', 'classmethod'):
             names = names[1:]
+            idx += 1
 
         if names:
-            attrs[names[0]] = self.get_type(self.get_pygtk_class_name(cls)).get_object()
+            attrs[idx] = self.get_type(self.get_pygtk_class_name(cls)).get_object()
             names = names[1:]
+            idx += 1
 
         if names:
-            for i, t in enumerate(gobject.signal_query(signal, str(cls))[-1]):
-                try:
-                    tname = self.get_type(self.get_pygtk_class_name(t.name))
-                    if tname:
-                        attrs[names[i]] = tname.get_object()
-                    else:
-                        attrs[names[i]] = None
-                except IndexError:
-                    break
+            for t in gobject.signal_query(signal, str(cls))[-1]:
+                tname = self.get_type(self.get_pygtk_class_name(t.name))
+                if tname:
+                    attrs[idx] = tname.get_object()
+
+                idx += 1
 
         return attrs
 

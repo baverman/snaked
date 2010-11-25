@@ -6,7 +6,7 @@ import rope.base.oi.soi
 import rope.base.pyobjects
 import rope.base.pynames
 from rope.base import exceptions
-from rope.base.pyobjectsdef import PyModule, PyPackage, PyClass
+from rope.base.pyobjectsdef import PyModule, PyPackage, PyClass, PyFunction
 
 class ReplacedName(rope.base.pynames.PyName):
     def __init__(self, pyobject, pyname):
@@ -29,11 +29,11 @@ def infer_parameter_objects_with_hints(func):
         except AttributeError:
             return params_types
 
-        param_names = pyfunction.get_param_names(False)
-        for i, name in enumerate(param_names):
-            ptype = hintdb.get_function_param_type(pyfunction, name)
-            if ptype is not None:
-                params_types[i] = ptype
+        scope_path = get_attribute_scope_path(pyfunction)
+        provided_names = hintdb.get_function_params(scope_path, pyfunction)
+        for i, t in enumerate(params_types):
+            if i in provided_names:
+                params_types[i] = provided_names[i]
 
         return params_types
 
@@ -50,61 +50,41 @@ def infer_returned_object_with_hints(func):
         except AttributeError:
             return func(pyfunction, args)
 
-        rtype = hintdb.get_function_param_type(pyfunction, 'return')
-        if rtype is None:
-            rtype = func(pyfunction, args)
-
-        return rtype
+        scope_path = get_attribute_scope_path(pyfunction)
+        params = hintdb.get_function_params(scope_path, pyfunction)
+        try:
+            return params['return']
+        except KeyError:
+            return func(pyfunction, args)
 
     return inner
 
 rope.base.oi.soi.infer_returned_object = infer_returned_object_with_hints(
     rope.base.oi.soi.infer_returned_object)
 
-def get_attribute_scope_path(obj):
-    if isinstance(obj, (PyModule, PyPackage)):
-        if obj.resource:
-            return obj.pycore.modname(obj.resource)
+def get_attribute_scope_path(obj, collected=''):
+        if isinstance(obj, (PyModule, PyPackage)):
+            if obj.resource:
+                name = obj.pycore.modname(obj.resource)
+            else:
+                return collected
         else:
-            return ''
-    elif isinstance(obj, (PyClass,)):
-        return get_attribute_scope_path(obj.get_module()) + '.' + obj.get_name()
-    else:
-        return ''
+            name = obj.get_name()
 
-def get_attribute_with_hints(func, what):
-    def inner(self, name):
-        #print what, get_attribute_scope_path(self), name
-
-        getting_name = 'getting_attr_%s' % name
-        if getattr(self, getting_name, False):
-            return func(self, name)
+        if collected:
+            collected = name + '.' + collected
+        else:
+            collected = name
 
         try:
-            hintdb = self.pycore.hintdb
+            scope = obj.get_scope().parent
         except AttributeError:
-            return func(self, name)
+            return collected
 
-        try:
-            setattr(self, getting_name, True)
-            result = hintdb.get_module_attribute(self, name)
-        except exceptions.AttributeNotFoundError:
-            result = None
-        except Exception:
-            raise
-        finally:
-            setattr(self, getting_name, False)
-
-        if result is None:
-            return func(self, name)
-
-        return result
-
-    return inner
-
-#PyModule.get_attribute = get_attribute_with_hints(PyModule.get_attribute, 'mod')
-#PyPackage.get_attribute = get_attribute_with_hints(PyPackage.get_attribute, 'pkg')
-
+        if scope:
+            return get_attribute_scope_path(scope.pyobject, collected)
+        else:
+            return collected
 
 def get_attributes_with_hints(func):
     def inner(self):
@@ -152,31 +132,13 @@ class HintProvider(object):
         """
         return self._project()
 
-    def get_function_param_type(self, pyfunc, name):
-        """Should resolve type for function's parameter `name`
+    def get_function_params(self, scope_path, pyfunc):
+        """Should resolve type for function's parameters `name`
 
-        Also should resolve return type if name == 'return'
-        If there is no any type hints None is returned
+        Also should resolve return type by setting 'return' item in result dict
+        If there is no any type hints {} is returned
         """
-        return None
-
-    def get_scope_path(self, scope):
-        result = []
-        current_scope = scope
-        while current_scope is not None:
-            pyobj = current_scope.pyobject
-            if isinstance(pyobj, PyModule):
-                if pyobj.resource:
-                    name = pyobj.pycore.modname(pyobj.resource)
-                else:
-                    break
-            else:
-                name = pyobj.get_name()
-
-            result.insert(0, name)
-            current_scope = current_scope.parent
-
-        return '.'.join(result)
+        return {}
 
     def get_attributes(self, scope_path, pyobj, attrs):
         """Returns additional atributes for pymodule or pyclass"""
@@ -211,15 +173,19 @@ class ScopeHintProvider(HintProvider):
         super(ScopeHintProvider, self).__init__(project)
         self.matcher = scope_matcher
 
-    def get_function_param_type(self, pyfunc, name):
-        scope_path = self.get_scope_path(pyfunc.get_scope())
-        type_name = self.matcher.find_param_type_for(scope_path, name)
-        if type_name:
-            pyname = self.get_type(type_name)
-            if pyname:
-                return pyname.get_object()
+    def get_function_params(self, scope_path, pyfunc):
+        result = {}
+        for i, name in enumerate(pyfunc.get_param_names(False)+['return']):
+            type_name = self.matcher.find_param_type_for(scope_path, name)
+            if type_name:
+                pyname = self.get_type(type_name)
+                if pyname:
+                    if name == 'return':
+                        result['return'] = pyname.get_object()
+                    else:
+                        result[i] = pyname.get_object()
 
-        return None
+        return result
 
     def get_attributes(self, scope_path, pyclass, attrs):
         attrs = {}
