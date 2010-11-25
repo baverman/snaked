@@ -104,7 +104,7 @@ class PyGtkHintProvider(HintProvider):
 
         return None
 
-    def get_class_attributes(self, scope_path, pyclass, orig_attrs):
+    def get_attributes(self, scope_path, pyclass, orig_attrs):
         attrs = {}
         glade_file = self.get_glade_file_for_class(scope_path, pyclass)
         if glade_file:

@@ -56,8 +56,11 @@ class DjangoHintProvider(HintProvider):
 
         self.settings = settings
 
-    def get_class_attributes(self, scope_path, pyclass, attrs):
+    def get_attributes(self, scope_path, pyclass, attrs):
         """:type pyclass: rope.base.pyobjectsdef.PyClass"""
+
+        if not hasattr(pyclass, 'get_superclasses'):
+            return {}
 
         if not any('django.db.models.base.Model' in get_attribute_scope_path(c)
                 for c in pyclass.get_superclasses()):

@@ -102,8 +102,8 @@ def get_attribute_with_hints(func, what):
 
     return inner
 
-PyModule.get_attribute = get_attribute_with_hints(PyModule.get_attribute, 'mod')
-PyPackage.get_attribute = get_attribute_with_hints(PyPackage.get_attribute, 'pkg')
+#PyModule.get_attribute = get_attribute_with_hints(PyModule.get_attribute, 'mod')
+#PyPackage.get_attribute = get_attribute_with_hints(PyPackage.get_attribute, 'pkg')
 
 
 def get_attributes_with_hints(func):
@@ -118,13 +118,15 @@ def get_attributes_with_hints(func):
             return result
 
         scope_path = get_attribute_scope_path(self)
-        result.update(hintdb.get_class_attributes(scope_path, self, result))
+        result.update(hintdb.get_attributes(scope_path, self, result))
 
         return result
 
     return inner
 
 PyClass._get_structural_attributes = get_attributes_with_hints(PyClass._get_structural_attributes)
+PyModule._get_structural_attributes = get_attributes_with_hints(PyModule._get_structural_attributes)
+PyPackage._get_structural_attributes = get_attributes_with_hints(PyPackage._get_structural_attributes)
 
 
 class HintProvider(object):
@@ -165,12 +167,8 @@ class HintProvider(object):
 
         return '.'.join(result)
 
-    def get_module_attribute(self, pymodule, name):
-        """Resolves module/package attribute's PyName"""
-        return None
-
-    def get_class_attributes(self, scope_path, pyclass, attrs):
-        """Returns additional atributes for pyclass"""
+    def get_attributes(self, scope_path, pyobj, attrs):
+        """Returns additional atributes for pymodule or pyclass"""
         return {}
 
     def get_type(self, type_name, scope=None):
@@ -204,7 +202,6 @@ class ScopeHintProvider(HintProvider):
 
     def get_function_param_type(self, pyfunc, name):
         scope_path = self.get_scope_path(pyfunc.get_scope())
-        print scope_path
         type_name = self.matcher.find_param_type_for(scope_path, name)
         if type_name:
             pyname = self.get_type(type_name)
@@ -213,29 +210,11 @@ class ScopeHintProvider(HintProvider):
 
         return None
 
-    def get_module_attribute(self, pymodule, name):
-        scope_path = get_attribute_scope_path(pymodule)
-
-        type_name = self.matcher.find_attribute_type_for(scope_path, name)
-        if type_name:
-            type = self.get_type(type_name)
-        else:
-            type = None
-
-        if type:
-            if type_name.endswith('()'):
-                obj = rope.base.pyobjects.PyObject(type.get_object())
-                pyname = ReplacedName(obj, type)
-            else:
-                pyname = type
-        else:
-            pyname = None
-
-        return pyname
-
-    def get_class_attributes(self, scope_path, pyclass, attrs):
+    def get_attributes(self, scope_path, pyclass, attrs):
         attrs = {}
-        for name, type_name in self.matcher.find_class_attributes(scope_path):
+        for name, type_name in self.matcher.find_attributes(scope_path):
+            if scope_path == 're':
+                print name, type_name
             type = self.get_type(type_name)
             if type:
                 if type_name.endswith('()'):
@@ -249,14 +228,6 @@ class ScopeHintProvider(HintProvider):
 class ScopeMatcher(object):
     """Abstract matcher class for :class:`ScopeHintProvider`"""
 
-    def find_attribute_type_for(self, scope_path, name):
-        """
-        Return matched scope attribute type
-
-        :param scope_path: module name (``program.module.name``)
-        :param name: module attribute name
-        """
-
     def find_param_type_for(self, scope_path, name):
         """
         Return matched function param or return value type
@@ -265,7 +236,7 @@ class ScopeMatcher(object):
         :param name: function param name or `return` in case matching function return value type
         """
 
-    def find_class_attributes(self, scope_path):
+    def find_attributes(self, scope_path):
         """
         Return matched class attributes types
 
@@ -279,35 +250,12 @@ class ReScopeMatcher(ScopeMatcher):
 
     Matching is done with ``re.match`` function (pay attention to differences with ``re.search``)
 
-    See :func:`add_attribute_hint`, :func:`add_param_hint`, :func:`add_class_attribute`.
+    See :func:`add_attribute`, :func:`add_param_hint`.
 
     """
     def __init__(self):
-        self.attribute_hints = []
         self.param_hints = []
-        self.class_attributes = []
-
-    def add_attribute_hint(self, scope, name, object_type):
-        """Add attribute type hint for module scope
-
-        Can be used to provide module attributes types, for example in case or complex
-        module loading (werkzeug) or complex runtime behavior (flask). Here is example
-        ``.ropeproject/ropehints.py``::
-
-            def init(provider):
-                provider.db.add_attribute_hint('flask$', 'request$', 'flask.wrappers.Request()')
-                provider.db.add_attribute_hint('werkzeug$', 'Request$', 'werkzeug.wrappers.Request')
-
-        What happens here? ``flask.request`` is magic proxy to isolate thread contexts from each other.
-        In runtime it is ``flask.wrappers.Request`` object (in default flask setup), so first line
-        adds this missing information. But this is not enough. ``flask.wrappers.Request`` is a child
-        of ``werkzeug.Request`` which can not be resolved because of werkzeug's module
-        loading system. So there is second line adding necessary mapping: module attribute
-        ``werkzeug.Request`` should be ``werkzeug.wrappers.Request`` indeed. Take note about
-        parentheses, ``flask.request`` is instance so type declared with them as opposite to
-        ``werkzeug.Request`` which is class.
-        """
-        self.attribute_hints.append((re.compile(scope), re.compile(name), object_type))
+        self.attributes = []
 
     def add_param_hint(self, scope, name, object_type):
         """Add function/method parameter or return value type hint.
@@ -333,35 +281,45 @@ class ReScopeMatcher(ScopeMatcher):
             provider.db.add_param_hint('re\.compile$', 'return$', 're.RegexObject()')
             provider.db.add_param_hint('re\.search$', 'return$', 're.MatchObject()')
             provider.db.add_param_hint('re\.match$', 'return$', 're.MatchObject()')
-            provider.db.add_attribute_hint('re$', 'RegexObject$', 'snaked.plugins.python.stub.RegexObject')
-            provider.db.add_attribute_hint('re$', 'MatchObject$', 'snaked.plugins.python.stub.MatchObject')
+            provider.db.add_attribute('re$', 'RegexObject', 'snaked.plugins.python.stub.RegexObject')
+            provider.db.add_attribute('re$', 'MatchObject', 'snaked.plugins.python.stub.MatchObject')
 
         Take notice, ``re.compile``, ``re.search``, ``re.match`` return absent classes which are mapped
         with :func:`add_attribute_hint` to existing stubs later.
         """
         self.param_hints.append((re.compile(scope), re.compile(name), object_type))
 
-    def add_class_attribute(self, scope, name, object_type):
-        """Add attribute type hint for class/object attribute
+    def add_attribute(self, scope, name, object_type):
+        """Add attribute type hint for module or class/object
 
-        Example from my django project::
+        Can be used to provide module attributes types, for example in case or complex
+        module loading (werkzeug) or complex runtime behavior (flask). Here is example
+        ``.ropeproject/ropehints.py``::
 
-            provider.db.add_class_attribute('django\.http\.HttpRequest$', 'cur$', 'app.Cur')
-            provider.db.add_class_attribute('django\.http\.HttpRequest$', 'render$', 'app.render')
+            def init(provider):
+                provider.db.add_attribute('flask$', 'request', 'flask.wrappers.Request()')
+                provider.db.add_attribute('werkzeug$', 'Request', 'werkzeug.wrappers.Request')
+
+        What happens here? ``flask.request`` is magic proxy to isolate thread contexts from each other.
+        In runtime it is ``flask.wrappers.Request`` object (in default flask setup), so first line
+        adds this missing information. But this is not enough. ``flask.wrappers.Request`` is a child
+        of ``werkzeug.Request`` which can not be resolved because of werkzeug's module
+        loading system. So there is second line adding necessary mapping: module attribute
+        ``werkzeug.Request`` should be ``werkzeug.wrappers.Request`` indeed. Take note about
+        parentheses, ``flask.request`` is instance so type declared with them as opposite to
+        ``werkzeug.Request`` which is class.
+
+        Also one can add class attributes hint. Here is example from my django project::
+
+            provider.db.add_attribute('django\.http\.HttpRequest$', 'cur', 'app.Cur')
+            provider.db.add_attribute('django\.http\.HttpRequest$', 'render', 'app.render')
 
         Here are some explanations. Every ``request`` object has ``cur`` attribute
         (I know about contexts, don't ask me why I need it) which is instance of ``app.Cur``, so
         first line injects such info. Second line resolves ``render`` function also bounded to
         request.
         """
-        self.class_attributes.append((re.compile(scope), name, object_type))
-
-    def find_attribute_type_for(self, scope_path, name):
-        for scope, vname, otype in self.attribute_hints:
-            if scope.match(scope_path) and vname.match(name):
-                return otype
-
-        return None
+        self.attributes.append((re.compile(scope), name, object_type))
 
     def find_param_type_for(self, scope_path, name):
         for scope, vname, otype in self.param_hints:
@@ -370,8 +328,8 @@ class ReScopeMatcher(ScopeMatcher):
 
         return None
 
-    def find_class_attributes(self, scope_path):
-        for scope, vname, otype in self.class_attributes:
+    def find_attributes(self, scope_path):
+        for scope, vname, otype in self.attributes:
             if scope.match(scope_path):
                 yield vname, otype
 

@@ -58,7 +58,7 @@ def test_func_return(project):
 
 def test_module_attribute(project):
     hintdb = provide_scope_hints_for(project)
-    hintdb.add_attribute_hint('re$', 'compile$', 'scopetest.Lolwhat()')
+    hintdb.add_attribute('re$', 'compile', 'scopetest.Lolwhat()')
 
     result = pset(get_proposals(project, 'import re\nre.compile.'))
     assert 'superstar' in result
@@ -66,7 +66,7 @@ def test_module_attribute(project):
 
 def test_class_attributes(project):
     hintdb = provide_scope_hints_for(project)
-    hintdb.add_class_attribute('scopetest.Lolwhat$', 'trololo', 'scopetest.Trololo()')
+    hintdb.add_attribute('scopetest.Lolwhat$', 'trololo', 'scopetest.Trololo()')
 
     result = pset(get_proposals(project, 'Lolwhat().trololo.'))
     assert 'eduard' in result
