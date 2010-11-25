@@ -3,9 +3,6 @@ from rope.contrib.codeassist import code_assist
 
 from snaked.plugins.python.djangohints import DjangoHintProvider
 
-def provide_django_hints_for(project):
-    project.pycore.hintdb = DjangoHintProvider(project, 'tests.test_djangohints')
-
 def get_proposals(project, source, offset=None, **kwargs):
     head = 'from tests.djangotest.models import *\n'
     source = head + source
@@ -22,12 +19,11 @@ def pset(proposals):
 
 def pytest_funcarg__project(request):
     project = testutils.sample_project()
+    project.pycore.hintdb = DjangoHintProvider(project, 'tests.test_djangohints')
     request.addfinalizer(lambda: testutils.remove_project(project))
     return project
 
 def test_common_field_names_must_be_in_proposals_for_model_instance(project):
-    provide_django_hints_for(project)
-
     result = pset(get_proposals(project, 'Blog().'))
     assert 'name' in result
     assert 'id' in result
@@ -39,8 +35,6 @@ def test_common_field_names_must_be_in_proposals_for_model_instance(project):
     assert 'blog_id' in result
 
 def test_proposals_for_objects_finder(project):
-    provide_django_hints_for(project)
-
     assert 'objects' in pset(get_proposals(project, 'Blog.'))
 
     result = pset(get_proposals(project, 'Blog.objects.'))
@@ -49,16 +43,12 @@ def test_proposals_for_objects_finder(project):
     assert 'filter' in result
 
 def test_manager_get_return_type_must_resolve_to_appropriate_model(project):
-    provide_django_hints_for(project)
-
     result = pset(get_proposals(project, 'Blog.objects.get().'))
     assert 'name' in result
     assert 'id' in result
     assert 'bposts' in result
 
 def test_manager_finder_methods_return_type_must_resolve_to_manager_itself(project):
-    provide_django_hints_for(project)
-
     result = pset(get_proposals(project, 'Blog.objects.filter().'))
     assert 'filter' in result
 
@@ -69,8 +59,6 @@ def test_manager_finder_methods_return_type_must_resolve_to_manager_itself(proje
     assert 'filter' in result
 
 def test_query_set_item_getting_and_iterating_must_resolve_to_model_type(project):
-    provide_django_hints_for(project)
-
     result = pset(get_proposals(project, 'Blog.objects.all()[0].'))
     assert 'name' in result
     assert 'id' in result
@@ -87,16 +75,12 @@ def test_query_set_item_getting_and_iterating_must_resolve_to_model_type(project
     assert 'bposts' in result
 
 def test_foreign_fields_must_be_resolved_to_model_type(project):
-    provide_django_hints_for(project)
-
     result = pset(get_proposals(project, 'Post().blog.'))
     assert 'name' in result
     assert 'id' in result
     assert 'bposts' in result
 
 def test_foreign_set_must_be_resolved_to_model_manager(project):
-    provide_django_hints_for(project)
-
     result = pset(get_proposals(project, 'Blog().bposts.all()[0].'))
     assert 'body' in result
     assert 'blog' in result

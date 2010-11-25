@@ -6,11 +6,6 @@ from snaked.util import join_to_file_dir
 
 from snaked.plugins.python.ropehints import ScopeHintProvider, ReScopeMatcher
 
-def provide_scope_hints_for(project):
-    matcher = ReScopeMatcher()
-    project.pycore.hintdb = ScopeHintProvider(project, matcher)
-    return matcher
-
 def get_proposals(project, source, offset=None, **kwargs):
     head = 'from tests.scopetest import *\n\n'
     source = head + source
@@ -30,45 +25,42 @@ def pset(proposals):
 
 def pytest_funcarg__project(request):
     project = testutils.sample_project()
+    matcher = ReScopeMatcher()
+    project.pycore.hintdb = ScopeHintProvider(project, matcher)
+    project.db = matcher
     request.addfinalizer(lambda: testutils.remove_project(project))
     return project
 
-
 def test_func_param_hint(project):
-    hintdb = provide_scope_hints_for(project)
-    hintdb.add_param_hint('tests\.module\.func$', 'lolwhat$', 'tests.scopetest.Lolwhat()')
+    project.db.add_param_hint('tests\.module\.func$', 'lolwhat$', 'tests.scopetest.Lolwhat()')
 
     result = pset(get_proposals(project, 'def func(lolwhat):\n    lolwhat.'))
     assert 'superstar' in result
     assert 'star' in result
 
 def test_func_return(project):
-    hintdb = provide_scope_hints_for(project)
-    hintdb.add_param_hint('tests\.module\.func$', 'return$', 'tests.scopetest.Lolwhat()')
+    project.db.add_param_hint('tests\.module\.func$', 'return$', 'tests.scopetest.Lolwhat()')
 
     result = pset(get_proposals(project, 'def func():\n    return None\n\nfunc().'))
     assert 'superstar' in result
     assert 'star' in result
 
 def test_module_attribute(project):
-    hintdb = provide_scope_hints_for(project)
-    hintdb.add_attribute('re$', 'compile', 'tests.scopetest.Lolwhat()')
+    project.db.add_attribute('re$', 'compile', 'tests.scopetest.Lolwhat()')
 
     result = pset(get_proposals(project, 'import re\nre.compile.'))
     assert 'superstar' in result
     assert 'star' in result
 
 def test_class_attributes(project):
-    hintdb = provide_scope_hints_for(project)
-    hintdb.add_attribute('tests\.scopetest\.Lolwhat$', 'trololo', 'tests.scopetest.Trololo()')
+    project.db.add_attribute('tests\.scopetest\.Lolwhat$', 'trololo', 'tests.scopetest.Trololo()')
 
     result = pset(get_proposals(project, 'Lolwhat().trololo.'))
     assert 'eduard' in result
     assert 'hill' in result
 
 def test_getting_recursive_attribute(project):
-    hintdb = provide_scope_hints_for(project)
-    hintdb.add_attribute('tests\.scopetest$', 'Trololo', 'tests.scopetest.ModifiedTrololo')
+    project.db.add_attribute('tests\.scopetest$', 'Trololo', 'tests.scopetest.ModifiedTrololo')
 
     result = pset(get_proposals(project, 'Trololo().'))
     assert 'anatolievich' in result
