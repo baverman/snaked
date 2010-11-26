@@ -66,7 +66,7 @@ class TestRunner(BuilderAware):
         parent, sep, child = node.rpartition('::')
         parent = self.collected_nodes[parent] if parent else None
 
-        self.collected_nodes[node] = self.tests.append(parent, (child, pango.WEIGHT_NORMAL))
+        self.collected_nodes[node] = self.tests.append(parent, (child, pango.WEIGHT_NORMAL, node))
 
         if is_item:
             self.tests_count += 1
@@ -74,9 +74,12 @@ class TestRunner(BuilderAware):
 
         if self.tests_count > 1:
             self.tests_view.expand_all()
-            self.tests_view.columns_autosize()
-            self.tests_view.set_size_request(self.tests_view.size_request()[0], -1)
-
+            nw = self.tests_view.size_request()[0]
+            w = self.scrolledwindow1.get_size_request()[0]
+            tw = self.hbox1.window.get_size()[0]
+            if nw > w:
+                if nw > tw/2: nw = tw/2
+                self.scrolledwindow1.set_size_request(nw, -1)
             self.hbox1.show()
 
     def handle_collect_item(self, node):
@@ -106,3 +109,9 @@ class TestRunner(BuilderAware):
     def handle_end(self):
         self.progress_adj.set_value(self.tests_count)
         self.progress.set_text('Done')
+
+    def on_tests_view_cursor_changed(self, view):
+        path, column = view.get_cursor()
+        iter = self.tests.get_iter(path)
+        node = self.tests.get_value(iter, 2)
+        self.buffer.set_text(self.failed_nodes.get(node, ''))

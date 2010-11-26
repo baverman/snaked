@@ -148,8 +148,10 @@ def toggle_test_panel(editor):
     else:
         if runner.hbox1.props.visible:
             editor.unstack_widget(runner.hbox1)
+            editor.view.grab_focus()
         else:
             editor.stack_widget(runner.hbox1)
+            runner.tests_view.grab_focus()
 
 def run_test(editor):
     try:
