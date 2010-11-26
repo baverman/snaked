@@ -19,6 +19,9 @@ def init(manager):
     manager.add_shortcut('python-calltip', '<ctrl>Return', 'Python',
         'Shows calltips', show_calltips)
 
+    manager.add_shortcut('run-test', '<ctrl>F10', 'Tests', 'Run test in cursor scope', run_test)
+    manager.add_shortcut('rerun-test', '<shift><alt>X', 'Tests', 'Rerun last test suite', rerun_test)
+
     from snaked.core.prefs import register_dialog
     register_dialog('Rope hints', edit_rope_hints, 'rope', 'hints')
     register_dialog('Rope config', edit_rope_config, 'rope', 'config')
@@ -114,8 +117,21 @@ def edit_rope_hints(editor):
 def edit_rope_config(editor):
     from os.path import join, exists
     ropeconfig = join(editor.project_root, '.ropeproject', 'config.py')
+    handlers[editor].project_manager
+
     if exists(ropeconfig):
         editor.open_file(ropeconfig)
     else:
         editor.message('There is no existing rope config.\n'
-            'Try to autocomplete something. Then repeat', 5000)
+            'Are you sure this is python project?', 5000)
+
+def run_test(editor):
+    try:
+        import pytest
+    except ImportError:
+        editor.message('You need installed pytest\nsudo pip install pytest')
+        return
+
+
+def rerun_test(editor):
+    pass
