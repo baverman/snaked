@@ -24,6 +24,8 @@ class Editor(SignalManager):
     push_escape_callback = Signal(object, object)
     plugins_changed = Signal()
     add_spot_request = Signal()
+    stack_request = Signal(object)
+    unstack_request = Signal(object)
 
     def __init__(self):
         self.uri = None
@@ -217,3 +219,9 @@ class Editor(SignalManager):
             return True
 
         return False
+
+    def stack_widget(self, widget):
+        self.stack_request.emit(widget)
+
+    def unstack_widget(self, widget):
+        self.unstack_request.emit(widget)

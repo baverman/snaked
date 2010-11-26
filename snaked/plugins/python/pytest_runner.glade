@@ -1,0 +1,143 @@
+<?xml version="1.0"?>
+<interface>
+  <requires lib="gtk+" version="2.16"/>
+  <!-- interface-naming-policy project-wide -->
+  <object class="GtkHBox" id="hbox1">
+    <property name="height_request">180</property>
+    <property name="visible">True</property>
+    <property name="border_width">5</property>
+    <property name="spacing">5</property>
+    <child>
+      <object class="GtkScrolledWindow" id="scrolledwindow1">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="hscrollbar_policy">automatic</property>
+        <property name="vscrollbar_policy">automatic</property>
+        <child>
+          <object class="GtkTreeView" id="tests_view">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="model">tests</property>
+            <property name="headers_visible">False</property>
+            <property name="headers_clickable">False</property>
+            <property name="search_column">0</property>
+            <child>
+              <object class="GtkTreeViewColumn" id="treeviewcolumn1">
+                <property name="title">column</property>
+                <child>
+                  <object class="GtkCellRendererText" id="cellrenderertext1"/>
+                  <attributes>
+                    <attribute name="text">0</attribute>
+                    <attribute name="weight">1</attribute>
+                  </attributes>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="fill">False</property>
+        <property name="position">0</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkVBox" id="vbox">
+        <property name="visible">True</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkHBox" id="hbox2">
+            <property name="visible">True</property>
+            <property name="spacing">5</property>
+            <child>
+              <object class="GtkProgressBar" id="progress">
+                <property name="visible">True</property>
+                <property name="adjustment">progress_adj</property>
+              </object>
+              <packing>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkHButtonBox" id="hbuttonbox1">
+                <property name="visible">True</property>
+                <property name="spacing">5</property>
+                <property name="layout_style">end</property>
+                <child>
+                  <object class="GtkButton" id="trace_up">
+                    <property name="label" translatable="yes">Trace _Up</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="use_underline">True</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="trace_down">
+                    <property name="label" translatable="yes">Trace Dow_n</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="use_underline">True</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="pack_type">end</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkScrolledWindow" id="buffer_place">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="hscrollbar_policy">automatic</property>
+            <property name="vscrollbar_policy">automatic</property>
+            <child>
+              <placeholder/>
+            </child>
+          </object>
+          <packing>
+            <property name="position">1</property>
+          </packing>
+        </child>
+      </object>
+      <packing>
+        <property name="position">1</property>
+      </packing>
+    </child>
+  </object>
+  <object class="GtkTreeStore" id="tests">
+    <columns>
+      <!-- column-name name -->
+      <column type="gchararray"/>
+      <!-- column-name weight -->
+      <column type="gint"/>
+    </columns>
+  </object>
+  <object class="GtkAdjustment" id="progress_adj">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+</interface>

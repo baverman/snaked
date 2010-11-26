@@ -37,6 +37,7 @@ class Collector(object):
 
     def pytest_runtest_call(self, item, __multicall__):
         names = tuple(item.listnames())
+        self.conn.send(('ITEM_CALL', item.nodeid))
         start = time.time()
         try:
             return __multicall__.execute()
@@ -54,9 +55,11 @@ class Collector(object):
 
     def pytest_collectreport(self, report):
         """:type report: _pytest.runner.CollectReport()"""
+        import pytest
         if report.passed:
             for node in report.result:
-                self.conn.send(('COLLECT',
+                node_type = 'COLLECT_ITEM' if isinstance(node, pytest.Item) else 'COLLECT_FOLDER'
+                self.conn.send((node_type,
                     node.name if report.nodeid == '.' else (report.nodeid + '::' + node.name)))
         elif report.failed:
             self.conn.send(('FAILED_COLLECT', report.nodeid, str(report.longrepr)))

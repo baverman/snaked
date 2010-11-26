@@ -8,6 +8,7 @@ import weakref
 
 handlers = weakref.WeakKeyDictionary()
 outline_dialog = None
+test_runner = []
 
 def init(manager):
     manager.add_shortcut('python-goto-definition', 'F3', 'Python',
@@ -21,6 +22,8 @@ def init(manager):
 
     manager.add_shortcut('run-test', '<ctrl>F10', 'Tests', 'Run test in cursor scope', run_test)
     manager.add_shortcut('rerun-test', '<shift><alt>X', 'Tests', 'Rerun last test suite', rerun_test)
+    manager.add_shortcut('toggle-test-panel', '<alt>1', 'Window',
+        'Toggle test panel', toggle_test_panel)
 
     from snaked.core.prefs import register_dialog
     register_dialog('Rope hints', edit_rope_hints, 'rope', 'hints')
@@ -125,6 +128,29 @@ def edit_rope_config(editor):
         editor.message('There is no existing rope config.\n'
             'Are you sure this is python project?', 5000)
 
+def get_pytest_runner(editor):
+    try:
+        return test_runner[0]
+    except IndexError:
+        pass
+
+    from pytest_runner import TestRunner
+    test_runner.append(TestRunner())
+
+    editor.stack_widget(test_runner[0].hbox1)
+    return test_runner[0]
+
+def toggle_test_panel(editor):
+    try:
+        runner = test_runner[0]
+    except IndexError:
+        get_pytest_runner(editor)
+    else:
+        if runner.hbox1.props.visible:
+            editor.unstack_widget(runner.hbox1)
+        else:
+            editor.stack_widget(runner.hbox1)
+
 def run_test(editor):
     try:
         import pytest
@@ -132,6 +158,7 @@ def run_test(editor):
         editor.message('You need installed pytest\nsudo pip install pytest')
         return
 
+    get_pytest_runner(editor).run(editor)
 
 def rerun_test(editor):
     pass

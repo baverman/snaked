@@ -1,15 +1,18 @@
 import time
+import weakref
 
 import gtk
 
 from snaked.core.shortcuts import ContextShortcutActivator, register_shortcut
 import snaked.core.manager
+import snaked.core.editor
 
 class TabbedEditorManager(snaked.core.manager.EditorManager):
     def __init__(self, show_tabs=True):
         super(TabbedEditorManager, self).__init__()
 
         self.last_switch_time = None
+        self.panels = weakref.WeakSet()
 
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.connect('delete-event', self.on_delete_event)
@@ -19,6 +22,9 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
 
         self.activator = ContextShortcutActivator(self.window, self.get_context)
 
+        self.box = gtk.VBox()
+        self.window.add(self.box)
+
         self.note = gtk.Notebook()
         self.note.set_show_tabs(show_tabs)
         self.note.set_scrollable(True)
@@ -26,7 +32,7 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
         self.note.set_property('homogeneous', False)
         self.note.connect_after('switch-page', self.on_switch_page)
         self.note.connect('page_removed', self.on_page_removed)
-        self.window.add(self.note)
+        self.box.pack_start(self.note)
 
         register_shortcut('toggle-tabs-visibility', '<alt>F11', 'Window', 'Toggles tabs visibility')
         register_shortcut('next-editor', '<alt>Right', 'Window', 'Switches to next editor')
@@ -147,3 +153,17 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
 
     def toggle_tabs(self, editor):
         self.note.set_show_tabs(not self.note.get_show_tabs())
+
+    @snaked.core.editor.Editor.stack_request
+    def on_stack_request(self, editor, widget):
+        if widget in self.panels:
+            widget.show()
+        else:
+            self.panels.add(widget)
+            self.box.pack_end(widget, False, False)
+            widget.show()
+
+    @snaked.core.editor.Editor.unstack_request
+    def on_unstack_request(self, editor, widget):
+        if widget in self.panels:
+            widget.hide()

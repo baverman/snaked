@@ -97,4 +97,4 @@ def test_foreign_set_must_be_resolved_to_model_manager(project):
         '       post.'))
     assert 'body' in result
     assert 'blog' in result
-    assert 'blog_id' in result
+    assert 'blog_i' in result
