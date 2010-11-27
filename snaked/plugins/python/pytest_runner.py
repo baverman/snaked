@@ -8,6 +8,8 @@ from snaked.util import BuilderAware, join_to_file_dir
 
 import pytest_launcher
 
+class Escape(object): pass
+
 class TestRunner(BuilderAware):
     """glade-file: pytest_runner.glade"""
 
@@ -20,14 +22,13 @@ class TestRunner(BuilderAware):
         self.buffer_place.add(self.view)
         self.view.show()
 
-        self.editor = None
+        self.editor_ref = None
         self.timer_id = None
         self.test_proc = None
         self.collected_nodes = {}
         self.failed_nodes = {}
-        self.tests_count = 0
-        self.executed_tests = 0
         self.hbox1.hide()
+        self.escape = None
 
     def collect(self, conn):
         while conn.poll():
@@ -50,16 +51,21 @@ class TestRunner(BuilderAware):
         self.failed_nodes.clear()
         self.tests_count = 0
         self.executed_tests = 0
+        self.passed_tests_count = 0
+        self.failed_tests_count = 0
+        self.prevent_scroll = False
+        self.buffer.delete(*self.buffer.get_bounds())
         self.progress.set_text('Running tests')
+
         proc, conn = pytest_launcher.run_test(editor.project_root, matches, files)
         self.test_proc = proc
         self.timer_id = glib.timeout_add(100, self.collect, conn)
 
-    def show(self, editor):
-        self.editor_ref = weakref.ref(editor)
-        self.hbox1.show()
+    def show(self):
+        self.editor_ref().popup_widget(self.hbox1)
 
-    def hide(self):
+    def hide(self, *args):
+        self.escape = None
         self.hbox1.hide()
 
     def find_common_parent(self, nodes):
@@ -110,31 +116,53 @@ class TestRunner(BuilderAware):
 
     def handle_item_call(self, node):
         self.executed_tests += 1
+        if self.executed_tests == 2:
+            self.show()
+
         self.progress_adj.set_value(self.executed_tests)
         self.progress.set_text('Running test %d/%d' % (self.executed_tests, self.tests_count))
 
         self.tests.set(self.collected_nodes[node], 1, pango.WEIGHT_BOLD)
 
-        path = self.tests.get_path(self.collected_nodes[node])
-        self.tests_view.scroll_to_cell(path)
+        if not self.prevent_scroll:
+            path = self.tests.get_path(self.collected_nodes[node])
+            self.tests_view.scroll_to_cell(path)
 
     def handle_pass(self, node):
+        self.passed_tests_count += 1
         iter = self.collected_nodes[node]
         testname = self.tests.get_value(iter, 0)
         self.tests.set(iter, 0, u'\u2714 '.encode('utf8') + testname, 1, pango.WEIGHT_NORMAL)
 
     def handle_fail(self, node, msg):
+        self.failed_tests_count += 1
+        self.prevent_scroll = True
         self.failed_nodes[node] = msg
         iter = self.collected_nodes[node]
         testname = self.tests.get_value(iter, 0)
         self.tests.set(iter, 0, u'\u2716 '.encode('utf8') + testname, 1, pango.WEIGHT_BOLD)
 
+        if self.failed_tests_count == 1:
+            self.tests_view.set_cursor(self.tests.get_path(iter))
+            self.show()
+            self.tests_view.grab_focus()
+
     def handle_end(self):
         self.progress_adj.set_value(self.tests_count)
         self.progress.set_text('Done')
+
+        if not self.tests_count:
+            self.editor_ref().message('There are no any tests to run')
+
+        if self.tests_count == self.passed_tests_count == 1:
+            self.editor_ref().message('Test PASSED')
 
     def on_tests_view_cursor_changed(self, view):
         path, column = view.get_cursor()
         iter = self.tests.get_iter(path)
         node = self.tests.get_value(iter, 2)
         self.buffer.set_text(self.failed_nodes.get(node, ''))
+
+    def on_popup(self):
+        self.escape = Escape()
+        self.editor_ref().push_escape(self.hide, self.escape)

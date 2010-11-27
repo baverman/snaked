@@ -24,8 +24,8 @@ class Editor(SignalManager):
     push_escape_callback = Signal(object, object)
     plugins_changed = Signal()
     add_spot_request = Signal()
-    stack_request = Signal(object)
-    unstack_request = Signal(object)
+    stack_add_request = Signal(object, object)
+    stack_popup_request = Signal(object)
 
     def __init__(self):
         self.uri = None
@@ -220,8 +220,8 @@ class Editor(SignalManager):
 
         return False
 
-    def stack_widget(self, widget):
-        self.stack_request.emit(widget)
+    def add_widget_to_stack(self, widget, on_popup=None):
+        self.stack_add_request.emit(widget, on_popup)
 
-    def unstack_widget(self, widget):
-        self.unstack_request.emit(widget)
+    def popup_widget(self, widget):
+        self.stack_popup_request.emit(widget)

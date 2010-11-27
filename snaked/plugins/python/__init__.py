@@ -139,21 +139,18 @@ def get_pytest_runner(editor):
     from pytest_runner import TestRunner
     test_runner.append(TestRunner())
 
-    editor.stack_widget(test_runner[0].hbox1)
+    editor.add_widget_to_stack(test_runner[0].hbox1, test_runner[0].on_popup)
     return test_runner[0]
 
 def toggle_test_panel(editor):
-    try:
-        runner = test_runner[0]
-    except IndexError:
-        get_pytest_runner(editor)
+    runner = get_pytest_runner(editor)
+    if runner.hbox1.props.visible:
+        runner.hide()
+        editor.view.grab_focus()
     else:
-        if runner.hbox1.props.visible:
-            editor.unstack_widget(runner.hbox1)
-            editor.view.grab_focus()
-        else:
-            editor.stack_widget(runner.hbox1)
-            runner.tests_view.grab_focus()
+        runner.editor_ref = weakref.ref(editor)
+        editor.popup_widget(runner.hbox1)
+        runner.tests_view.grab_focus()
 
 def pytest_available(editor):
     try:

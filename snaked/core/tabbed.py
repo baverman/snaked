@@ -12,7 +12,7 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
         super(TabbedEditorManager, self).__init__()
 
         self.last_switch_time = None
-        self.panels = weakref.WeakSet()
+        self.panels = weakref.WeakKeyDictionary()
 
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.connect('delete-event', self.on_delete_event)
@@ -154,16 +154,14 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
     def toggle_tabs(self, editor):
         self.note.set_show_tabs(not self.note.get_show_tabs())
 
-    @snaked.core.editor.Editor.stack_request
-    def on_stack_request(self, editor, widget):
-        if widget in self.panels:
-            widget.show()
-        else:
-            self.panels.add(widget)
-            self.box.pack_end(widget, False, False)
-            widget.show()
+    @snaked.core.editor.Editor.stack_add_request
+    def on_stack_add_request(self, editor, widget, on_popup):
+        self.panels[widget] = on_popup
+        self.box.pack_end(widget, False, False)
 
-    @snaked.core.editor.Editor.unstack_request
-    def on_unstack_request(self, editor, widget):
+    @snaked.core.editor.Editor.stack_popup_request
+    def on_stack_popup_request(self, editor, widget):
         if widget in self.panels:
-            widget.hide()
+            widget.show()
+            if self.panels[widget]:
+                self.panels[widget]()
