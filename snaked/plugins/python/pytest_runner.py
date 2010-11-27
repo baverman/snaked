@@ -94,9 +94,14 @@ class TestRunner(BuilderAware):
 
         return ''
 
-    def handle_failed_collect(self, node, msg):
-        self.collected_nodes[node] = self.tests.append(
+    def handle_failed_collect(self, node, msg, trace):
+        iter = self.collected_nodes[node] = self.tests.append(
             None, (node, pango.WEIGHT_NORMAL, node))
+
+        self.nodes_traces[node] = trace
+
+        testname = self.tests.get_value(iter, 0)
+        self.tests.set(iter, 0, u'\u2716 '.encode('utf8') + testname, 1, pango.WEIGHT_BOLD)
 
         self.failed_nodes[node] = msg
         self.show()

@@ -68,7 +68,8 @@ class Collector(object):
     def pytest_collectreport(self, report):
         """:type report: _pytest.runner.CollectReport()"""
         if report.failed:
-            self.conn.send(('FAILED_COLLECT', report.nodeid, str(report.longrepr)))
+            self.conn.send(('FAILED_COLLECT', report.nodeid, str(report.longrepr),
+                self.extract_trace(report.longrepr)))
 
     def pytest_internalerror(self, excrepr):
         self.conn.send(('INTERNAL_ERROR', excrepr))

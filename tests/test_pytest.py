@@ -30,6 +30,7 @@ def test_runner_must_return_right_status_for_failed_collect():
 
     assert result[1][0] == 'FAILED_COLLECT'
     assert result[1][1] == 'python_test/module_with_errors.py'
+    assert result[1][3] == [('python_test/module_with_errors.py', 4)]
     assert 'NameError' in result[1][2]
 
 def test_runner_must_return_runned_test_results():
