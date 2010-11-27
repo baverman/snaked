@@ -1,11 +1,12 @@
 import os.path
 import weakref
+import time
 
 import glib
 import pango
 import gtk
 
-from snaked.util import BuilderAware, join_to_file_dir
+from snaked.util import BuilderAware, join_to_file_dir, refresh_gui
 
 import pytest_launcher
 
@@ -50,6 +51,7 @@ class TestRunner(BuilderAware):
 
     def run(self, editor, matches='', files=[]):
         self.editor_ref = weakref.ref(editor)
+        self.stop_running_test()
 
         self.tests.clear()
         self.collected_nodes.clear()
@@ -64,6 +66,7 @@ class TestRunner(BuilderAware):
         self.buffer.delete(*self.buffer.get_bounds())
         self.buffer.node = None
         self.progress.set_text('Running tests')
+        self.stop_run.show()
 
         proc, conn = pytest_launcher.run_test(editor.project_root, matches, files)
         self.test_proc = proc
@@ -162,6 +165,7 @@ class TestRunner(BuilderAware):
         self.test_dir = test_dir
 
     def handle_end(self):
+        self.stop_run.hide()
         self.progress.set_text(
             'Done. %d/%d passed.' % (self.passed_tests_count, self.tests_count) +
                 ((' %d failed' % self.failed_tests_count) if self.failed_tests_count else '') )
@@ -213,3 +217,19 @@ class TestRunner(BuilderAware):
                 filename = os.path.join(self.test_dir, filename)
                 e = self.editor_ref().open_file(filename, line - 1)
                 e.view.grab_focus()
+
+    def on_stop_run_activate(self, button):
+        self.stop_running_test()
+
+    def stop_running_test(self):
+        if self.test_proc:
+            if self.test_proc.is_alive():
+                glib.source_remove(self.timer_id)
+                self.timer_id = None
+                self.test_proc.terminate()
+                while self.test_proc.is_alive():
+                    refresh_gui()
+                    time.sleep(0.01)
+
+                self.stop_run.hide()
+                self.progress.set_text('Stopped')
