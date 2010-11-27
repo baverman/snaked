@@ -13,6 +13,7 @@ project_managers = weakref.WeakValueDictionary()
 
 class RopeProjectManager(object):
     def __init__(self, project):
+        """:type project: rope.base.project.Project()"""
         self.project = project
         self.hints_monitor = None
 
@@ -272,3 +273,33 @@ class Plugin(object):
             self.editor.message(doc.strip(), 20000)
         else:
             self.editor.message('Info not found')
+
+    def get_scope(self):
+        project = self.project_manager.project
+        project.validate()
+
+        resource = self.get_rope_resource(project)
+        source, offset = self.get_source_and_offset()
+
+        module = self.project_manager.project.pycore.get_string_module(source, resource, True)
+        scope = module.get_scope().get_inner_scope_for_offset(offset)
+
+        return self.get_file_and_scope(scope)
+
+    def get_file_and_scope(self, scope):
+        from rope.base.pyobjectsdef import PyModule, PyPackage
+
+        names = []
+        while scope:
+            obj = scope.pyobject
+            if isinstance(obj, (PyModule, PyPackage)):
+                if obj.resource:
+                    return obj.resource.path, '.'.join(names)
+                else:
+                    return None, None
+            else:
+                names.append(obj.get_name())
+
+            scope = scope.parent
+
+        return None, None

@@ -21,6 +21,8 @@ def init(manager):
         'Shows calltips', show_calltips)
 
     manager.add_shortcut('run-test', '<ctrl>F10', 'Tests', 'Run test in cursor scope', run_test)
+    manager.add_shortcut('run-all-tests', '<ctrl><shift>F10', 'Tests',
+        'Run all project tests', run_all_tests)
     manager.add_shortcut('rerun-test', '<shift><alt>X', 'Tests', 'Rerun last test suite', rerun_test)
     manager.add_shortcut('toggle-test-panel', '<alt>1', 'Window',
         'Toggle test panel', toggle_test_panel)
@@ -153,14 +155,28 @@ def toggle_test_panel(editor):
             editor.stack_widget(runner.hbox1)
             runner.tests_view.grab_focus()
 
-def run_test(editor):
+def pytest_available(editor):
     try:
         import pytest
     except ImportError:
         editor.message('You need installed pytest\nsudo pip install pytest')
-        return
+        return False
 
-    get_pytest_runner(editor).run(editor)
+    return True
+
+def run_all_tests(editor):
+    if pytest_available(editor):
+        editor.message('Collecting tests...')
+        get_pytest_runner(editor).run(editor)
+
+def run_test(editor):
+    if pytest_available(editor):
+        filename, func_name = handlers[editor].get_scope()
+        if filename:
+            editor.message('Collecting tests...')
+            get_pytest_runner(editor).run(editor, func_name, [filename])
+        else:
+            editor.message('Test scope can not be defined')
 
 def rerun_test(editor):
     pass

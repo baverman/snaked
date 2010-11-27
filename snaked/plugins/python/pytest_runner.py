@@ -62,17 +62,44 @@ class TestRunner(BuilderAware):
     def hide(self):
         self.hbox1.hide()
 
-    def handle_collect_folder(self, node, is_item=False):
-        parent, sep, child = node.rpartition('::')
-        parent = self.collected_nodes[parent] if parent else None
+    def find_common_parent(self, nodes):
+        if not nodes:
+            return ''
 
-        self.collected_nodes[node] = self.tests.append(parent, (child, pango.WEIGHT_NORMAL, node))
+        parent, _, _ = nodes[0].rpartition('::')
+        while parent:
+            if all(n.startswith(parent) for n in nodes):
+                return parent
 
-        if is_item:
-            self.tests_count += 1
-            self.progress_adj.set_upper(self.tests_count)
+            parent, _, _ = parent.rpartition('::')
 
-        if self.tests_count > 1:
+        return ''
+
+    def handle_collected_tests(self, nodes):
+        common_parent = self.find_common_parent(nodes)
+
+        self.tests_count = len(nodes)
+        self.progress_adj.set_upper(self.tests_count)
+
+        def append(node, node_name):
+            parent, sep, child = node_name.rpartition('::')
+            if parent:
+                if parent not in self.collected_nodes:
+                    append(parent, parent)
+
+                self.collected_nodes[node] = self.tests.append(
+                    self.collected_nodes[parent], (child, pango.WEIGHT_NORMAL, node))
+            else:
+                self.collected_nodes[node] = self.tests.append(
+                    None, (child, pango.WEIGHT_NORMAL, node))
+
+        for node in nodes:
+            node_name = node
+            if common_parent:
+                node_name = node[len(common_parent)+2:]
+            append(node, node_name)
+
+        if self.tests_count:
             self.tests_view.expand_all()
             nw = self.tests_view.size_request()[0]
             w = self.scrolledwindow1.get_size_request()[0]
@@ -80,10 +107,6 @@ class TestRunner(BuilderAware):
             if nw > w:
                 if nw > tw/2: nw = tw/2
                 self.scrolledwindow1.set_size_request(nw, -1)
-            self.hbox1.show()
-
-    def handle_collect_item(self, node):
-        self.handle_collect_folder(node, True)
 
     def handle_item_call(self, node):
         self.executed_tests += 1

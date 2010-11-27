@@ -6,7 +6,7 @@ import rope.base.oi.soi
 import rope.base.pyobjects
 import rope.base.pynames
 from rope.base import exceptions
-from rope.base.pyobjectsdef import PyModule, PyPackage, PyClass, PyFunction
+from rope.base.pyobjectsdef import PyModule, PyPackage, PyClass
 
 class ReplacedName(rope.base.pynames.PyName):
     def __init__(self, pyobject, pyname):

@@ -21,6 +21,7 @@ class Collector(object):
     def __init__(self, conn):
         self.conn = conn
         self._durations = {}
+        self.tests = []
 
     def pytest_runtest_logreport(self, report):
         """:type report: _pytest.runner.TestReport()"""
@@ -55,13 +56,7 @@ class Collector(object):
 
     def pytest_collectreport(self, report):
         """:type report: _pytest.runner.CollectReport()"""
-        import pytest
-        if report.passed:
-            for node in report.result:
-                node_type = 'COLLECT_ITEM' if isinstance(node, pytest.Item) else 'COLLECT_FOLDER'
-                self.conn.send((node_type,
-                    node.name if report.nodeid == '.' else (report.nodeid + '::' + node.name)))
-        elif report.failed:
+        if report.failed:
             self.conn.send(('FAILED_COLLECT', report.nodeid, str(report.longrepr)))
 
     def pytest_internalerror(self, excrepr):
@@ -72,3 +67,17 @@ class Collector(object):
 
     def pytest_sessionfinish(self, session, exitstatus, __multicall__):
         self.conn.send(('END', ))
+
+    def pytest_collection_finish(self):
+        self.conn.send(('COLLECTED_TESTS', self.tests))
+
+    def pytest_deselected(self, items):
+        for node in items:
+            self.tests.remove(node.nodeid)
+
+    def pytest_itemcollected(self, item):
+        self.tests.append(item.nodeid)
+
+    #def __getattr__(self, name):
+    #    print 'getattr', name
+    #    raise AttributeError()
