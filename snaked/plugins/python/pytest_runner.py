@@ -1,3 +1,4 @@
+import os.path
 import weakref
 
 import glib
@@ -27,6 +28,7 @@ class TestRunner(BuilderAware):
         self.test_proc = None
         self.collected_nodes = {}
         self.failed_nodes = {}
+        self.nodes_traces = {}
         self.hbox1.hide()
         self.escape = None
 
@@ -49,6 +51,7 @@ class TestRunner(BuilderAware):
         self.tests.clear()
         self.collected_nodes.clear()
         self.failed_nodes.clear()
+        self.nodes_traces.clear()
         self.tests_count = 0
         self.executed_tests = 0
         self.passed_tests_count = 0
@@ -116,12 +119,12 @@ class TestRunner(BuilderAware):
                 if nw > tw/2: nw = tw/2
                 self.scrolledwindow1.set_size_request(nw, -1)
 
-    def handle_item_call(self, node):
-        self.executed_tests += 1
-        if self.executed_tests == 2:
+        if self.tests_count > 1:
             self.show()
 
-        self.progress_adj.set_value(self.executed_tests)
+    def handle_item_call(self, node):
+        self.executed_tests += 1
+        self.progress_adj.set_value(self.executed_tests - 1)
         self.progress.set_text('Running test %d/%d' % (self.executed_tests, self.tests_count))
 
         self.tests.set(self.collected_nodes[node], 1, pango.WEIGHT_BOLD)
@@ -136,10 +139,11 @@ class TestRunner(BuilderAware):
         testname = self.tests.get_value(iter, 0)
         self.tests.set(iter, 0, u'\u2714 '.encode('utf8') + testname, 1, pango.WEIGHT_NORMAL)
 
-    def handle_fail(self, node, msg):
+    def handle_fail(self, node, msg, trace):
         self.failed_tests_count += 1
         self.prevent_scroll = True
         self.failed_nodes[node] = msg
+        self.nodes_traces[node] = trace
         iter = self.collected_nodes[node]
         testname = self.tests.get_value(iter, 0)
         self.tests.set(iter, 0, u'\u2716 '.encode('utf8') + testname, 1, pango.WEIGHT_BOLD)
@@ -149,9 +153,15 @@ class TestRunner(BuilderAware):
             self.show()
             self.tests_view.grab_focus()
 
+    def handle_start(self, test_dir):
+        self.test_dir = test_dir
+
     def handle_end(self):
+        self.progress.set_text(
+            'Done. %d/%d passed.' % (self.passed_tests_count, self.tests_count) +
+                ((' %d failed' % self.failed_tests_count) if self.failed_tests_count else '') )
+
         self.progress_adj.set_value(self.tests_count)
-        self.progress.set_text('Done')
 
         if not self.tests_count:
             self.editor_ref().message('There are no any tests to run')
@@ -168,3 +178,15 @@ class TestRunner(BuilderAware):
     def on_popup(self):
         self.escape = Escape()
         self.editor_ref().push_escape(self.hide, self.escape)
+
+    def on_tests_view_row_activated(self, view, path, *args):
+        iter = self.tests.get_iter(path)
+        node = self.tests.get_value(iter, 2)
+
+        if node in self.nodes_traces:
+            filename, line = self.nodes_traces[node][-1]
+
+            if not filename.startswith('/'):
+                filename = os.path.join(self.test_dir, filename)
+                e = self.editor_ref().open_file(filename, line - 1)
+                e.view.grab_focus()

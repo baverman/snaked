@@ -23,6 +23,15 @@ class Collector(object):
         self._durations = {}
         self.tests = []
 
+    def extract_trace(self, excinfo):
+        """:type excinfo: py._code.code.ReprExceptionInfo"""
+
+        result = []
+        for entry in excinfo.reprtraceback.reprentries:
+            result.append((entry.reprfileloc.path, entry.reprfileloc.lineno))
+
+        return result
+
     def pytest_runtest_logreport(self, report):
         """:type report: _pytest.runner.TestReport()"""
 
@@ -32,7 +41,8 @@ class Collector(object):
             if report.when != "call":
                 self.conn.send(('ERROR', report.nodeid, str(report.longrepr)))
             else:
-                self.conn.send(('FAIL', report.nodeid, str(report.longrepr)))
+                self.conn.send(('FAIL', report.nodeid, str(report.longrepr),
+                    self.extract_trace(report.longrepr)))
         elif report.skipped:
             self.conn.send(('SKIP', report.nodeid))
 
@@ -64,6 +74,7 @@ class Collector(object):
 
     def pytest_sessionstart(self, session):
         self.suite_start_time = time.time()
+        self.conn.send(('START', str(session.fspath)))
 
     def pytest_sessionfinish(self, session, exitstatus, __multicall__):
         self.conn.send(('END', ))

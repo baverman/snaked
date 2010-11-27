@@ -1,7 +1,5 @@
 import pytest
-
-def func():
-    raise Exception('func_raise_exception')
+import os.path
 
 def test_first():
     pass
@@ -14,4 +12,4 @@ def test_third():
     raise NotImplementedError()
 
 def test_fourth():
-    func()
+    os.path.join(None, None)
