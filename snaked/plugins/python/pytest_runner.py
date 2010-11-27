@@ -29,7 +29,7 @@ class TestRunner(BuilderAware):
         self.collected_nodes = {}
         self.failed_nodes = {}
         self.nodes_traces = {}
-        self.hbox1.hide()
+        self.panel.hide()
         self.escape = None
 
     def collect(self, conn):
@@ -65,11 +65,11 @@ class TestRunner(BuilderAware):
         self.timer_id = glib.timeout_add(100, self.collect, conn)
 
     def show(self):
-        self.editor_ref().popup_widget(self.hbox1)
+        self.editor_ref().popup_widget(self.panel)
 
     def hide(self, editor=None, *args):
         self.escape = None
-        self.hbox1.hide()
+        self.panel.hide()
         if editor:
             editor.view.grab_focus()
 
@@ -113,11 +113,11 @@ class TestRunner(BuilderAware):
         if self.tests_count:
             self.tests_view.expand_all()
             nw = self.tests_view.size_request()[0]
-            w = self.scrolledwindow1.get_size_request()[0]
-            tw = self.hbox1.window.get_size()[0]
+            w = self.tests_view_sw.get_size_request()[0]
+            tw = self.panel.window.get_size()[0]
             if nw > w:
                 if nw > tw/2: nw = tw/2
-                self.scrolledwindow1.set_size_request(nw, -1)
+                self.tests_view_sw.set_size_request(nw, -1)
 
         if self.tests_count > 1:
             self.show()
@@ -131,7 +131,7 @@ class TestRunner(BuilderAware):
 
         if not self.prevent_scroll:
             path = self.tests.get_path(self.collected_nodes[node])
-            self.tests_view.scroll_to_cell(path)
+            self.tests_view.scroll_to_cell(path, None, True, 0.5)
 
     def handle_pass(self, node):
         self.passed_tests_count += 1

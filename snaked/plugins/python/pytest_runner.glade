@@ -12,13 +12,13 @@
       <column type="gchararray"/>
     </columns>
   </object>
-  <object class="GtkHBox" id="hbox1">
+  <object class="GtkHBox" id="panel">
     <property name="height_request">180</property>
     <property name="visible">True</property>
     <property name="border_width">5</property>
     <property name="spacing">5</property>
     <child>
-      <object class="GtkScrolledWindow" id="scrolledwindow1">
+      <object class="GtkScrolledWindow" id="tests_view_sw">
         <property name="width_request">200</property>
         <property name="visible">True</property>
         <property name="can_focus">True</property>
@@ -77,8 +77,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkHButtonBox" id="hbuttonbox1">
-                <property name="visible">True</property>
+              <object class="GtkHButtonBox" id="trace_buttons">
                 <property name="spacing">5</property>
                 <property name="layout_style">end</property>
                 <child>
