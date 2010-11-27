@@ -3,7 +3,7 @@ import weakref
 
 import glib
 import pango
-import gtksourceview2
+import gtk
 
 from snaked.util import BuilderAware, join_to_file_dir
 
@@ -17,9 +17,11 @@ class TestRunner(BuilderAware):
     def __init__(self):
         super(TestRunner, self).__init__(join_to_file_dir(__file__, 'pytest_runner.glade'))
 
-        self.buffer = gtksourceview2.Buffer()
-        self.view = gtksourceview2.View()
+        self.buffer = gtk.TextBuffer()
+        self.view = gtk.TextView()
         self.view.set_buffer(self.buffer)
+        self.view.set_editable(False)
+        self.view.set_wrap_mode(gtk.WRAP_WORD)
         self.buffer_place.add(self.view)
         self.view.show()
 
@@ -29,6 +31,7 @@ class TestRunner(BuilderAware):
         self.collected_nodes = {}
         self.failed_nodes = {}
         self.nodes_traces = {}
+        self.nodes_buffer_positions = {}
         self.panel.hide()
         self.escape = None
 
@@ -52,12 +55,14 @@ class TestRunner(BuilderAware):
         self.collected_nodes.clear()
         self.failed_nodes.clear()
         self.nodes_traces.clear()
+        self.nodes_buffer_positions.clear()
         self.tests_count = 0
         self.executed_tests = 0
         self.passed_tests_count = 0
         self.failed_tests_count = 0
         self.prevent_scroll = False
         self.buffer.delete(*self.buffer.get_bounds())
+        self.buffer.node = None
         self.progress.set_text('Running tests')
 
         proc, conn = pytest_launcher.run_test(editor.project_root, matches, files)
@@ -173,7 +178,25 @@ class TestRunner(BuilderAware):
         path, column = view.get_cursor()
         iter = self.tests.get_iter(path)
         node = self.tests.get_value(iter, 2)
-        self.buffer.set_text(self.failed_nodes.get(node, ''))
+
+        buf = self.buffer
+
+        if buf.node:
+            self.nodes_buffer_positions[buf.node] = buf.get_iter_at_mark(
+                buf.get_insert()).get_offset()
+
+        if node in self.failed_nodes:
+            buf.set_text(self.failed_nodes[node])
+            buf.node = node
+            if node in self.nodes_buffer_positions:
+                buf.place_cursor(buf.get_iter_at_offset(self.nodes_buffer_positions[node]))
+            else:
+                buf.place_cursor(buf.get_bounds()[1])
+
+            self.view.scroll_to_mark(buf.get_insert(), 0.001, use_align=True, xalign=1.0)
+        else:
+            self.buffer.set_text('')
+            self.buffer.node = None
 
     def on_popup(self):
         self.escape = Escape()

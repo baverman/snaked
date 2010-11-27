@@ -40,7 +40,6 @@ def test_func_param_hint(project):
 
 def test_func_return(project):
     project.db.add_param_hint('tests\.module\.func$', 'return$', 'tests.scopetest.Lolwhat()')
-
     result = pset(get_proposals(project, 'def func():\n    return None\n\nfunc().'))
     assert 'superstar' in result
     assert 'star' in result
