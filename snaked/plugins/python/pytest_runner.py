@@ -64,9 +64,11 @@ class TestRunner(BuilderAware):
     def show(self):
         self.editor_ref().popup_widget(self.hbox1)
 
-    def hide(self, *args):
+    def hide(self, editor=None, *args):
         self.escape = None
         self.hbox1.hide()
+        if editor:
+            editor.view.grab_focus()
 
     def find_common_parent(self, nodes):
         if not nodes:

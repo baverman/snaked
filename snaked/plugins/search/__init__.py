@@ -30,7 +30,7 @@ def search(editor):
         active_widgets[editor] = widget
         editor.widget.pack_start(widget, False)
         widget.entry.grab_focus()
-        editor.push_escape(hide, editor, widget)
+        editor.push_escape(hide, widget)
         widget.show_all()
 
 def backward_search(matcher, text, endpos):
@@ -243,7 +243,7 @@ def mark_selection(editor):
         delete_all_marks(editor)
 
     mark_occurences(editor, occur.search, False, False)
-    editor.push_escape(remove_all, editor, occur)
+    editor.push_escape(remove_all, occur)
 
 def on_replace_activate(button, editor, widget):
     if editor not in active_widgets:

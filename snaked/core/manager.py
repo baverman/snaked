@@ -239,7 +239,7 @@ class EditorManager(object):
             del self.escape_map[key]
             realargs = [a() for a in args]
             if not any(a is None for a in realargs):
-                cb(*realargs)
+                cb(editor, *realargs)
                 return False
 
         return False
