@@ -94,6 +94,15 @@ class TestRunner(BuilderAware):
 
         return ''
 
+    def handle_failed_collect(self, node, msg):
+        self.collected_nodes[node] = self.tests.append(
+            None, (node, pango.WEIGHT_NORMAL, node))
+
+        self.failed_nodes[node] = msg
+        self.show()
+        self.tests_view.grab_focus()
+        self.prevent_scroll = True
+
     def handle_collected_tests(self, nodes):
         common_parent = self.find_common_parent(nodes)
 
@@ -211,12 +220,13 @@ class TestRunner(BuilderAware):
         node = self.tests.get_value(iter, 2)
 
         if node in self.nodes_traces:
-            filename, line = self.nodes_traces[node][-1]
+            filename, line = self.nodes_traces[node][0]
 
             if not filename.startswith('/'):
                 filename = os.path.join(self.test_dir, filename)
-                e = self.editor_ref().open_file(filename, line - 1)
-                e.view.grab_focus()
+
+            e = self.editor_ref().open_file(filename, line - 1)
+            e.view.grab_focus()
 
     def on_stop_run_activate(self, button):
         self.stop_running_test()

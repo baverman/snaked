@@ -3,8 +3,9 @@ import multiprocessing
 import time
 
 def test_runner(conn, cwd, match, files):
-    import pytest
+    import pytest, sys
     os.chdir(cwd)
+    sys.path.insert(0, cwd)
 
     args = ' '.join(['-q', ('-k %s' % match) if match else ''] + files)
     pytest.main(args, plugins=[Collector(conn)])
