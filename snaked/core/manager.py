@@ -226,7 +226,7 @@ class EditorManager(object):
 
     @Editor.push_escape_callback
     def on_push_escape_callback(self, editor, callback, args):
-        key = (callback,) + tuple(map(id, args))
+        key = (callback,) + tuple(map(weakref.ref, args))
         if key in self.escape_map:
             return
 

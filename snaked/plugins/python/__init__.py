@@ -144,7 +144,7 @@ def get_pytest_runner(editor):
 
 def toggle_test_panel(editor):
     runner = get_pytest_runner(editor)
-    if runner.hbox1.props.visible:
+    if runner.hbox1.get_focus_child():
         runner.hide()
         editor.view.grab_focus()
     else:
