@@ -38,14 +38,21 @@ def wrap_text(editor):
         return
 
     import textwrap
+    from util import get_whitespace
 
     start, end = buf.get_selection_bounds()
     start.order(end)
     if end.starts_line():
         end.backward_visible_cursor_position()
 
+    si = ''
+    second_line = start.copy()
+    second_line.set_line(start.get_line() + 1)
+    if second_line.get_offset() < end.get_offset():
+        si = get_whitespace(second_line)
+
     text = buf.get_text(start, end).decode('utf-8')
-    text = textwrap.fill(text, width=editor.view.get_right_margin_position())
+    text = textwrap.fill(text, subsequent_indent=si ,width=editor.view.get_right_margin_position())
 
     buf.begin_user_action()
     buf.place_cursor(end)
