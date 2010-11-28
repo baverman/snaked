@@ -73,7 +73,7 @@ def wrap_text(editor):
         editor.message('Select text block to wrap')
         return
 
-    import textwrap
+    import textwrap, re
     from util import get_whitespace
 
     start, end = buf.get_selection_bounds()
@@ -88,6 +88,7 @@ def wrap_text(editor):
         si = get_whitespace(second_line)
 
     text = buf.get_text(start, end).decode('utf-8')
+    text = re.sub('(?m)^\s+', '', text)
     text = textwrap.fill(text, subsequent_indent=si ,width=editor.view.get_right_margin_position())
 
     buf.begin_user_action()
