@@ -135,21 +135,90 @@ Image again:
 
 .. image:: /images/pygtk-hints.*
 
-Who is there? ``BuilderAwere`` is a simple wrapper which delegates missing
+Who is there? ``BuilderAware`` is a simple wrapper which delegates missing
 attributes to GtkBuilder. ``Window`` is ``BuilderAware`` class constructed from
 glade file. ``vbox1`` is a GtkVBox defined in glade file and PyGtk hint provider
 resolves class attributes from it.
 
-Besides that, goto definition (``F3``) opens glade file and place cursor at ``vbox1``
-declaration.
+Besides that, goto definition (``F3``) opens glade file and place cursor at
+``vbox1`` declaration.
 
-And more, if there are any signal handlers in glade file they parameters also will
-be resolved.
+And more, if there are any signal handlers in glade file they parameters also
+will be resolved.
 
-You only need to add pygtk support and assign glade file to class via ``ropehints.py``::
+You only need to add pygtk support and assign glade file to class via
+``ropehints.py``::
 
    def init(provider):
        from snaked.plugins.python.pygtkhints import add_gtk_support
+       add_gtk_support(provider)
 
-       pygtk = add_gtk_support(provider)
-       pygtk.add_class('gui.Window', 'main.glade')
+And define glade file in class pydoc::
+
+   class Window(BuilderAware):
+      """glade-file: main.glade"""
+      ...
+
+
+Unit testing
+------------
+
+This is a holy grail of modern development. Honestly, I didn't plan to integrate
+unit testing support in snaked -- running ``py.test`` from terminal completely
+satisfied my needs, but during heavy tests reorganization I realized too much
+time was spent for snaked/terminal switching and searching fail's cause in
+``py.test`` output.
+
+Plugin completely based on `py.test <http://pytest.org>`_ capabilities and you
+need latest (2.0) its version. Unit testing features:
+
+* Test framework agnostic. Really killer feature -- one shoot and three bunnies
+  are dead: ``py.test`` itself, `unittest
+  <http://docs.python.org/library/unittest.html>`_ and `nose
+  <http://somethingaboutorange.com/mrl/projects/nose/>`_.
+
+* Test environment configuration are done by ordinary ``conftest.py`` and
+  `pytest.ini <http://pytest.org/customize.html>`_.
+
+* Common GUI for testing process which can be founded in other IDEs.
+
+* Tests output is not messed and can be seen for each test individually (thanks
+  for ``py.test``).
+
+* Quick jump to test fail cause. Also one can navigate through traceback.
+  Without any mouse, fast ant easy.
+
+.. image:: /images/unittest.*
+
+Shortcuts
+*********
+
+* ``<ctrl><shift>F10`` runs all tests in project.
+
+* ``<ctrl>F10`` runs tests defined in scope under cursor. It can be test
+  function/method, test case class or whole module.
+
+* ``<shift><alt>x`` reruns last tests.
+
+* ``<alt>1`` toggles test result window.
+
+* ``Enter`` in test list view jums to failed test line.
+
+* ``<alt>u``/``<alt>n`` mnemonics navigate through traceback.
+
+Running django tests
+********************
+
+At first you need to configure django environment. Create ``conftest.py`` module
+in the root of you project::
+
+   import os
+   os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+
+Then you should tell ``py.test`` which modules are tests proper. Create
+``pytest.ini`` file in project root::
+
+   [pytest]
+   python_files = tests.py
+
+That's all. Now you can run django tests with ``py.test`` and snaked.

@@ -1,21 +1,18 @@
 Snaked user manual
 ====================
 
-`Snaked`_ (**snak**\ e **ed**\ itor) is light and :ref:`minimalist
-<minimalist-mean>` editor inspired by `Scribes`_, indented mostly for python
-developers, but other users may find it useful too.
+`Snaked`_ (**snak**\ e **ed**\ itor) is light and :ref:`minimalist <minimalist-mean>`
+editor inspired by `Scribes`_, indented mostly for python developers, but
+other users may find it useful too.
 
 Features:
 
-* Light UI. There are no menu, tool bar, status bar or project browser at all. Only editor view
-  itself.
+* Light UI. There are no menu, tool bar, status bar or project browser at all.
+  Only editor view itself.
 
 * `gtksourceview2`_ based.
 
 * Keyboard oriented control.
-
-* :ref:`Tabbed <tabbed-interface>` and :ref:`windowed <windowed-interface>`
-  (separate window for each editor) interfaces.
 
 * Auto projects. In most cases you do not need such boring operation like
   :menuselection:`File --> New project`. Just start edit your file.
@@ -26,13 +23,17 @@ Features:
 
 * Restoring last edit position.
 
-* Python auto complete and navigation via rope.
+* Python auto complete and navigation via rope with very flexible type hinting
+  framework. PyGtk, Django support.
 
 * Basic python code lint via pyflakes.
 
-* Smart everything selection.
+* Snippets.
 
-* Common word completer.
+* Unittests (with `py.test <http://pytest.org/>`_ as backend, so there is
+  support for usual UnitTest   cases, nose cases and ``py.test`` itself).
+
+* Spell check.
 
 
 .. image:: /images/snaked.*
@@ -43,8 +44,8 @@ Features:
 .. note::
 
    Just a brief remark: I'm not a native English speaker so you may feel some
-   confusion reading this manual.  Please, :ref:`share <contacts>` your discomfiture with me. I'll
-   be very grateful for that.
+   confusion reading this manual.  Please, :ref:`share <contacts>` your
+   discomfiture with me. I'll be very grateful for that.
 
 
 Content

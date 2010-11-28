@@ -31,6 +31,8 @@ Provides features for easy text editing.
   gtksourceview2 selection moving (``<alt>Up``, ``<alt>Down``) it allows forget
   about copy-paste.
 
+* ``<shift><alt>w`` shrinks smart selection back.
+
 * ``<alt>f`` reformats selection to current right margin width.
 
 That's all for now. Planed feature functionality:
@@ -151,14 +153,13 @@ Snippets
 It is similar to vim's SnipMate plugin which are clone of TextMate's snippets,
 you may refer to these projects for syntax documentation.
 
-User snippet files are searched in ``~/.config/snaked/snippets``. There are only
-python built-in snippets now.
+User snippet files are searched in ``~/.config/snaked/snippets``. You can
+configure it via preferences (``<ctrl>p``) item ``Snippets``.
+
+There is ability to attach several snippet sets to one editor via multiple
+contexts (preferences ``File types`` item).
 
 Missing features:
-
-* Multiple contexts, e.g. django template should have `html` and `django`
-  contexts to allow to use two snippet sets. There is only one context defined by
-  editor language now.
 
 * Variable/python commands/shell commands expansion via backticks.
 
