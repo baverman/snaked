@@ -9,6 +9,7 @@ import weakref
 handlers = weakref.WeakKeyDictionary()
 outline_dialog = None
 test_runner = []
+last_run_test = []
 
 def init(manager):
     manager.add_shortcut('python-goto-definition', 'F3', 'Python',
@@ -131,6 +132,7 @@ def edit_rope_config(editor):
             'Are you sure this is python project?', 5000)
 
 def get_pytest_runner(editor):
+    """:rtype: snaked.plugins.python.pytest_runner.TestRunner()"""
     try:
         return test_runner[0]
     except IndexError:
@@ -161,9 +163,16 @@ def pytest_available(editor):
 
     return True
 
+def set_last_run_test(func_name, filenames):
+    if last_run_test:
+        last_run_test[0] = func_name, filenames
+    else:
+        last_run_test.append((func_name, filenames))
+
 def run_all_tests(editor):
     if pytest_available(editor):
         editor.message('Collecting tests...')
+        set_last_run_test('', [])
         get_pytest_runner(editor).run(editor)
 
 def run_test(editor):
@@ -171,9 +180,15 @@ def run_test(editor):
         filename, func_name = handlers[editor].get_scope()
         if filename:
             editor.message('Collecting tests...')
+            set_last_run_test(func_name, [filename])
             get_pytest_runner(editor).run(editor, func_name, [filename])
         else:
             editor.message('Test scope can not be defined')
 
 def rerun_test(editor):
-    pass
+    if pytest_available(editor):
+        if last_run_test:
+            editor.message('Collecting tests...')
+            get_pytest_runner(editor).run(editor, *last_run_test[0])
+        else:
+            editor.message('You do not run any test yet')
