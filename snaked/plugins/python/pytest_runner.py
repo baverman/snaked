@@ -68,6 +68,7 @@ class TestRunner(BuilderAware):
         self.buffer.node = None
         self.progress.set_text('Running tests')
         self.stop_run.show()
+        self.trace_buttons.hide()
 
         proc, conn = pytest_launcher.run_test(editor.project_root, matches, files)
         self.test_proc = proc
