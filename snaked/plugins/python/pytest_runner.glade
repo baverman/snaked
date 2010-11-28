@@ -101,6 +101,7 @@
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="use_underline">True</property>
+                    <signal name="activate" handler="on_trace_up_activate"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -115,6 +116,7 @@
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="use_underline">True</property>
+                    <signal name="activate" handler="on_trace_down_activate"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>

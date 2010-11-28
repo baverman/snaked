@@ -62,6 +62,7 @@ class TestRunner(BuilderAware):
         self.executed_tests = 0
         self.passed_tests_count = 0
         self.failed_tests_count = 0
+        self.skipped_tests_count = 0
         self.prevent_scroll = False
         self.buffer.delete(*self.buffer.get_bounds())
         self.buffer.node = None
@@ -98,12 +99,11 @@ class TestRunner(BuilderAware):
         iter = self.collected_nodes[node] = self.tests.append(
             None, (node, pango.WEIGHT_NORMAL, node))
 
-        self.nodes_traces[node] = trace
+        self.add_trace(node, msg, trace)
 
         testname = self.tests.get_value(iter, 0)
-        self.tests.set(iter, 0, u'\u2716 '.encode('utf8') + testname, 1, pango.WEIGHT_BOLD)
+        self.tests.set(iter, 0, u'\u2718 '.encode('utf8') + testname, 1, pango.WEIGHT_BOLD)
 
-        self.failed_nodes[node] = msg
         self.show()
         self.tests_view.grab_focus()
         self.prevent_scroll = True
@@ -161,14 +161,31 @@ class TestRunner(BuilderAware):
         testname = self.tests.get_value(iter, 0)
         self.tests.set(iter, 0, u'\u2714 '.encode('utf8') + testname, 1, pango.WEIGHT_NORMAL)
 
+    def handle_skip(self, node):
+        self.skipped_tests_count += 1
+        iter = self.collected_nodes[node]
+        testname = self.tests.get_value(iter, 0)
+        self.tests.set(iter, 0, u'\u2731 '.encode('utf8') + testname, 1, pango.WEIGHT_NORMAL)
+
+    def add_trace(self, node, msg, trace):
+        self.failed_nodes[node] = msg
+
+        result = []
+        msg = msg.decode('utf-8')
+        for filename, line in trace:
+            search = u'%s:%d:' % (filename, line)
+            idx = msg.find(search)
+            result.append((filename, line, idx))
+
+        self.nodes_traces[node] = result
+
     def handle_fail(self, node, msg, trace):
         self.failed_tests_count += 1
         self.prevent_scroll = True
-        self.failed_nodes[node] = msg
-        self.nodes_traces[node] = trace
+        self.add_trace(node, msg, trace)
         iter = self.collected_nodes[node]
         testname = self.tests.get_value(iter, 0)
-        self.tests.set(iter, 0, u'\u2716 '.encode('utf8') + testname, 1, pango.WEIGHT_BOLD)
+        self.tests.set(iter, 0, u'\u2718 '.encode('utf8') + testname, 1, pango.WEIGHT_BOLD)
 
         if self.failed_tests_count == 1:
             self.tests_view.set_cursor(self.tests.get_path(iter))
@@ -180,10 +197,17 @@ class TestRunner(BuilderAware):
 
     def handle_end(self):
         self.stop_run.hide()
-        self.progress.set_text(
-            'Done. %d/%d passed.' % (self.passed_tests_count, self.tests_count) +
-                ((' %d failed' % self.failed_tests_count) if self.failed_tests_count else '') )
 
+        text = ['Done.']
+        text.append('%d/%d passed.' % (self.passed_tests_count, self.tests_count))
+
+        if self.skipped_tests_count:
+            text.append('%d skipped.' % self.skipped_tests_count)
+
+        if self.failed_tests_count:
+            text.append('%d failed.' % self.failed_tests_count)
+
+        self.progress.set_text(' '.join(text))
         self.progress_adj.set_value(self.tests_count)
 
         if not self.tests_count:
@@ -202,6 +226,8 @@ class TestRunner(BuilderAware):
         if buf.node:
             self.nodes_buffer_positions[buf.node] = buf.get_iter_at_mark(
                 buf.get_insert()).get_offset()
+
+        self.trace_buttons.hide()
 
         if node in self.failed_nodes:
             buf.set_text(self.failed_nodes[node])
@@ -225,13 +251,22 @@ class TestRunner(BuilderAware):
         node = self.tests.get_value(iter, 2)
 
         if node in self.nodes_traces:
-            filename, line = self.nodes_traces[node][0]
+            self.goto_trace(node, self.nodes_traces[node][0])
+            if len(self.nodes_traces[node]) > 1:
+                self.trace_buttons.show()
 
-            if not filename.startswith('/'):
-                filename = os.path.join(self.test_dir, filename)
+    def goto_trace(self, node, trace):
+        filename, line, idx = trace
 
-            e = self.editor_ref().open_file(filename, line - 1)
-            e.view.grab_focus()
+        if idx >= 0:
+            self.buffer.place_cursor(self.buffer.get_iter_at_offset(idx))
+            self.view.scroll_to_mark(self.buffer.get_insert(), 0.001, True, 1.0, 1.0)
+
+        if not filename.startswith('/'):
+            filename = os.path.join(self.test_dir, filename)
+
+        e = self.editor_ref().open_file(filename, line - 1)
+        e.view.grab_focus()
 
     def on_stop_run_activate(self, button):
         self.stop_running_test()
@@ -248,3 +283,26 @@ class TestRunner(BuilderAware):
 
                 self.stop_run.hide()
                 self.progress.set_text('Stopped')
+
+    def move_to_next_trace(self, is_back):
+        if not self.buffer.node or not self.buffer.node in self.nodes_traces:
+            return
+
+        offset = self.buffer.get_iter_at_mark(self.buffer.get_insert()).get_offset()
+
+        traces = self.nodes_traces[self.buffer.node]
+        if is_back:
+            traces = reversed(traces)
+
+        for t in traces:
+            if (is_back and t[2] < offset) or (not is_back and t[2] > offset):
+                self.goto_trace(self.buffer.node, t)
+                return
+
+        self.editor_ref().message('There is no any traces to follow')
+
+    def on_trace_up_activate(self, button):
+        self.move_to_next_trace(True)
+
+    def on_trace_down_activate(self, button):
+        self.move_to_next_trace(False)
