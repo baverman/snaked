@@ -27,7 +27,7 @@ class Editor(SignalManager):
     stack_add_request = Signal(object, object)
     stack_popup_request = Signal(object)
 
-    def __init__(self):
+    def __init__(self, snaked_conf):
         self.uri = None
         self.session = None
         self.saveable = True
@@ -53,6 +53,9 @@ class Editor(SignalManager):
         self.widget.show_all()
 
         connect_all(self, buffer=self.buffer, view=self.view)
+
+        if snaked_conf.get('DISABLE_LEFT_CLICK', False):
+            self.view.connect('button-press-event', self.on_button_press_event)
 
     def update_title(self):
         modified = '*' if self.buffer.get_modified() else ''
@@ -213,7 +216,6 @@ class Editor(SignalManager):
     def on_buffer_changed(self, buffer):
         self.last_cursor_move = None
 
-    @connect_external('view', 'button-press-event')
     def on_button_press_event(self, view, event):
         if event.button == 1:
             return True

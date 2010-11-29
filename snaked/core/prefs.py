@@ -64,6 +64,16 @@ def save_json_settings(name, value):
     with open(filename, 'w') as f:
         json.dump(value, f, sort_keys=True, indent=4)
 
+def load_py_settings(name, default=None):
+    filename = get_settings_path(name)
+    result = {}
+    try:
+        execfile(filename, result)
+    except IOError:
+        return default
+
+    return result
+
 def get_settings_path(name):
     filename = join_to_settings_dir(name)
     make_missing_dirs(filename)

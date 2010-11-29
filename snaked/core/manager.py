@@ -36,6 +36,8 @@ class EditorManager(object):
         prefs.register_dialog('File types', self.edit_contexts, 'file', 'type', 'association')
 
 
+        self.snaked_conf = prefs.load_py_settings('snaked.conf', {})
+
         self.escape_stack = []
         self.escape_map = {}
         self.spot_history = []
@@ -82,7 +84,7 @@ class EditorManager(object):
         return guesser
 
     def open(self, filename, line=None):
-        editor = Editor()
+        editor = Editor(self.snaked_conf)
         self.editors.append(editor)
         editor.session = self.session
 
