@@ -17,11 +17,13 @@ def init(manager):
     manager.add_shortcut('wrap-text', '<alt>f', 'Edit', 'Wrap text on right margin width', wrap_text)
 
 def delete_line(editor):
-    from util import get_line_bounds
+    from util import get_line_bounds, line_is_empty
+
     bounds = get_line_bounds(editor.cursor)
-    clipboard = editor.view.get_clipboard(gtk.gdk.SELECTION_CLIPBOARD)
-    editor.buffer.select_range(*bounds)
-    editor.buffer.copy_clipboard(clipboard)
+    if not line_is_empty(editor.cursor):
+        clipboard = editor.view.get_clipboard(gtk.gdk.SELECTION_CLIPBOARD)
+        editor.buffer.select_range(*bounds)
+        editor.buffer.copy_clipboard(clipboard)
 
     editor.buffer.begin_user_action()
     editor.buffer.delete(*bounds)
