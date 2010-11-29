@@ -193,6 +193,9 @@ class TestRunner(BuilderAware):
             self.show()
             self.tests_view.grab_focus()
 
+    def handle_error(self, node, msg, err):
+        self.handle_fail(node, msg, err)
+
     def handle_start(self, test_dir):
         self.test_dir = test_dir
 

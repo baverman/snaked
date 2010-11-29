@@ -40,7 +40,8 @@ class Collector(object):
             self.conn.send(('PASS', report.nodeid))
         elif report.failed:
             if report.when != "call":
-                self.conn.send(('ERROR', report.nodeid, str(report.longrepr)))
+                self.conn.send(('ERROR', report.nodeid, str(report.longrepr),
+                    self.extract_trace(report.longrepr)))
             else:
                 self.conn.send(('FAIL', report.nodeid, str(report.longrepr),
                     self.extract_trace(report.longrepr)))
