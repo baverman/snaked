@@ -41,6 +41,11 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
         register_shortcut('prev-editor-alt', '<ctrl>Page_Up', 'Window', 'Switches to previous editor')
         register_shortcut('fullscreen', 'F11', 'Window', 'Toggles fullscreen mode')
 
+        if self.snaked_conf['RESTORE_POSITION'] and 'LAST_POSITION' in self.snaked_conf:
+            pos, size = self.snaked_conf['LAST_POSITION']
+            self.window.move(*pos)
+            self.window.resize(*size)
+
         self.window.show_all()
 
     def get_context(self):
@@ -111,6 +116,8 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
         self.activator.bind('Escape', self.process_escape)
 
     def quit(self, editor):
+        self.snaked_conf['LAST_POSITION'] = self.window.get_position(), self.window.get_size()
+
         self.window.hide()
         super(TabbedEditorManager, self).quit(editor)
 

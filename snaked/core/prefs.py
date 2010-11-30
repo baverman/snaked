@@ -64,16 +64,6 @@ def save_json_settings(name, value):
     with open(filename, 'w') as f:
         json.dump(value, f, sort_keys=True, indent=4)
 
-def load_py_settings(name, default=None):
-    filename = get_settings_path(name)
-    result = {}
-    try:
-        execfile(filename, result)
-    except IOError:
-        return default
-
-    return result
-
 def get_settings_path(name):
     filename = join_to_settings_dir(name)
     make_missing_dirs(filename)
@@ -131,3 +121,73 @@ class ListSettings(object):
 
     def store(self, data):
         open(self.path, 'w').write('\n'.join(data))
+
+
+class PySettings(object):
+    def __init__(self, data=None):
+        self.data = data or {}
+        self.loaded = False
+
+    def __getitem__(self, name):
+        try:
+            return self.data[name]
+        except KeyError:
+            pass
+
+        value = getattr(self, name, None)
+        if value is None:
+            raise KeyError()
+
+        return value
+
+    def __setitem__(self, name, value):
+        self.data[name] = value
+
+    def __contains__(self, name):
+        return name in self.data or ( getattr(self, name, None) is not None
+            and not self.is_special(name) )
+
+    def is_special(self, name):
+        return name.startswith('_') or name.lower().endswith('_doc')
+
+    def is_default(self, name):
+        return name not in self.data and getattr(self, name, None) is not None and \
+             not self.is_special(name)
+
+    def get_source(self):
+        result = ''
+        for name in sorted(self.__class__.__dict__):
+            if name not in self:
+                continue
+
+            doc = getattr(self, name + '_doc', None)
+            if not doc:
+                doc = getattr(self, name + '_DOC', None)
+            if doc:
+                result += '# ' + doc + '\n'
+
+            value = '%s = %s' % (name, repr(self[name]))
+            if self.is_default(name):
+                value = '# ' + value
+
+            result += value + '\n\n'
+
+        return result
+
+    def load(self, name):
+        self.loaded = False
+        self.data = {}
+        filename = get_settings_path(name)
+        try:
+            execfile(filename, self.data)
+            self.loaded = True
+        except IOError:
+            pass
+        except SyntaxError, e:
+            print 'Error on loading config: %s' % filename, e
+            pass
+
+    def save(self, name):
+        filename = get_settings_path(name)
+        with open(filename, 'w') as f:
+            f.write(self.get_source())

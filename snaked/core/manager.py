@@ -16,6 +16,16 @@ from .editor import Editor
 
 import snaked.core.quick_open
 
+class SnakedConf(prefs.PySettings):
+    DISABLE_LEFT_CLICK = False
+    DISABLE_LEFT_CLICK_DOC = 'Disable left mouse button handling in editor view'
+
+    RESTORE_POSITION = True
+    RESTORE_POSITION_DOC = 'Restore snaked window position'
+
+    LAST_POSITION = None
+    LAST_POSITION_DOC = 'Tuple of ((x,y), (w,h)) last window position'
+
 
 class EditorManager(object):
     def __init__(self):
@@ -36,7 +46,8 @@ class EditorManager(object):
         prefs.register_dialog('File types', self.edit_contexts, 'file', 'type', 'association')
 
 
-        self.snaked_conf = prefs.load_py_settings('snaked.conf', {})
+        self.snaked_conf = SnakedConf()
+        self.snaked_conf.load('snaked.conf')
 
         self.escape_stack = []
         self.escape_map = {}
@@ -207,6 +218,8 @@ class EditorManager(object):
     def quit(self, editor):
         if self.session:
             self.save_session(self.session, editor)
+
+        self.snaked_conf.save('snaked.conf')
 
         map(self.plugin_manager.editor_closed, self.editors)
 
