@@ -33,7 +33,10 @@ def mark_problems(editor, problems):
     for line, name, message in problems:
         iter = editor.buffer.get_iter_at_line(line-1)
         while iter.get_line() == line - 1:
-            nstart, nend = iter.forward_search(name, gtk.TEXT_SEARCH_VISIBLE_ONLY)
+            result = iter.forward_search(name, gtk.TEXT_SEARCH_VISIBLE_ONLY)
+            if result is None:
+                break
+            nstart, nend = result
             if nstart.starts_word() and nend.ends_word():
                 break
 
