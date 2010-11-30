@@ -1,12 +1,11 @@
 import os.path
 import weakref
-import time
 
 import glib
 import pango
 import gtk
 
-from snaked.util import BuilderAware, join_to_file_dir, refresh_gui
+from snaked.util import BuilderAware, join_to_file_dir
 
 import pytest_launcher
 
