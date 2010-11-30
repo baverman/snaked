@@ -38,7 +38,11 @@ class TestRunner(BuilderAware):
 
     def collect(self, conn):
         while conn.poll():
-            msg = conn.recv()
+            try:
+                msg = conn.recv()
+            except EOFError:
+                break
+
             handler_name = 'handle_' + msg[0].lower()
             try:
                 func = getattr(self, handler_name)
@@ -47,7 +51,7 @@ class TestRunner(BuilderAware):
             else:
                 func(*msg[1:])
 
-        return self.test_proc.is_alive()
+        return self.test_proc.poll() is None
 
     def run(self, editor, matches='', files=[]):
         self.editor_ref = weakref.ref(editor)
@@ -277,13 +281,11 @@ class TestRunner(BuilderAware):
 
     def stop_running_test(self):
         if self.test_proc:
-            if self.test_proc.is_alive():
+            if self.test_proc.poll() is None:
                 glib.source_remove(self.timer_id)
                 self.timer_id = None
                 self.test_proc.terminate()
-                while self.test_proc.is_alive():
-                    refresh_gui()
-                    time.sleep(0.01)
+                self.test_proc.wait()
 
                 self.stop_run.hide()
                 self.progress.set_text('Stopped')

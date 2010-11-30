@@ -7,9 +7,14 @@ def collect_results(proc, conn):
     result = []
     while True:
         while conn.poll():
-            result.append(conn.recv())
+            try:
+                data = conn.recv()
+                result.append(data)
+            except EOFError:
+                break
 
-        if not proc.is_alive():
+        if proc.poll() is not None:
+            conn.close()
             break
 
         time.sleep(0.1)
