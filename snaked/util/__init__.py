@@ -34,7 +34,10 @@ def save_file(filename, data, encoding):
     f.close()
 
     if exists(filename):
-        shutil.copymode(filename, tmpfilename)
+        try:
+            shutil.copymode(filename, tmpfilename)
+        except OSError:
+            pass
 
     os.rename(tmpfilename, filename)
 
