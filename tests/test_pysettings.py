@@ -62,7 +62,6 @@ def test_prefs_must_provide_its_source():
     p['key4'] = '50'
 
     result = p.get_source()
-    exec result in {}
 
     assert '# Example key' in result
     assert "key1 = 'key11'" in result
@@ -70,3 +69,7 @@ def test_prefs_must_provide_its_source():
     assert '# Another key' in result
     assert '# key3 = True' in result
     assert 'key4' not in result
+
+    data = {}
+    exec result in data
+    assert data['key1'] == p['key1']

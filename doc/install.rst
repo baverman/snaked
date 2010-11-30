@@ -10,7 +10,7 @@ Dependencies
   framework release.
 
 * PyGtk >= 2.10
-  
+
 * pygtksourceview >= 2.10
 
 
@@ -43,6 +43,18 @@ From source
    cd snaked
    python setup.py build
    sudo python setup.py install
+
+If you often pull changes from master brunch I recommend you following recipe:
+
+* First install snaked in develop mode (remove any snaked dirs in site-packages
+  before that)::
+
+     sudo python setup.py develop
+
+* Then, if you want use latest snaked from master branch simply do::
+
+     cd cloned/snaked/dir
+     git pull
 
 
 .. _pip: http://pip.openplans.org/
