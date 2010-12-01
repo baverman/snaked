@@ -18,6 +18,8 @@ def init(manager):
     manager.add_shortcut('search', '<ctrl>f', 'Edit', 'Search or mark', search)
     manager.add_shortcut('find-next', '<ctrl>j', 'Edit', 'Find next', find_next)
     manager.add_shortcut('find-prev', '<ctrl>k', 'Edit', 'Find prev', find_prev)
+    manager.add_shortcut('mark-selection', '<ctrl>h', 'Edit',
+        'Mark selection occurrences', mark_selection)
 
 def search(editor):
     if editor in active_widgets:
