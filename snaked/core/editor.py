@@ -57,6 +57,8 @@ class Editor(SignalManager):
         if snaked_conf['DISABLE_LEFT_CLICK']:
             self.view.connect('button-press-event', self.on_button_press_event)
 
+        self.snaked_conf = snaked_conf
+
     def update_title(self):
         modified = '*' if self.buffer.get_modified() else ''
 

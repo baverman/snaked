@@ -10,22 +10,13 @@ from ..util import (idle, lazy_property, create_lang_matchers_from_file,
     LangGuesser, get_project_root, join_to_file_dir)
 
 import prefs
+import config
+
 from .shortcuts import register_shortcut, load_shortcuts
 from .plugins import PluginManager
 from .editor import Editor
 
 import snaked.core.quick_open
-
-class SnakedConf(prefs.PySettings):
-    DISABLE_LEFT_CLICK = False
-    DISABLE_LEFT_CLICK_DOC = 'Disable left mouse button handling in editor view'
-
-    RESTORE_POSITION = True
-    RESTORE_POSITION_DOC = 'Restore snaked window position'
-
-    LAST_POSITION = None
-    LAST_POSITION_DOC = 'Tuple of ((x,y), (w,h)) last window position'
-
 
 class EditorManager(object):
     def __init__(self):
@@ -45,8 +36,7 @@ class EditorManager(object):
 
         prefs.register_dialog('File types', self.edit_contexts, 'file', 'type', 'association')
 
-
-        self.snaked_conf = SnakedConf()
+        self.snaked_conf = config.SnakedConf()
         self.snaked_conf.load('snaked.conf')
 
         self.escape_stack = []

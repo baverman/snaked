@@ -3,6 +3,7 @@ import traceback
 
 from snaked.core.shortcuts import Shortcut, register_shortcut, get_path_by_key
 from snaked.core.prefs import ListSettings
+from snaked.core.config import add_option
 
 default_enabled_plugins = ['save_positions', 'edit_and_select',
     'python', 'complete_words', 'hash_comment', 'python_flakes', 'goto_line',
@@ -36,6 +37,9 @@ class ShortcutsHolder(object):
 
         snaked.core.gui.editor_prefs.on_dialog_created_hooks.append(on_dialog_created)
         snaked.core.gui.editor_prefs.on_pref_refresh_hooks.append(on_pref_refresh)
+
+    def add_global_option(self, name, default, doc=None):
+        add_option(name, default, doc)
 
 
 class PluginManager(object):

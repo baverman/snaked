@@ -13,6 +13,8 @@ import settings
 import searcher
 
 class QuickOpenDialog(BuilderAware):
+    """glade-file: gui.glade"""
+
     def __init__(self):
         super(QuickOpenDialog, self).__init__(join_to_file_dir(__file__, 'gui.glade'))
         self.shortcuts = ShortcutActivator(self.window)
@@ -24,6 +26,7 @@ class QuickOpenDialog(BuilderAware):
         self.shortcuts.bind('<ctrl>o', self.free_open)
         self.shortcuts.bind('<ctrl>p', self.popup_projects)
         self.shortcuts.bind('<ctrl>Delete', self.delete_project)
+        self.shortcuts.bind('<ctrl>h', self.toggle_hidden)
         self.shortcuts.bind('BackSpace', self.browse_top)
 
         set_activate_the_one_item(self.search_entry, self.filelist_tree)
@@ -155,11 +158,19 @@ class QuickOpenDialog(BuilderAware):
         dirs = []
         files = []
 
+        conf = self.editor().snaked_conf
+        hidden_masks = None
+        if not conf['QUICK_OPEN_SHOW_HIDDEN']:
+            hidden_masks = conf['QUICK_OPEN_HIDDEN_FILES']
+
         if top and not top.endswith('/'):
             top += '/'
 
         root = os.path.join(self.get_current_root(), top)
         for name in os.listdir(root):
+            if hidden_masks and any(name.endswith(m) for m in hidden_masks):
+                continue
+
             path = os.path.join(root, name)
             if os.path.isdir(path):
                 dirs.append(name+'/')
@@ -172,7 +183,9 @@ class QuickOpenDialog(BuilderAware):
                 place_idx = i
             self.filelist.append((name, top))
 
-        for name in sorted(files):
+        for i, name in enumerate(sorted(files)):
+            if name == place:
+                place_idx = i + len(dirs)
             self.filelist.append((name, top))
 
         self.filelist_tree.columns_autosize()
@@ -272,3 +285,22 @@ class QuickOpenDialog(BuilderAware):
             else:
                 place = os.path.basename(os.path.dirname(top)) + '/'
                 idle(self.fill_with_dirs, os.path.dirname(os.path.dirname(top)), place)
+
+    def toggle_hidden(self):
+        if self.search_entry.get_text():
+            self.editor().message('You are not in browse mode')
+            return
+
+        conf = self.editor().snaked_conf
+        conf['QUICK_OPEN_SHOW_HIDDEN'] = not conf['QUICK_OPEN_SHOW_HIDDEN']
+
+        self.editor().message('Show hidden files' if conf['QUICK_OPEN_SHOW_HIDDEN'] else
+            'Do now show hidden files' )
+
+        fname, name, top = self.get_selected_file()
+        if fname:
+            idle(self.fill_with_dirs, top, name)
+        else:
+            if len(self.filelist):
+                name, top = self.filelist[0]
+                idle(self.fill_with_dirs, top)
