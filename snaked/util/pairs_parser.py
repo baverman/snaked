@@ -18,7 +18,7 @@ def find_closing_quote_pos(quote, text, start):
     m = match_quote_end[quote].match(text, start)
     if m:
         return m.end()
-        
+
     return None
 
 def get_brackets(text, cursor):
@@ -30,7 +30,7 @@ def get_brackets(text, cursor):
         m = match_start.search(text, start)
         if not m:
             break
-            
+
         start = m.end()
         bracket = m.group()
 
@@ -52,10 +52,12 @@ def get_brackets(text, cursor):
             open.append((bracket, start))
         elif open and bracket in [')', ']', '}']:
             close.append((inverted[bracket], start))
-        
+
         while open and close and open[-1][0] == close[-1][0]:
             br, opos = open.pop()
             br, cpos = close.pop()
-            
+
             if len(open) == level:
                 return br, opos, cpos
+
+    return None, None, None

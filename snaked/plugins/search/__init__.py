@@ -21,6 +21,9 @@ def init(manager):
     manager.add_shortcut('mark-selection', '<ctrl>h', 'Edit',
         'Mark selection occurrences', mark_selection)
 
+    manager.add_global_option('SEARCH_IGNORE_CASE', False, 'Ignore case while searching')
+    manager.add_global_option('SEARCH_REGEX', False, 'Use regular expression for searhing')
+
 def search(editor):
     if editor in active_widgets:
         widget = active_widgets[editor]
@@ -37,7 +40,6 @@ def search(editor):
         start, end = editor.buffer.get_selection_bounds()
         if start.get_line() == end.get_line():
             refresh_gui()
-            editor.add_spot()
             widget.entry.set_text(start.get_text(end))
             editor.buffer.place_cursor(start)
             on_search_activate(widget.entry, editor, widget)
@@ -131,10 +133,12 @@ def create_widget(editor):
 
 
     cb = gtk.CheckButton('Ignore _case')
+    cb.set_active(editor.snaked_conf['SEARCH_IGNORE_CASE'])
     widget.pack_start(cb, False)
     widget.ignore_case = cb
 
     cb = gtk.CheckButton('Rege_x')
+    cb.set_active(editor.snaked_conf['SEARCH_REGEX'])
     widget.pack_start(cb, False)
     widget.regex = cb
 
@@ -153,6 +157,10 @@ def create_widget(editor):
     button.add(label)
     widget.pack_start(button, False)
     button.connect('activate', on_replace_all_activate, editor, widget)
+    widget.replace_all = button
+
+    editor.view.connect_after('move-cursor', on_editor_view_move_cursor, widget)
+    widget.replace_in_selection = False
 
     return widget
 
@@ -216,6 +224,7 @@ def mark_occurences(editor, search, ignore_case, regex):
 
 def on_search_activate(sender, editor, widget):
     delete_all_marks(editor)
+    editor.add_spot()
     if mark_occurences(editor, widget.entry.get_text(),
             widget.ignore_case.get_active(), widget.regex.get_active()):
         find_next(editor, True)
@@ -231,6 +240,9 @@ def hide(editor, widget):
     if widget and widget.get_parent():
         editor.widget.remove(widget)
         widget.destroy()
+
+        editor.snaked_conf['SEARCH_IGNORE_CASE'] = widget.ignore_case.get_active()
+        editor.snaked_conf['SEARCH_REGEX'] = widget.regex.get_active()
 
     editor.view.grab_focus()
 
@@ -301,8 +313,16 @@ def on_replace_all_activate(button, editor, widget):
 
     line, offset = editor.cursor.get_line(), editor.cursor.get_line_offset()
 
+    if active_widgets[editor].replace_in_selection:
+        start, end = editor.buffer.get_selection_bounds()
+        start.order(end)
+    else:
+        start, end = active_widgets[editor]
+
+    end_mark = editor.buffer.create_mark(None, end)
+
     editor.buffer.begin_user_action()
-    editor.buffer.place_cursor(editor.buffer.get_bounds()[0])
+    editor.buffer.place_cursor(start)
     count = 0
     while True:
         match = matcher.search(editor.utext, editor.cursor.get_offset())
@@ -310,6 +330,9 @@ def on_replace_all_activate(button, editor, widget):
             break
 
         start, end = map(editor.buffer.get_iter_at_offset, match.span())
+        if end.compare(editor.buffer.get_iter_at_mark(end_mark)) > 0:
+            break
+
         editor.buffer.place_cursor(start)
         editor.buffer.delete(start, end)
         editor.buffer.insert_at_cursor(match.expand(replace).encode('utf-8'))
@@ -329,3 +352,18 @@ def on_replace_all_activate(button, editor, widget):
     cursor.set_line_offset(offset)
     editor.buffer.place_cursor(cursor)
     editor.view.scroll_mark_onscreen(editor.buffer.get_insert())
+    editor.view.grab_focus()
+
+def on_editor_view_move_cursor(view, step, count, selection, widget):
+    if selection:
+        r = view.get_buffer().get_selection_bounds()
+        new_state = r and r[0].get_line() != r[1].get_line()
+    else:
+        new_state = False
+
+    if widget.replace_in_selection != new_state:
+        widget.replace_in_selection = new_state
+        if new_state:
+            widget.replace_all.set_label("Replace in se_lection")
+        else:
+            widget.replace_all.set_label("Replace _all")
