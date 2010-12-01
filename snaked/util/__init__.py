@@ -52,6 +52,10 @@ def join_to_settings_dir(*args):
     config_dir = os.getenv('XDG_CONFIG_HOME', expanduser('~/.config'))
     return join(config_dir, 'snaked', *args)
 
+def join_to_cache_dir(*args):
+    config_dir = os.getenv('XDG_CACHE_HOME', expanduser('~/.cache'))
+    return join(config_dir, 'snaked', *args)
+
 def make_missing_dirs(filename):
     path = dirname(filename)
     if not exists(path):

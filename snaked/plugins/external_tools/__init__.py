@@ -5,45 +5,40 @@ desc = 'Allows one to define own commands'
 import weakref
 import gtk
 
-from snaked.util import idle
+from snaked.util import idle, join_to_settings_dir
 from snaked.core.prefs import register_dialog
+
+tools = []
 
 def init(manager):
     manager.add_shortcut('external-tools', '<alt>x', 'Tools', 'Run tool', run_tool)
-    register_dialog('External tools', show_preferences, 'run', 'external', 'tool', 'command')
+    register_dialog('External tools', edit_external_tools, 'run', 'external', 'tool', 'command')
 
-def to_str(data, encoding='utf-8'):
-    if isinstance(data, unicode):
-        return data.encode(encoding)
-
-    return data
-
-def get_run_menu(prefs, editor):
+def get_run_menu(tools, editor):
     menu = gtk.Menu()
     menu.set_reserve_toggle_size(False)
 
     has_selection = editor.buffer.get_has_selection()
 
     any_items = False
-    for tool in sorted(prefs):
-        if prefs[tool]['stdin'] == 'selection' and not has_selection:
+    for tool in tools:
+        if tool.input == 'from-selection' and not has_selection:
             continue
 
-        if prefs[tool]['langs'].strip() and editor.lang not in map(str.strip,
-                to_str(prefs[tool]['langs']).split(',')):
+        if tool.context and not all(ctx in editor.contexts for ctx in tool.context):
             continue
 
         any_items = True
         item = gtk.MenuItem(None, True)
         label = gtk.Label()
         label.set_alignment(0, 0.5)
-        label.set_markup_with_mnemonic(prefs[tool]['name'])
-        if len(tool) < 10:
+        label.set_markup_with_mnemonic(tool.name)
+        if len(tool.name) < 10:
             label.set_width_chars(10)
 
         item.add(label)
         menu.append(item)
-        item.connect('activate', on_item_activate, weakref.ref(editor), tool, prefs[tool])
+        item.connect('activate', on_item_activate, weakref.ref(editor), tool)
 
     if any_items:
         menu.show_all()
@@ -53,10 +48,18 @@ def get_run_menu(prefs, editor):
         return None
 
 def run_tool(editor):
-    from snaked.core.prefs import load_json_settings
+    from parser import parse, ParseException
 
-    prefs = load_json_settings('external-tools.conf', {})
-    if not prefs:
+    if not tools:
+        try:
+            tools[:] = parse(open(join_to_settings_dir('external.tools')).read())
+        except IOError:
+            pass
+        except ParseException, e:
+            editor.message(str(e), 5000)
+            return
+
+    if not tools:
         editor.message('There is no any tool to run')
         return
 
@@ -67,33 +70,32 @@ def run_tool(editor):
         mw, mh = menu.size_request()
         return x + w - mw, y + h - mh, False
 
-    menu = get_run_menu(prefs, editor)
+    menu = get_run_menu(tools, editor)
     if not menu:
         editor.message('There is no any tool to run')
         return
 
     menu.popup(None, None, get_coords, 0, gtk.get_current_event_time())
 
-def on_item_activate(item, editor, name, prefs):
-    idle(run, editor(), name, prefs)
+def on_item_activate(item, editor, tool):
+    idle(run, editor(), tool)
     idle(item.get_parent().destroy)
 
-def show_preferences(editor):
-    from prefs import PreferencesDialog
-    PreferencesDialog().show(editor)
-
 def get_stdin(editor, id):
-    if id == 'none':
+    if id == 'none' or id is None:
         return None
-    elif id == 'buffer':
+    elif id == 'from-buffer':
         return editor.text
-    elif id == 'selection':
+    elif id == 'from-selection':
         return editor.buffer.get_text(*editor.buffer.get_selection_bounds())
-    elif id == 'buffer-or-selection':
+    elif id == 'from-buffer-or-selection':
         if editor.buffer.get_has_selection():
             return editor.buffer.get_text(*editor.buffer.get_selection_bounds())
         else:
             return editor.text
+    else:
+        print 'Unknown input action', id
+        editor.message('Unknown input action ' + id)
 
 def replace(editor, bounds, text):
     line = editor.cursor.get_line()
@@ -112,10 +114,10 @@ def insert(editor, iter, text):
     editor.buffer.end_user_action()
 
 def process_stdout(editor, stdout, stderr, id):
-    if id != 'show-feedback' and stderr:
+    if id != 'to-feedback' and stderr:
         editor.message(stderr, 5000)
 
-    if id == 'show-feedback':
+    if id == 'to-feedback':
         msg = stdout + stderr
         if not msg:
             msg = 'Empty command output'
@@ -135,37 +137,48 @@ def process_stdout(editor, stdout, stderr, id):
         last_line = editor.buffer.get_line_count()
         insert(editor, editor.buffer.get_bounds()[1], stdout)
         editor.goto_line(last_line)
-    elif id == 'clipboard':
+    elif id == 'tp-clipboard':
         clipboard = editor.view.get_clipboard(gtk.gdk.SELECTION_CLIPBOARD)
         clipboard.set_text(stdout)
         editor.message('Command output was placed on clipboard')
     else:
         editor.message('Unknown stdout action ' + id)
 
-def run(editor, name, prefs):
-    import shlex
+def run(editor, tool):
     import os.path
     from subprocess import Popen, PIPE
+    import tempfile
 
-    command = shlex.split(to_str(prefs['command']))
-    if not command:
-        editor.message('Tool must define command to run')
-        return
+    editor.message('Running ' + tool.title)
 
-    editor.message('Running ' + name)
+    fd, filename = tempfile.mkstemp()
+    os.write(fd, tool.script)
+    os.close(fd)
 
-    stdin = get_stdin(editor, prefs['stdin'])
+    stdin = get_stdin(editor, tool.input)
 
-    current_file = editor.uri
-    current_dir = os.path.dirname(current_file)
-    current_project = editor.project_root
-
-    command_to_run = ['/usr/bin/env']
-    for c in command:
-        command_to_run.append(c.replace('%f', current_file).replace(
-            '%d', current_dir).replace('%p', current_project))
+    command_to_run = ['/usr/bin/env', 'sh', filename]
 
     stdout, stderr = Popen(command_to_run, stdout=PIPE, stderr=PIPE,
-        stdin=PIPE if stdin else None).communicate(stdin)
+        stdin=PIPE if stdin else None, cwd=editor.project_root,
+        env={'FILENAME':editor.uri, 'OFFSET':str(editor.cursor.get_offset())}).communicate(stdin)
 
-    process_stdout(editor, stdout, stderr, prefs['stdout'])
+    os.remove(filename)
+    process_stdout(editor, stdout, stderr, tool.output)
+
+def edit_external_tools(editor):
+    import shutil
+    from os.path import join, exists, dirname
+    from snaked.util import make_missing_dirs
+
+    filename = join_to_settings_dir('external.tools')
+    if not exists(filename):
+        make_missing_dirs(filename)
+        shutil.copy(join(dirname(__file__), 'external.tools.template'), filename)
+
+    e = editor.open_file(filename)
+    e.connect('file-saved', on_external_tools_save)
+
+def on_external_tools_save(editor):
+    tools[:] = []
+    editor.message('External tools updated')

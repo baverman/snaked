@@ -1,0 +1,42 @@
+# Config describes external tools. Basic syntax is:
+#
+# tool "toolname" [for "ctx1, ctx2"] [input] [output]
+#     shell cmd1
+#     shell cmd2
+#
+# tool ...
+#
+# Tool's name can include underscore (_) to define mnemonic
+# key and pango markup, e.g "<b>_R</b>un", 
+#
+# Context is editor lang, attached contexts (via File Types menu)
+# or session context.
+#
+# input is one of: 
+#
+#   from-buffer               : pipes whole buffer to script
+#   from-selection            : pipes only current selection
+#   from-buffer-or-selection  : pipes selection if exists and buffer otherwise.
+#
+# output can be on of:
+#
+#   replace-buffer
+#   replace-selection
+#   replace-buffer-or-selection
+#   insert
+#   insert-at-end
+#   to-console
+#   to-feedback
+#   to-clipboard
+#
+# I think it self-explanatory.
+#
+# Here some examples:
+
+tool "_Run" for "python" from-buffer to-console
+    python
+    
+tool "Spninx _make" for "session:myproject" to-console
+    cd doc
+    make html
+    
