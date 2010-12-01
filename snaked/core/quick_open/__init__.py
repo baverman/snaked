@@ -16,6 +16,11 @@ def editor_opened(editor):
     if root and root not in settings.recent_projects:
         settings.recent_projects.append(root)
 
+    if not root:
+        root = editor.get_project_root(larva=True)
+        if root and root not in settings.larva_projects:
+            settings.larva_projects.append(root)
+
 def activate(editor):
     global dialog
     if not dialog:

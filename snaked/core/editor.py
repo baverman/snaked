@@ -15,6 +15,7 @@ class Editor(SignalManager):
     request_close = Signal()
     settings_changed = Signal()
     get_title = Signal(return_type=str)
+    get_project_larva = Signal(return_type=str)
     get_file_position = Signal(return_type=int)
     before_close = Signal()
     file_loaded = Signal()
@@ -142,14 +143,28 @@ class Editor(SignalManager):
 
     @property
     def project_root(self):
-        if self.uri:
-            root = get_project_root(self.uri)
+        """This is real file's project root
+
+        There config can be saved and so on.
+
+        """
+        return self.get_project_root()
+
+    def get_project_root(self, larva=False, force_select=False):
+        if not self.uri:
+            return None
+
+        root = get_project_root(self.uri)
+
+        if not root and force_select:
+            pass
+
+        if not root and larva:
+            root = self.get_project_larva.emit()
             if not root:
                 root = os.path.dirname(self.uri)
 
-            return root
-
-        return None
+        return root
 
     def open_file(self, filename, line=None):
         """:rtype: Editor"""

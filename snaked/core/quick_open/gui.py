@@ -50,7 +50,7 @@ class QuickOpenDialog(BuilderAware):
     def show(self, editor):
         self.editor = weakref.ref(editor)
         self.update_recent_projects()
-        self.update_projects(editor.project_root)
+        self.update_projects(editor.get_project_root(larva=True))
         editor.request_transient_for.emit(self.window)
 
         self.search_entry.grab_focus()
@@ -83,6 +83,11 @@ class QuickOpenDialog(BuilderAware):
         for i, r in enumerate(settings.recent_projects):
             if r == root:
                 index = i
+            self.projectlist.append((r,))
+
+        for i, r in enumerate(reversed(sorted(settings.larva_projects, key=lambda r:len(r)))):
+            if r == root:
+                index = i + len(settings.recent_projects)
             self.projectlist.append((r,))
 
         if not len(self.projectlist):
