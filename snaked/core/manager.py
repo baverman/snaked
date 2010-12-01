@@ -142,6 +142,9 @@ class EditorManager(object):
         if lang:
             editor.buffer.set_language(lang)
 
+        if self.session:
+            editor.contexts.append('session:' + self.session)
+
         pref = prefs.CompositePreferences(self.lang_prefs.get(editor.lang, {}),
             self.lang_prefs.get('default', {}), prefs.default_prefs.get(editor.lang, {}),
             prefs.default_prefs['default'])
