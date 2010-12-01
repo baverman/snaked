@@ -249,9 +249,9 @@ class TestRunner(BuilderAware):
             self.buffer.set_text('')
             self.buffer.node = None
 
-    def on_popup(self):
+    def on_popup(self, widget, editor):
         self.escape = Escape()
-        self.editor_ref().push_escape(self.hide, self.escape)
+        editor.push_escape(self.hide, self.escape)
 
     def on_tests_view_row_activated(self, view, path, *args):
         iter = self.tests.get_iter(path)

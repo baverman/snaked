@@ -159,12 +159,19 @@ def run(editor, tool):
 
     command_to_run = ['/usr/bin/env', 'sh', filename]
 
-    stdout, stderr = Popen(command_to_run, stdout=PIPE, stderr=PIPE,
+    proc = Popen(command_to_run, stdout=PIPE, stderr=PIPE,
         stdin=PIPE if stdin else None, cwd=editor.project_root,
-        env={'FILENAME':editor.uri, 'OFFSET':str(editor.cursor.get_offset())}).communicate(stdin)
+        env={'FILENAME':editor.uri, 'OFFSET':str(editor.cursor.get_offset())})
 
-    os.remove(filename)
-    process_stdout(editor, stdout, stderr, tool.output)
+    on_finish = lambda: os.remove(filename)
+
+    if tool.output == 'to-console':
+        from snaked.core.console import consume_output
+        consume_output(editor, proc, on_finish)
+    else:
+        stdout, stderr = proc.communicate(stdin)
+        on_finish()
+        process_stdout(editor, stdout, stderr, tool.output)
 
 def edit_external_tools(editor):
     import shutil

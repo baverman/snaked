@@ -177,4 +177,4 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
             widget.set_size_request(w, h)
 
             if self.panels[widget]:
-                self.panels[widget]()
+                self.panels[widget](widget, editor)
