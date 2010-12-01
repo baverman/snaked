@@ -396,6 +396,7 @@ class FakeEditor(object):
         self.manager = manager
         self.request_transient_for = self
         self.session = manager.session
+        self.snaked_conf = manager.snaked_conf
 
     def emit(self, window):
         self.manager.set_transient_for(self, window)
@@ -411,3 +412,6 @@ class FakeEditor(object):
 
     def message(self, message, timeout=None):
         print message
+
+    def get_project_root(*args, **kwargs):
+        return None
