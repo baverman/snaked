@@ -295,7 +295,7 @@ class QuickOpenDialog(BuilderAware):
         conf['QUICK_OPEN_SHOW_HIDDEN'] = not conf['QUICK_OPEN_SHOW_HIDDEN']
 
         self.editor().message('Show hidden files' if conf['QUICK_OPEN_SHOW_HIDDEN'] else
-            'Do now show hidden files' )
+            'Do not show hidden files' )
 
         fname, name, top = self.get_selected_file()
         if fname:
