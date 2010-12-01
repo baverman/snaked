@@ -1,6 +1,8 @@
 import gtk
 import glib
 
+from snaked.util import refresh_gui
+
 console_widget = []
 
 class Escape(object): pass
@@ -23,6 +25,7 @@ def create_console_widget():
     panel.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 
     panel.view = gtk.TextView()
+    panel.view.set_editable(False)
     panel.view.set_buffer(gtk.TextBuffer())
     panel.add(panel.view)
     panel.view.show()
@@ -68,6 +71,9 @@ def consumer(editor, console, proc, on_finish):
                 buf = console.view.get_buffer()
                 iter = buf.get_bounds()[1]
                 buf.insert(iter, data)
+                buf.place_cursor(buf.get_bounds()[1])
+                console.view.scroll_mark_onscreen(buf.get_insert())
+                refresh_gui()
 
     if proc.poll() is not None:
         on_finish()
