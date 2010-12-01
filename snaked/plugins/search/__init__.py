@@ -5,7 +5,7 @@ desc = 'Searches words in document'
 import re
 import weakref
 import gtk
-from snaked.util import idle
+from snaked.util import idle, refresh_gui
 
 active_widgets = weakref.WeakKeyDictionary()
 search_selections = []
@@ -15,11 +15,9 @@ class SearchSelection(object):
         self.search = search
 
 def init(manager):
-    manager.add_shortcut('search', '<ctrl>f', 'Edit', 'Search', search)
+    manager.add_shortcut('search', '<ctrl>f', 'Edit', 'Search or mark', search)
     manager.add_shortcut('find-next', '<ctrl>j', 'Edit', 'Find next', find_next)
     manager.add_shortcut('find-prev', '<ctrl>k', 'Edit', 'Find prev', find_prev)
-    manager.add_shortcut('mark-selection', '<ctrl>h', 'Edit',
-        'Mark selection occurrences', mark_selection)
 
 def search(editor):
     if editor in active_widgets:
@@ -32,6 +30,15 @@ def search(editor):
         widget.entry.grab_focus()
         editor.push_escape(hide, widget)
         widget.show_all()
+
+    if editor.buffer.get_has_selection():
+        start, end = editor.buffer.get_selection_bounds()
+        if start.get_line() == end.get_line():
+            refresh_gui()
+            editor.add_spot()
+            widget.entry.set_text(start.get_text(end))
+            editor.buffer.place_cursor(start)
+            on_search_activate(widget.entry, editor, widget)
 
 def backward_search(matcher, text, endpos):
     match = None
@@ -74,7 +81,7 @@ def do_find(editor, dir, start_from=None):
     if match:
         bounds = map(editor.buffer.get_iter_at_offset, match.span())
         editor.buffer.select_range(bounds[1], bounds[0])
-        editor.view.scroll_to_iter(bounds[0], 0.001, use_align=True, xalign=1.0)
+        editor.view.scroll_mark_onscreen(editor.buffer.get_insert())
         if start_from:
             editor.message('Wrap search', 800)
 
@@ -275,7 +282,7 @@ def on_replace_activate(button, editor, widget):
     editor.buffer.insert_at_cursor(match.expand(replace).encode('utf-8'))
     editor.buffer.end_user_action()
 
-    idle(editor.scroll_to_cursor)
+    editor.view.scroll_mark_onscreen(editor.buffer.get_insert())
 
 def on_replace_all_activate(button, editor, widget):
     if editor not in active_widgets:
@@ -319,4 +326,4 @@ def on_replace_all_activate(button, editor, widget):
     cursor.set_line(line)
     cursor.set_line_offset(offset)
     editor.buffer.place_cursor(cursor)
-    editor.scroll_to_cursor()
+    editor.view.scroll_mark_onscreen(editor.buffer.get_insert())
