@@ -41,6 +41,9 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
         register_shortcut('prev-editor-alt', '<ctrl>Page_Up', 'Window', 'Switches to previous editor')
         register_shortcut('fullscreen', 'F11', 'Window', 'Toggles fullscreen mode')
 
+        register_shortcut('toggle-console', '<alt>grave', 'Window', 'Toggles console')
+
+
         if self.snaked_conf['RESTORE_POSITION'] and 'LAST_POSITION' in self.snaked_conf:
             pos, size = self.snaked_conf['LAST_POSITION']
             self.window.move(*pos)
@@ -113,6 +116,8 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
         self.activator.bind_to_name('goto-next-spot', self.goto_next_prev_spot, True)
         self.activator.bind_to_name('goto-prev-spot', self.goto_next_prev_spot, False)
 
+        self.activator.bind_to_name('toggle-console', self.toggle_console)
+
         self.activator.bind('Escape', self.process_escape)
 
     def quit(self, editor):
@@ -182,3 +187,7 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
 
             if self.panels[widget]:
                 self.panels[widget](widget, editor)
+
+    def toggle_console(self, editor):
+        from snaked.core.console import toggle_console
+        toggle_console(editor)

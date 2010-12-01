@@ -33,14 +33,13 @@ def create_console_widget():
     return panel
 
 def toggle_console(editor):
-    console = get_console_widget()
+    console = get_console_widget(editor)
 
     if console.props.visible:
         console.hide()
         editor.view.grab_focus()
     else:
         editor.popup_widget(console)
-        #console.grab_focus()
 
 def hide(editor, widget, escape):
     widget.hide()
