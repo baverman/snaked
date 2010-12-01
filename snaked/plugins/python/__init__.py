@@ -34,6 +34,7 @@ def init(manager):
 
 def editor_created(editor):
     editor.connect('get-title', on_editor_get_title)
+    editor.connect('get-project-larva', on_editor_get_project_larva)
 
 def editor_opened(editor):
     from plugin import Plugin
@@ -71,9 +72,35 @@ def show_calltips(editor):
 
 def on_editor_get_title(editor):
     if editor.uri.endswith('.py'):
+        editor.stop_emission('get-title')
         return get_python_title(editor.uri)
 
-    return None
+def get_package_root(module_path):
+    import os.path
+
+    packages = [os.path.basename(module_path).rpartition('.')[0]]
+    while True:
+        path = os.path.dirname(module_path)
+        if path == module_path:
+            break
+
+        module_path = path
+
+        if os.path.exists(os.path.join(module_path, '__init__.py')):
+            packages.append(os.path.basename(module_path))
+        else:
+            break
+
+    return module_path, '.'.join(reversed(packages))
+
+def on_editor_get_project_larva(editor):
+    from snaked.util import join_to_file_dir
+    import os.path
+
+    if os.path.exists(join_to_file_dir(editor.uri, '__init__.py')):
+        editor.stop_emission('get-project-larva')
+        root, packages = get_package_root(editor.uri)
+        return os.path.join(root, packages.partition('.')[0])
 
 def get_python_title(uri):
     from os.path import dirname, basename, exists, join
