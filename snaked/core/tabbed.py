@@ -169,6 +169,10 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
     @snaked.core.editor.Editor.stack_popup_request
     def on_stack_popup_request(self, editor, widget):
         if widget in self.panels:
+            for w in self.panels:
+                if w is not widget:
+                    w.hide()
+
             widget.show()
 
             _, _, _, wh, _ = self.window.window.get_geometry()
