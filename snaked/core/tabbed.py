@@ -8,7 +8,7 @@ import snaked.core.manager
 import snaked.core.editor
 
 class TabbedEditorManager(snaked.core.manager.EditorManager):
-    def __init__(self, show_tabs=True):
+    def __init__(self):
         super(TabbedEditorManager, self).__init__()
 
         self.last_switch_time = None
@@ -26,7 +26,7 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
         self.window.add(self.box)
 
         self.note = gtk.Notebook()
-        self.note.set_show_tabs(show_tabs)
+        self.note.set_show_tabs(self.snaked_conf['SHOW_TABS'])
         self.note.set_scrollable(True)
         self.note.set_property('tab-hborder', 10)
         self.note.set_property('homogeneous', False)
@@ -50,6 +50,9 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
             self.window.resize(*size)
 
         self.window.show_all()
+
+        if self.snaked_conf['FULLSCREEN']:
+            self.window.fullscreen()
 
     def get_context(self):
         widget = self.note.get_nth_page(self.note.get_current_page())
@@ -108,7 +111,7 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
         self.activator.bind_to_name('prev-editor-alt', self.switch_to, -1)
         self.activator.bind_to_name('new-file', self.new_file_action)
         self.activator.bind_to_name('show-preferences', self.show_preferences)
-        self.activator.bind_to_name('fullscreen', self.fullscreen, [True])
+        self.activator.bind_to_name('fullscreen', self.fullscreen)
         self.activator.bind_to_name('toggle-tabs-visibility', self.toggle_tabs)
 
         self.activator.bind_to_name('place-spot', self.add_spot_with_feedback)
@@ -155,16 +158,16 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
         idx = ( self.note.get_current_page() + dir ) % self.note.get_n_pages()
         self.note.set_current_page(idx)
 
-    def fullscreen(self, editor, state):
-        if state[0]:
+    def fullscreen(self, editor):
+        self.snaked_conf['FULLSCREEN'] = not self.snaked_conf['FULLSCREEN']
+        if self.snaked_conf['FULLSCREEN']:
             self.window.fullscreen()
         else:
             self.window.unfullscreen()
 
-        state[0] = not state[0]
-
     def toggle_tabs(self, editor):
         self.note.set_show_tabs(not self.note.get_show_tabs())
+        self.snaked_conf['SHOW_TABS'] = self.note.get_show_tabs()
 
     @snaked.core.editor.Editor.stack_add_request
     def on_stack_add_request(self, editor, widget, on_popup):

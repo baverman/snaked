@@ -10,6 +10,13 @@ class SnakedConf(prefs.PySettings):
     LAST_POSITION = None
     LAST_POSITION_DOC = 'Tuple of ((x,y), (w,h)) last window position'
 
+    FULLSCREEN = False
+    FULLSCREEN_DOC = 'State of fullscreen mode'
+
+    SHOW_TABS = True
+    SHOW_TABS_DOC = 'State of tabs visibility'
+
+
 def add_option(name, default, doc=None):
     setattr(SnakedConf, name, default)
     if doc:
