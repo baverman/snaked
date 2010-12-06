@@ -32,6 +32,7 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
         self.note.set_property('homogeneous', False)
         self.note.connect_after('switch-page', self.on_switch_page)
         self.note.connect('page_removed', self.on_page_removed)
+        self.note.connect('page_reordered', self.on_page_reordered)
         self.box.pack_start(self.note)
 
         register_shortcut('toggle-tabs-visibility', '<alt>F11', 'Window', 'Toggles tabs visibility')
@@ -65,6 +66,7 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
     def manage_editor(self, editor):
         label = gtk.Label('Unknown')
         self.note.insert_page(editor.widget, label, -1)
+        self.note.set_tab_reorderable(editor.widget, True)
         self.focus_editor(editor)
         editor.view.grab_focus()
 
@@ -194,3 +196,9 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
     def toggle_console(self, editor):
         from snaked.core.console import toggle_console
         toggle_console(editor)
+
+    def on_page_reordered(self, note, child, num):
+        for i, e in enumerate(self.editors):
+            if e.widget is child:
+                self.editors[i], self.editors[num] = self.editors[num], self.editors[i]
+                break

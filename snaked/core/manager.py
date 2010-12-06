@@ -220,7 +220,7 @@ class EditorManager(object):
         new_file.show_create_file(editor)
 
     def quit(self, editor):
-        self.save_conf()
+        self.save_conf(editor)
 
         map(self.plugin_manager.editor_closed, self.editors)
         self.plugin_manager.quit()
