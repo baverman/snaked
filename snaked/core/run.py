@@ -32,22 +32,16 @@ def select_session():
 def get_manager():
     parser = OptionParser()
     parser.add_option('-s', '--session', dest='session', help="Open snaked with specified session")
-    parser.add_option('-w', '--windowed', action="store_true",
-        dest='windowed', default=False, help="Open separate editor window instead tab")
     parser.add_option('', '--select-session', action="store_true", dest='select_session',
-        help="Opens dialog to select session", default=False)
+        help="Show dialog to select session at startup", default=False)
 
     options, args = parser.parse_args()
 
     import gobject
     gobject.threads_init()
+    from .tabbed import TabbedEditorManager
 
-    if options.windowed:
-        from .windowed import WindowedEditorManager as WM
-        manager = WM()
-    else:
-        from .tabbed import TabbedEditorManager as WM
-        manager = WM()
+    manager = TabbedEditorManager()
 
     if options.select_session:
         options.session = select_session()
