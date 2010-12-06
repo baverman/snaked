@@ -19,8 +19,9 @@ from .editor import Editor
 import snaked.core.quick_open
 
 class EditorManager(object):
-    def __init__(self):
+    def __init__(self, session):
         self.editors = []
+        self.session = session
         self.style_manager = gtksourceview2.style_scheme_manager_get_default()
         self.lang_manager = gtksourceview2.language_manager_get_default()
         self.modify_lang_search_path(self.lang_manager)
@@ -36,15 +37,13 @@ class EditorManager(object):
 
         prefs.register_dialog('File types', self.edit_contexts, 'file', 'type', 'association')
 
-        self.snaked_conf = config.SnakedConf()
-        self.snaked_conf.load('snaked.conf')
+        self.snaked_conf = self.load_conf()
 
         self.escape_stack = []
         self.escape_map = {}
         self.spot_history = []
         self.lang_gussers = {}
 
-        self.session = None
 
         load_shortcuts()
         self.register_app_shortcuts()
@@ -52,6 +51,18 @@ class EditorManager(object):
         # Init core plugins
         self.plugin_manager.load_core_plugin(snaked.core.quick_open)
 
+    def load_conf(self):
+        c = config.SnakedConf()
+        c.load('snaked.conf')
+        if self.session:
+            c.load(self.session + '.session')
+
+        return c
+
+    def save_conf(self, active_editor=None):
+        self.snaked_conf['OPENED_FILES'] = [e.uri for e in self.editors if e.uri]
+        self.snaked_conf['ACTIVE_FILE'] = active_editor.uri if active_editor else None
+        self.snaked_conf.save()
 
     def register_app_shortcuts(self):
         register_shortcut('quit', '<ctrl>q', 'Application', 'Quit')
@@ -209,28 +220,13 @@ class EditorManager(object):
         new_file.show_create_file(editor)
 
     def quit(self, editor):
-        if self.session:
-            self.save_session(self.session, editor)
-
-        self.snaked_conf.save('snaked.conf')
+        self.save_conf()
 
         map(self.plugin_manager.editor_closed, self.editors)
-
         self.plugin_manager.quit()
 
         if gtk.main_level() > 0:
             gtk.main_quit()
-
-    def get_session_settings(self, session):
-        from .prefs import load_json_settings
-        return load_json_settings('%s.session' % session, {})
-
-    def save_session(self, session, active_editor=None):
-        from .prefs import save_json_settings
-        settings = self.get_session_settings(session)
-        settings['files'] = [e.uri for e in self.editors if e.uri]
-        settings['active_file'] = active_editor.uri if active_editor else None
-        save_json_settings('%s.session' % session, settings)
 
     @Editor.push_escape_callback
     def on_push_escape_callback(self, editor, callback, args):

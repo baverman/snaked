@@ -124,15 +124,16 @@ class ListSettings(object):
 
 
 class PySettings(object):
-    def __init__(self, data=None):
-        self.data = data or {}
-        self.loaded = False
+    def __init__(self):
+        self.data = {}
+        self.sources = []
 
     def __getitem__(self, name):
-        try:
-            return self.data[name]
-        except KeyError:
-            pass
+        for s in self.sources:
+            try:
+                return self.data[s][name]
+            except KeyError:
+                pass
 
         value = getattr(self, name, None)
         if value is None:
@@ -141,53 +142,68 @@ class PySettings(object):
         return value
 
     def __setitem__(self, name, value):
-        self.data[name] = value
+        self.data[self.sources[0]][name] = value
 
     def __contains__(self, name):
-        return name in self.data or ( getattr(self, name, None) is not None
-            and not self.is_special(name) )
+        return any(name in self.data[s] for s in self.sources) or \
+            ( getattr(self.__class__, name, None) is not None and not self.is_special(name) )
 
     def is_special(self, name):
         return name.startswith('_') or name.lower().endswith('_doc')
 
-    def is_default(self, name):
-        return name not in self.data and getattr(self, name, None) is not None and \
-             not self.is_special(name)
+    def is_default(self, source, name):
+        return name not in self.data[source] and \
+            getattr(self.__class__, name, None) is not None and not self.is_special(name)
 
-    def get_source(self):
+    def get_config(self, source):
         result = ''
         for name in sorted(self.__class__.__dict__):
             if name not in self:
                 continue
 
-            doc = getattr(self, name + '_doc', None)
+            doc = getattr(self.__class__, name + '_doc', None)
             if not doc:
-                doc = getattr(self, name + '_DOC', None)
+                doc = getattr(self.__class__, name + '_DOC', None)
             if doc:
                 result += '# ' + doc + '\n'
 
-            value = '%s = %s' % (name, repr(self[name]))
-            if self.is_default(name):
-                value = '# ' + value
+            write_value = True
+            is_default = False
+            if name in self.data[source]:
+                value = self.data[source][name]
+            else:
+                value = getattr(self.__class__, name, None)
+                is_default = True
+                if value is None:
+                    write_value = False
 
-            result += value + '\n\n'
+            if write_value:
+                value = '%s = %s' % (name, repr(value))
+                if is_default:
+                    value = '# ' + value
+
+                result += value + '\n\n'
 
         return result
 
+    def add_source(self, source, data):
+        self.sources.insert(0, source)
+        self.data[source] = data
+
     def load(self, name):
-        self.loaded = False
-        self.data = {}
         filename = get_settings_path(name)
+        data = {}
         try:
-            execfile(filename, self.data)
-            self.loaded = True
+            execfile(filename, data)
         except IOError:
             pass
         except SyntaxError, e:
             print 'Error on loading config: %s' % filename, e
-            pass
 
-    def save(self, name):
-        filename = get_settings_path(name)
-        with open(filename, 'w') as f:
-            f.write(self.get_source())
+        self.add_source(name, data)
+
+    def save(self):
+        for s in self.sources:
+            filename = get_settings_path(s)
+            with open(filename, 'w') as f:
+                f.write(self.get_config(s))

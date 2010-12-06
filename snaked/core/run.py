@@ -31,7 +31,8 @@ def select_session():
 
 def get_manager():
     parser = OptionParser()
-    parser.add_option('-s', '--session', dest='session', help="Open snaked with specified session")
+    parser.add_option('-s', '--session', dest='session',
+        help="Open snaked with specified session", default='default')
     parser.add_option('', '--select-session', action="store_true", dest='select_session',
         help="Show dialog to select session at startup", default=False)
 
@@ -41,20 +42,18 @@ def get_manager():
     gobject.threads_init()
     from .tabbed import TabbedEditorManager
 
-    manager = TabbedEditorManager()
-
     if options.select_session:
         options.session = select_session()
+
+    manager = TabbedEditorManager(options.session)
 
     opened_files = []
 
     session_files = []
     active_file = None
-    if options.session:
-        settings = manager.get_session_settings(options.session)
-        session_files = settings.get('files', [])
-        active_file = settings.get('active_file', None)
-        manager.session = options.session
+
+    session_files = manager.snaked_conf['OPENED_FILES']
+    active_file = manager.snaked_conf['ACTIVE_FILE']
 
     editor_to_focus = None
     for f in session_files + args:

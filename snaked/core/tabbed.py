@@ -8,8 +8,8 @@ import snaked.core.manager
 import snaked.core.editor
 
 class TabbedEditorManager(snaked.core.manager.EditorManager):
-    def __init__(self):
-        super(TabbedEditorManager, self).__init__()
+    def __init__(self, session):
+        super(TabbedEditorManager, self).__init__(session)
 
         self.last_switch_time = None
         self.panels = weakref.WeakKeyDictionary()

@@ -16,6 +16,11 @@ class SnakedConf(prefs.PySettings):
     SHOW_TABS = True
     SHOW_TABS_DOC = 'State of tabs visibility'
 
+    OPENED_FILES = []
+    OPENED_FILES_DOC = 'Last opened files'
+
+    ACTIVE_FILE = ''
+    ACTIVE_FILE_DOC = 'Last active file'
 
 def add_option(name, default, doc=None):
     setattr(SnakedConf, name, default)

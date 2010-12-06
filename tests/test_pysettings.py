@@ -17,6 +17,7 @@ def test_prefs_must_return_assigned_values():
         key2 = 'key2'
 
     p = Pref()
+    p.add_source('d', {})
     p['key1'] = 'key11'
     p['key2'] = None
 
@@ -40,6 +41,7 @@ def test_prefs_must_provide_inclusion_check():
         key2 = None
 
     p = Pref()
+    p.add_source('d', {})
     p['key1'] = 'key11'
     p['key3'] = 'key3'
     p['key4'] = None
@@ -58,10 +60,11 @@ def test_prefs_must_provide_its_source():
         key3_doc = 'Another key'
 
     p = Pref()
+    p.add_source('d', {})
     p['key1'] = 'key11'
     p['key4'] = '50'
 
-    result = p.get_source()
+    result = p.get_config('d')
 
     assert '# Example key' in result
     assert "key1 = 'key11'" in result
