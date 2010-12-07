@@ -9,8 +9,8 @@ from ..signals import connect_all
 from ..util import (idle, lazy_property, create_lang_matchers_from_file,
     LangGuesser, get_project_root, join_to_file_dir, join_to_settings_dir)
 
-import prefs
-import config
+from . import prefs
+from snaked.core import config
 
 from .shortcuts import register_shortcut, load_shortcuts
 from .plugins import PluginManager
