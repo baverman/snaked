@@ -7,7 +7,7 @@ import pango
 
 from ..signals import connect_all
 from ..util import (idle, lazy_property, create_lang_matchers_from_file,
-    LangGuesser, get_project_root, join_to_file_dir)
+    LangGuesser, get_project_root, join_to_file_dir, join_to_settings_dir)
 
 import prefs
 import config
@@ -35,15 +35,21 @@ class EditorManager(object):
         prefs.register_dialog('Editor settings', self.show_editor_preferences,
             'editor', 'font', 'style', 'margin', 'line', 'tab', 'whitespace')
 
+        prefs.register_dialog('Global preferences', self.show_global_preferences,
+            'snaked', 'preferences')
+
+        prefs.register_dialog('Session preferences', self.show_session_preferences,
+            'session', 'preferences')
+
         prefs.register_dialog('File types', self.edit_contexts, 'file', 'type', 'association')
 
-        self.snaked_conf = self.load_conf()
+        self.snaked_conf = config.SnakedConf()
+        self.load_conf()
 
         self.escape_stack = []
         self.escape_map = {}
         self.spot_history = []
         self.lang_gussers = {}
-
 
         load_shortcuts()
         self.register_app_shortcuts()
@@ -52,12 +58,11 @@ class EditorManager(object):
         self.plugin_manager.load_core_plugin(snaked.core.quick_open)
 
     def load_conf(self):
-        c = config.SnakedConf()
-        c.load('snaked.conf')
-        if self.session:
-            c.load(self.session + '.session')
+        self.snaked_conf.clear()
 
-        return c
+        self.snaked_conf.load('snaked.conf')
+        if self.session:
+            self.snaked_conf.load(self.session + '.session')
 
     def save_conf(self, active_editor=None):
         self.snaked_conf['OPENED_FILES'] = [e.uri for e in self.editors if e.uri]
@@ -95,14 +100,14 @@ class EditorManager(object):
         self.lang_gussers[project_root] = guesser
         return guesser
 
-    def open(self, filename, line=None):
+    def open(self, filename, line=None, contexts=None):
         editor = Editor(self.snaked_conf)
         self.editors.append(editor)
         editor.session = self.session
 
         connect_all(self, editor)
 
-        idle(self.set_editor_prefs, editor, filename)
+        idle(self.set_editor_prefs, editor, filename, contexts)
         idle(self.set_editor_shortcuts, editor)
         idle(self.plugin_manager.editor_created, editor)
 
@@ -117,22 +122,29 @@ class EditorManager(object):
     def lang_prefs(self):
         return prefs.load_json_settings('langs.conf', {})
 
-    def set_editor_prefs(self, editor, filename):
+    def set_editor_contexts(self, editor, contexts):
+        if contexts:
+            lang_id = contexts[0]
+            lang = self.lang_manager.get_language(lang_id)
+            if lang:
+                editor.lang = lang.get_id()
+                editor.contexts = contexts
+                return lang
+
+    def set_editor_prefs(self, editor, filename, contexts):
         lang = None
         editor.lang = 'default'
         editor.contexts = ['default']
 
         if filename:
-            root = get_project_root(filename)
-            guesser = self.get_lang_guesser(root)
-            if guesser:
-                contexts = guesser.guess(os.path.abspath(filename))
-                if contexts:
-                    lang_id = contexts[0]
-                    lang = self.lang_manager.get_language(lang_id)
-                    if lang:
-                        editor.lang = lang.get_id()
-                        editor.contexts = contexts
+            if not contexts:
+                root = get_project_root(filename)
+                guesser = self.get_lang_guesser(root)
+                if guesser:
+                    contexts = guesser.guess(os.path.abspath(filename))
+
+            if contexts:
+                lang = self.set_editor_contexts(editor, contexts)
 
             if not lang:
                 lang = self.lang_manager.guess_language(filename, None)
@@ -188,7 +200,7 @@ class EditorManager(object):
         self.close_editor(editor)
 
     @Editor.request_to_open_file
-    def on_request_to_open_file(self, editor, filename, line):
+    def on_request_to_open_file(self, editor, filename, line, contexts):
         self.add_spot(editor)
 
         for e in self.editors:
@@ -200,7 +212,7 @@ class EditorManager(object):
 
                 break
         else:
-            e = self.open(filename, line)
+            e = self.open(filename, line, contexts)
 
         return e
 
@@ -210,10 +222,10 @@ class EditorManager(object):
 
     @Editor.settings_changed(idle=True)
     def on_editor_settings_changed(self, editor):
-        self.set_editor_prefs(editor, editor.uri)
+        self.set_editor_prefs(editor, editor.uri, editor.contexts)
         for e in self.editors:
             if e is not editor:
-                idle(self.set_editor_prefs, e, e.uri)
+                idle(self.set_editor_prefs, e, e.uri, e.contexts)
 
     def new_file_action(self, editor):
         from snaked.core.gui import new_file
@@ -327,6 +339,19 @@ class EditorManager(object):
 
         self.goto_last_spot(editor)
 
+    def show_global_preferences(self, editor):
+        self.save_conf(editor)
+        e = editor.open_file(join_to_settings_dir('snaked.conf'), contexts=['python'])
+        e.file_saved.connect(self, 'on_config_saved')
+
+    def show_session_preferences(self, editor):
+        self.save_conf(editor)
+        e = editor.open_file(join_to_settings_dir(self.session + '.session'), contexts=['python'])
+        e.file_saved.connect(self, 'on_config_saved')
+
+    def on_config_saved(self, editor):
+        editor.message('Config updated')
+        self.load_conf()
 
     def edit_contexts(self, editor):
         import shutil

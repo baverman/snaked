@@ -128,6 +128,10 @@ class PySettings(object):
         self.data = {}
         self.sources = []
 
+    def clear(self):
+        self.data.clear()
+        self.sources[:] = []
+
     def __getitem__(self, name):
         for s in self.sources:
             try:

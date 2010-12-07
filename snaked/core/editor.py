@@ -11,7 +11,7 @@ from ..signals import SignalManager, Signal, connect_all, connect_external
 
 class Editor(SignalManager):
     editor_closed = Signal()
-    request_to_open_file = Signal(str, object, return_type=object)
+    request_to_open_file = Signal(str, object, object, return_type=object)
     request_close = Signal()
     settings_changed = Signal()
     get_title = Signal(return_type=str)
@@ -166,9 +166,9 @@ class Editor(SignalManager):
 
         return root
 
-    def open_file(self, filename, line=None):
+    def open_file(self, filename, line=None, contexts=None):
         """:rtype: Editor"""
-        return self.request_to_open_file.emit(filename, line)
+        return self.request_to_open_file.emit(filename, line, contexts)
 
     @property
     def cursor(self):
