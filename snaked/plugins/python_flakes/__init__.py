@@ -1,12 +1,14 @@
 author = 'Anton Bobrov<bobrov@vl.ru>'
 name = 'Python flakes'
 desc = 'Basic python linter'
+langs = ['python']
 
 import gtk
 import pango
 import os.path
+import weakref
 
-langs = ['python']
+flakes_warnings = weakref.WeakKeyDictionary()
 
 def editor_opened(editor):
     editor.connect('file-saved', on_file_saved)
@@ -15,32 +17,31 @@ def editor_opened(editor):
     if editor.uri and os.path.exists(editor.uri):
         add_job(editor)
 
-def on_query_tooltip(view,x,y,keyboard_mode,tooltip):
-    '''
-    Show error message as tooltip
-    Putting tooltip in the tag name is dirty, though
-    '''
+def on_query_tooltip(view, x, y, keyboard_mode, tooltip):
     x, y = view.window_to_buffer_coords(gtk.TEXT_WINDOW_WIDGET, x, y)
-    iterator = view.get_iter_at_location(x,y)
+    iterator = view.get_iter_at_location(x, y)
     tags = iterator.get_tags()
     if tags:
         tags.reverse()
         for tag in tags:
             tag_name = tag.get_property('name')
             if tag_name and tag_name.startswith('flakes_'):
-                tooltip.set_text(tag_name[7:])
+                tooltip.set_text(flakes_warnings[view][tag_name])
                 return True
     return False
 
 def on_file_saved(editor):
     add_job(editor)
 
-def get_tag(editor,message):
+def get_tag(editor, num, message):
     table = editor.buffer.get_tag_table()
-    message = message[:min(255,len(message))]
-    tag = table.lookup('flakes_%s' % message)
+    tag_name = 'flakes_%d' % num
+
+    tag = table.lookup(tag_name)
     if not tag:
-        tag = editor.buffer.create_tag('flakes_%s' % message, underline=pango.UNDERLINE_ERROR)
+        tag = editor.buffer.create_tag(tag_name, underline=pango.UNDERLINE_ERROR)
+
+    flakes_warnings.setdefault(editor.view, {})[tag_name] = message
 
     return tag
 
@@ -53,7 +54,11 @@ def mark_problems(editor, problems):
             editor.buffer.remove_tag_by_name(tag_name,start,end)
     editor.buffer.get_tag_table().foreach(clean_tag,None)
 
-    for line, name, message in problems:
+    try:
+        flakes_warnings[editor.view].clear()
+    except KeyError: pass
+
+    for num, (line, name, message) in enumerate(problems):
         iter = editor.buffer.get_iter_at_line(line-1)
         while iter.get_line() == line - 1:
             result = iter.forward_search(name, gtk.TEXT_SEARCH_VISIBLE_ONLY)
@@ -64,7 +69,8 @@ def mark_problems(editor, problems):
                 break
 
             iter = nend
-        editor.buffer.apply_tag(get_tag(editor,message), nstart, nend)
+
+        editor.buffer.apply_tag(get_tag(editor, num, message), nstart, nend)
 
 def get_problem_list(filename):
     import subprocess
