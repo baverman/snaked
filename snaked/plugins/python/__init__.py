@@ -140,6 +140,12 @@ def edit_rope_hints(editor):
     from os.path import join, exists, dirname
     from snaked.util import make_missing_dirs
 
+    if not editor.project_root:
+        editor.message('Can not determine current project.\n'
+            'Are you editing read-only file?\n'
+            'Also check existence of .snaked_project directory', 8000)
+        return
+
     ropehints = join(editor.project_root, '.ropeproject', 'ropehints.py')
     if not exists(ropehints):
         make_missing_dirs(ropehints)
@@ -149,6 +155,13 @@ def edit_rope_hints(editor):
 
 def edit_rope_config(editor):
     from os.path import join, exists
+
+    if not editor.project_root:
+        editor.message('Can not determine current project.\n'
+            'Are you editing read-only file?\n'
+            'Also check existence of .snaked_project directory', 8000)
+        return
+
     ropeconfig = join(editor.project_root, '.ropeproject', 'config.py')
     handlers[editor].project_manager
 
