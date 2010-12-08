@@ -148,7 +148,7 @@ def create_widget(editor):
     button = gtk.Button()
     button.add(label)
     widget.pack_start(button, False)
-    button.connect('activate', on_replace_activate, editor, widget)
+    button.connect('clicked', on_replace_activate, editor, widget)
 
     label = gtk.Label('Replace _all')
     label.set_use_underline(True)
@@ -156,7 +156,7 @@ def create_widget(editor):
     button = gtk.Button()
     button.add(label)
     widget.pack_start(button, False)
-    button.connect('activate', on_replace_all_activate, editor, widget)
+    button.connect('clicked', on_replace_all_activate, editor, widget)
     widget.replace_all = button
 
     editor.view.connect_after('move-cursor', on_editor_view_move_cursor, widget)
@@ -317,7 +317,7 @@ def on_replace_all_activate(button, editor, widget):
         start, end = editor.buffer.get_selection_bounds()
         start.order(end)
     else:
-        start, end = active_widgets[editor]
+        start, end = editor.buffer.get_bounds()
 
     end_mark = editor.buffer.create_mark(None, end)
 
