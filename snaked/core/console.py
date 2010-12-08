@@ -66,11 +66,11 @@ def consume_output(editor, proc, on_finish):
         consume_io, editor, console, proc, on_finish)
 
 def consume_io(f, cond, editor, console, proc, on_finish):
-    if not console.props.visible:
-        editor.popup_widget(console)
-
     data = f.read()
     if data:
+        if not console.props.visible:
+            editor.popup_widget(console)
+
         buf = console.view.get_buffer()
         iter = buf.get_bounds()[1]
         buf.insert(iter, data)
