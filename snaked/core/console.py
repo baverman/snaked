@@ -60,23 +60,27 @@ def consume_output(editor, proc, on_finish):
     buf.delete(*buf.get_bounds())
     unblock_fd(proc.stdout)
     unblock_fd(proc.stderr)
-    glib.io_add_watch(proc.stdout, glib.IO_IN|glib.IO_ERR, consume_io, editor, console, proc, on_finish)
-    glib.io_add_watch(proc.stderr, glib.IO_IN|glib.IO_ERR, consume_io, editor, console, proc, on_finish)
+    glib.io_add_watch(proc.stdout, glib.IO_IN|glib.IO_ERR|glib.IO_HUP,
+        consume_io, editor, console, proc, on_finish)
+    glib.io_add_watch(proc.stderr, glib.IO_IN|glib.IO_ERR|glib.IO_HUP,
+        consume_io, editor, console, proc, on_finish)
 
 def consume_io(f, cond, editor, console, proc, on_finish):
     if not console.props.visible:
         editor.popup_widget(console)
 
     data = f.read()
-
-    buf = console.view.get_buffer()
-    iter = buf.get_bounds()[1]
-    buf.insert(iter, data)
-    buf.place_cursor(buf.get_bounds()[1])
-    console.view.scroll_mark_onscreen(buf.get_insert())
+    if data:
+        buf = console.view.get_buffer()
+        iter = buf.get_bounds()[1]
+        buf.insert(iter, data)
+        buf.place_cursor(buf.get_bounds()[1])
+        console.view.scroll_mark_onscreen(buf.get_insert())
 
     if proc.poll() is not None:
-        on_finish()
+        if not getattr(proc, 'consume_done', False):
+            proc.consume_done = True
+            on_finish()
         return False
 
     return True
