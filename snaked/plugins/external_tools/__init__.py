@@ -159,9 +159,13 @@ def run(editor, tool):
 
     command_to_run = ['/usr/bin/env', 'sh', filename]
 
+    env = {}
+    env.update(os.environ)
+    env['FILENAME'] = editor.uri
+    env['OFFSET'] = str(editor.cursor.get_offset())
+
     proc = Popen(command_to_run, stdout=PIPE, stderr=PIPE,
-        stdin=PIPE if stdin else None, cwd=editor.project_root,
-        env={'FILENAME':editor.uri, 'OFFSET':str(editor.cursor.get_offset())})
+        stdin=PIPE if stdin else None, cwd=editor.project_root, env=env)
 
     on_finish = lambda: os.remove(filename)
 
