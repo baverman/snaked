@@ -6,8 +6,7 @@ import gtksourceview2
 import pango
 
 from ..signals import connect_all
-from ..util import (idle, lazy_property, create_lang_matchers_from_file,
-    LangGuesser, get_project_root, join_to_file_dir, join_to_settings_dir)
+from ..util import (idle, lazy_property, get_project_root, join_to_file_dir, join_to_settings_dir)
 
 from . import prefs
 from snaked.core import config
@@ -15,6 +14,7 @@ from snaked.core import config
 from .shortcuts import register_shortcut, load_shortcuts
 from .plugins import PluginManager
 from .editor import Editor
+from .context import add_setter as add_context_setter, Processor as ContextProcessor
 
 import snaked.core.quick_open
 
@@ -49,13 +49,18 @@ class EditorManager(object):
         self.escape_stack = []
         self.escape_map = {}
         self.spot_history = []
-        self.lang_gussers = {}
+        self.context_processors = {}
+        self.lang_contexts = {}
+        self.ctx_contexts = {}
 
         load_shortcuts()
         self.register_app_shortcuts()
 
         # Init core plugins
         self.plugin_manager.load_core_plugin(snaked.core.quick_open)
+
+        add_context_setter('lang', self.set_lang_context)
+        add_context_setter('ctx', self.set_ctx_context)
 
     def load_conf(self):
         self.snaked_conf.clear()
@@ -84,21 +89,14 @@ class EditorManager(object):
         register_shortcut('goto-prev-spot', '<ctrl><alt>Left', 'Edit',
             'Quick jump to previous spot in history')
 
-    def get_lang_guesser(self, project_root):
-        try:
-            return self.lang_gussers[project_root]
-        except KeyError:
-            pass
-
-        guesser = None
-        if project_root:
+    def process_project_contexts(self, project_root, force=False):
+        if project_root not in self.context_processors:
             contexts_filename = os.path.join(project_root, '.snaked_project', 'contexts')
-            if os.path.exists(contexts_filename):
-                matchers = create_lang_matchers_from_file(project_root, contexts_filename)
-                guesser = LangGuesser(matchers)
-
-        self.lang_gussers[project_root] = guesser
-        return guesser
+            p = self.context_processors[project_root] = ContextProcessor(project_root, contexts_filename)
+            p.process()
+        else:
+            if force:
+                self.context_processors[project_root].process()
 
     def open(self, filename, line=None, contexts=None):
         editor = Editor(self.snaked_conf)
@@ -122,41 +120,43 @@ class EditorManager(object):
     def lang_prefs(self):
         return prefs.load_json_settings('langs.conf', {})
 
-    def set_editor_contexts(self, editor, contexts):
-        if contexts:
-            lang_id = contexts[0]
+    def set_editor_prefs(self, editor, filename, lang_id=None):
+        lang = None
+        editor.lang = 'default'
+        editor.contexts = [editor.lang]
+
+        root = get_project_root(filename)
+        if root:
+            self.process_project_contexts(root)
+
+        if not lang_id and root in self.lang_contexts:
+            for id, matcher in self.lang_contexts[root].items():
+                if matcher.search(filename):
+                    lang_id = id
+                    break
+
+        if lang_id:
             lang = self.lang_manager.get_language(lang_id)
             if lang:
                 editor.lang = lang.get_id()
-                editor.contexts = contexts
-                return lang
 
-    def set_editor_prefs(self, editor, filename, contexts):
-        lang = None
-        editor.lang = 'default'
-        editor.contexts = ['default']
+        if not lang:
+            lang = self.lang_manager.guess_language(filename, None)
+            if lang:
+                editor.lang = lang.get_id()
 
-        if filename:
-            if not contexts:
-                root = get_project_root(filename)
-                guesser = self.get_lang_guesser(root)
-                if guesser:
-                    contexts = guesser.guess(os.path.abspath(filename))
-
-            if contexts:
-                lang = self.set_editor_contexts(editor, contexts)
-
-            if not lang:
-                lang = self.lang_manager.guess_language(filename, None)
-                if lang:
-                    editor.lang = lang.get_id()
-                    editor.contexts = [editor.lang]
+        editor.contexts = [editor.lang]
 
         if lang:
             editor.buffer.set_language(lang)
 
         if self.session:
             editor.contexts.append('session:' + self.session)
+
+        if root in self.ctx_contexts:
+            for ctx, matcher in self.ctx_contexts[root].items():
+                if matcher.search(filename):
+                    editor.contexts.append(ctx)
 
         pref = prefs.CompositePreferences(self.lang_prefs.get(editor.lang, {}),
             self.lang_prefs.get('default', {}), prefs.default_prefs.get(editor.lang, {}),
@@ -368,7 +368,7 @@ class EditorManager(object):
 
     def on_context_saved(self, editor):
         editor.message('File type associations changed')
-        self.lang_gussers.clear()
+        self.process_project_contexts(editor.project_root, True)
 
     def modify_lang_search_path(self, manager):
         search_path = manager.get_search_path()
@@ -379,6 +379,12 @@ class EditorManager(object):
 
         search_path.insert(i, join_to_file_dir(__file__, 'lang-specs'))
         manager.set_search_path(search_path)
+
+    def set_lang_context(self, project_root, contexts):
+        self.lang_contexts[project_root] = contexts
+
+    def set_ctx_context(self, project_root, contexts):
+        self.ctx_contexts[project_root] = contexts
 
 class EditorSpot(object):
     def __init__(self, manager, editor):

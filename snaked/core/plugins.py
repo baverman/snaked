@@ -41,6 +41,10 @@ class ShortcutsHolder(object):
     def add_global_option(self, name, default, doc=None):
         add_option(name, default, doc)
 
+    def add_context(self, ctx, callback):
+        from snaked.core.context import add_setter
+        add_setter(ctx, callback)
+
 
 class PluginManager(object):
     def __init__(self):

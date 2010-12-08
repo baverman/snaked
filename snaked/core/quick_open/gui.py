@@ -142,9 +142,19 @@ class QuickOpenDialog(BuilderAware):
                 if self.current_search is not current_search:
                     raise StopIteration()
 
+        root = self.get_current_root()
+
+        try:
+            bad_re = settings.ignore_contexts[root]['ignore']
+            def bad_matcher(path):
+                return bad_re.search(path)
+
+        except KeyError:
+            bad_matcher = None
+
         for m in (searcher.name_start_match, searcher.name_match,
                 searcher.path_match, searcher.fuzzy_match):
-            for p in searcher.search(self.get_current_root(), '', m(search), already_matched, tick):
+            for p in searcher.search(root, '', m(search), already_matched, bad_matcher, tick):
                 if self.current_search is not current_search:
                     return
 

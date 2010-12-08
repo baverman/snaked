@@ -1,7 +1,6 @@
 import os
 import shutil
 from os.path import join, dirname, realpath, abspath, exists, expanduser
-import re
 
 import gobject
 import gtk
@@ -128,30 +127,6 @@ def set_activate_the_one_item(entry, treeview):
 
     entry.connect('activate', activate)
 
-def create_lang_matchers_from_file(project_root, filename):
-    result = []
-    for l in open(filename):
-        l = l.strip()
-        if not l or l.startswith('#'):
-            continue
-
-        try:
-            expr, contexts = l.split(':')
-        except ValueError:
-            continue
-
-        contexts = [c.strip() for c in contexts.split(',')]
-        if not contexts:
-            continue
-
-        if not l.startswith('/'):
-            expr = '/*/' + expr
-
-        matcher = re.compile(project_root + re.escape(expr).replace('\*', '.*') + '$')
-        result.append((matcher, contexts))
-
-    return result
-
 
 class BuilderAware(object):
     def __init__(self, glade_file):
@@ -166,15 +141,3 @@ class BuilderAware(object):
 
         setattr(self, name, obj)
         return obj
-
-
-class LangGuesser(object):
-    def __init__(self, matchers):
-        self.matchers = matchers
-
-    def guess(self, filename):
-        for m, ctx in self.matchers:
-            if m.match(filename):
-                return ctx
-
-        return []

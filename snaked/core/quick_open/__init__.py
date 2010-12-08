@@ -10,6 +10,8 @@ def init(manager):
     manager.add_global_option('QUICK_OPEN_SHOW_HIDDEN', False,
         "Option to show hidden files. <ctrl>H in quick open dialog")
 
+    manager.add_context('quick_open', set_context)
+
 def editor_opened(editor):
     import settings
     root = editor.project_root
@@ -32,3 +34,7 @@ def activate(editor):
 def quit():
     global dialog
     dialog = dialog
+
+def set_context(project_root, contexts):
+    import settings
+    settings.ignore_contexts[project_root] = contexts
