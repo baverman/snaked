@@ -10,6 +10,9 @@ def init(manager):
     manager.add_global_option('QUICK_OPEN_SHOW_HIDDEN', False,
         "Option to show hidden files. <ctrl>H in quick open dialog")
 
+    manager.add_global_option('QUICK_OPEN_RECENT_PROJECTS', [],
+        "Recent projects be shown in quick open dialog")
+
     manager.add_context('quick_open', set_context)
 
 def editor_opened(editor):

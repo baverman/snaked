@@ -7,7 +7,6 @@ import gtk
 from snaked.util import (idle, join_to_file_dir, BuilderAware, open_mime, refresh_gui,
     set_activate_the_one_item)
 from snaked.core.shortcuts import ShortcutActivator
-from snaked.core.prefs import ListSettings, load_json_settings, save_json_settings
 
 import settings
 import searcher
@@ -32,20 +31,10 @@ class QuickOpenDialog(BuilderAware):
         set_activate_the_one_item(self.search_entry, self.filelist_tree)
 
     def get_stored_recent_projects(self):
-        if self.editor().session:
-            return load_json_settings(
-                '%s.session' % self.editor().session, {}).get('recent_projects', [])
-        else:
-            return ListSettings('project-roots.db').load()
+        return self.editor().snaked_conf['QUICK_OPEN_RECENT_PROJECTS']
 
     def store_recent_projects(self, projects):
-        if self.editor().session:
-            name = '%s.session' % self.editor().session
-            session_settings = load_json_settings(name, {})
-            session_settings['recent_projects'] = list(projects)
-            save_json_settings(name, session_settings)
-        else:
-            return ListSettings('project-roots.db').store(projects)
+        self.editor().snaked_conf['QUICK_OPEN_RECENT_PROJECTS'] = list(projects)
 
     def show(self, editor):
         self.editor = weakref.ref(editor)
