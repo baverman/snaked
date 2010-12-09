@@ -19,17 +19,17 @@ Edit and Select
 
 Provides features for easy text editing.
 
-* ``<ctrl>d`` deletes line under cursor with copying it into clipboard.
+* ``<ctrl>d`` deletes the line under the cursor, copying it into the clipboard.
 
 * ``<ctrl><alt>o`` shows cursor offset and cursor column position.
-  Huh? Simply I need offset when write tests (parsing, code analyzing, etc.).
+  Huh? I simply need some offsets (column and line) when I'm writing tests (text parsing, code analyzing, etc.).
 
-* ``<alt>w`` smart select. Selects semantic blocks. Just try it. Have you ever
-  need to select whole function definition or string in quotes or function
-  parameters or function call with parameters or statement block? There is only
+* ``<alt>w`` smart select. Selects semantic blocks. Just try it. I'm sure you
+  regularly want to select a whole function definition or a quoted string or function
+  parameters or function call with parameters or any statement block? There is only
   one function for such tasks in Snaked. In conjunction with stock
-  gtksourceview2 selection moving (``<alt>Up``, ``<alt>Down``) it allows forget
-  about copy-paste.
+  gtksourceview2 selection moving (``<alt>Up``, ``<alt>Down``) you will quickly forget
+  about copy-and-paste.
 
 * ``<shift><alt>w`` shrinks smart selection back.
 
@@ -56,46 +56,48 @@ That's all for now. Planed feature functionality:
 Goto Dir
 --------
 
-Default shortcut ``<crtl><alt>l`` opens editor file directory in file manager.
+Default shortcut ``<crtl><alt>l`` opens the folder containing the current document in your file manager.
 
 
 Goto Line
 ---------
 
-``<ctrl>l`` popups dialog with line number input.
+``<ctrl>l`` popups a dialog allowing you to jump to the specified line number.
 
 
 Hash Comment
 ------------
 
-Comments and uncomments code with hashes. Useful for languages with appropriate
-comment symbols. Default key ``<ctrl>slash``.
+Toggle hash ``#`` commenting. Only useful for languages allowing that kind of comments
+Default key ``<ctrl>slash``.
 
 
 Python Flakes
 -------------
 
 Background python code linter. Highlights problems like unused or undefined
-imports or variables. Also gives feedback about syntax errors. Quite handy
-plugin.
+imports or variables. Also gives some feedback about syntax errors.
+This is a time saver plugin.
 
 
 Save positions
 --------------
 
-Remembers current file position on editor close and restores it on open.
+Remembers latest position in file for the next time.
 
 
 Search
 ------
 
-Simply search, like in other editors.
+Simple search (and replace), like other editors do.
 
 .. image:: /images/search.*
 
 
-Replace entry supports back references (``\1`` or ``\g<name>``) for regular
-expression groups in search field.
+When ``Regex`` is on, replace entry supports back references:
+
+* ``\1`` for the first group
+``\g<name>`` for ``name`` group
 
 Shortcuts
 *********
@@ -104,14 +106,14 @@ Shortcuts
 
 * ``Escape`` hides it.
 
-* ``Enter`` in search or replace text entry do actual searching.
+* ``Enter`` in search or replace text entry will initiate the search.
 
-* ``<ctrl>j``, ``<ctrl>k`` navigate to next/previous match.
+* ``<ctrl>j``, ``<ctrl>k`` jumps to next/previous match.
 
 * ``<ctrl>h`` highlights selection occurrences.
 
 To control `ignore case`, `regex` checkboxes and activate `Replace`/`Replace
-all` buttons you can use mnemonics: ``<alt>c``, ``<alt>x``, ``<alt>p`` and
+all` buttons you can use the following mnemonics: ``<alt>c``, ``<alt>x``, ``<alt>p`` and
 ``<alt>a``.
 
 
@@ -120,17 +122,17 @@ all` buttons you can use mnemonics: ``<alt>c``, ``<alt>x``, ``<alt>p`` and
 External tools
 --------------
 
-Plugin allows to run commands optionally piping selection or whole buffer's
-content to it and process it's stdout.
+Plugin allowing to run commands, optionally piping selection or whole buffer's
+content. stdout processing is also supported (for instance, you can get the external program output back into your buffer).
 
 .. image:: /images/external-tools.*
 
 
 * ``Name``: tool's name. You can use underscore ("_") to define mnemonic key and
-  pango markup.
+  pango markup too.
 
-* ``Langs``: comma separated list of languages for which this tool is intended.
-  Leave field empty if tool should be available in all editors.
+* ``Langs``: comma separated list of languages compatibles with this tool.
+  Leave the field empty if the tool should be available on all editors.
 
 * ``Command``: Shell command to execute. Following variables are supported:
 
@@ -138,22 +140,23 @@ content to it and process it's stdout.
   * ``%d`` — current filename's directory
   * ``%p`` — current project directory
 
-  Take note, you have not to quote it.
+  .. note::
+
+      You don't have to quote it!
 
 * ``Stdin`` and ``Stdout`` should be self-explanatory.
 
-Default key to activate run menu is ``<alt>x``. Actual tool can be run by
-pressing it's mnemonic key or selecting it with cursor keys an hitting
-``Enter``.
+The default key to activate the "run" menu is ``<alt>x``. Then, the specific tool can be selected by
+pressing it's mnemonic key or by moving into the list and pressing ``Enter``.
 
 
 Snippets
 --------
 
-It is similar to vim's SnipMate plugin which are clone of TextMate's snippets,
+It is similar to vim's SnipMate plugin which is a clone of TextMate's snippets,
 you may refer to these projects for syntax documentation.
 
-User snippet files are searched in ``~/.config/snaked/snippets``. You can
+User snippet files are read from ``~/.config/snaked/snippets``. You can
 configure it via preferences (``<ctrl>p``) item ``Snippets``.
 
 There is ability to attach several snippet sets to one editor via multiple
@@ -170,4 +173,4 @@ Spell check
 Attaches spell checker to current editor. You need ``pygtkspell`` installed
 (look at gnome-python-extras package for your distro).
 
-Spell check is activated/deactivated by ``F7`` key.
+Spell check is activated/deactivated by pressing ``F7`` key.
