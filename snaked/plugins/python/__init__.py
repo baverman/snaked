@@ -163,13 +163,19 @@ def edit_rope_config(editor):
         return
 
     ropeconfig = join(editor.project_root, '.ropeproject', 'config.py')
-    handlers[editor].project_manager
 
     if exists(ropeconfig):
         editor.open_file(ropeconfig)
     else:
-        editor.message('There is no existing rope config.\n'
-            'Are you sure this is python project?', 5000)
+        if editor in handlers:
+            handlers[editor].project_manager
+
+        if exists(ropeconfig):
+            editor.open_file(ropeconfig)
+        else:
+            editor.message('There is no existing rope config.\n'
+                'Are you sure this is python project?\n'
+                'Try to open any python file', 8000)
 
 def get_pytest_runner(editor):
     """:rtype: snaked.plugins.python.pytest_runner.TestRunner()"""
