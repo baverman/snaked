@@ -77,7 +77,9 @@ class Plugin(object):
             kwargs = dict(ropefolder=None)
 
         from rope.base.project import Project
-        project = Project(root, **kwargs)
+        from rope.base.fscommands import FileSystemCommands
+
+        project = Project(root, fscommands=FileSystemCommands(), **kwargs)
         project.snaked_project_root = root
 
         pm = RopeProjectManager(project)
