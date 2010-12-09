@@ -200,7 +200,7 @@ class EditorManager(object):
         self.close_editor(editor)
 
     @Editor.request_to_open_file
-    def on_request_to_open_file(self, editor, filename, line, contexts):
+    def on_request_to_open_file(self, editor, filename, line, lang_id):
         self.add_spot(editor)
 
         for e in self.editors:
@@ -212,7 +212,7 @@ class EditorManager(object):
 
                 break
         else:
-            e = self.open(filename, line, contexts)
+            e = self.open(filename, line, lang_id)
 
         return e
 
@@ -341,12 +341,12 @@ class EditorManager(object):
 
     def show_global_preferences(self, editor):
         self.save_conf(editor)
-        e = editor.open_file(join_to_settings_dir('snaked.conf'), contexts=['python'])
+        e = editor.open_file(join_to_settings_dir('snaked.conf'), lang_id='python')
         e.file_saved.connect(self, 'on_config_saved')
 
     def show_session_preferences(self, editor):
         self.save_conf(editor)
-        e = editor.open_file(join_to_settings_dir(self.session + '.session'), contexts=['python'])
+        e = editor.open_file(join_to_settings_dir(self.session + '.session'), lang_id='python')
         e.file_saved.connect(self, 'on_config_saved')
 
     def on_config_saved(self, editor):

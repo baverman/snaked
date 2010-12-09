@@ -166,9 +166,9 @@ class Editor(SignalManager):
 
         return root
 
-    def open_file(self, filename, line=None, contexts=None):
+    def open_file(self, filename, line=None, lang_id=None):
         """:rtype: Editor"""
-        return self.request_to_open_file.emit(filename, line, contexts)
+        return self.request_to_open_file.emit(filename, line, lang_id)
 
     @property
     def cursor(self):
