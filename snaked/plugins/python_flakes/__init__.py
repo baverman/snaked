@@ -1,5 +1,5 @@
-author = 'Anton Bobrov<bobrov@vl.ru>'
-name = 'Python flakes'
+author = 'Anton Bobrov<bobrov@vl.ru>/Fabien Devaux<fdev31@gmail.com>'
+name = 'Python flakes/pylint'
 desc = 'Basic python linter'
 langs = ['python']
 
@@ -76,6 +76,8 @@ def get_problem_list(filename):
     import subprocess
     import re
 
+    # pyflakes
+
     stdout, stderr = subprocess.Popen(['/usr/bin/env', 'pyflakes', filename],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 
@@ -91,6 +93,57 @@ def get_problem_list(filename):
             raise Exception("Can't parse variable name in " + message)
 
         result.append((int(line), name.group(1), message))
+
+    # Pylint
+
+    data = open(filename).readlines()
+
+    stdout, stderr = subprocess.Popen(['/usr/bin/env', 'pylint',
+        '-f' 'parseable', '-r', 'n', filename],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+
+    if stderr:
+        raise Exception('python_flakes plugin: ' + stderr)
+
+    last_line = None
+    qrex = re.compile(r".*?'(.*?)'.*")
+    rex = re.compile(r'.*?:(?P<lineno>\d+):\s*\[(?P<what>[A-Z]\d{4})(?P<where>,\s+[^\]]*)?\]\s+(?P<message>.*)')
+
+    res = []
+
+    for line in stdout.split('\n'):
+        if not line.strip():
+            break
+        m = rex.match(line)
+        if m:
+            d = m.groupdict()
+            d['lineno'] = i = int(d['lineno'])
+            orig_line = data[i-1]
+            if d['where']:
+                if d['where'] in orig_line:
+                    pass
+                elif d['where'].rsplit('.', 1)[-1] in orig_line:
+                    d['where'] = d['where'].rsplit('.', 1)[-1]
+                else:
+                    m = qrex.match(d['where'])
+                    if m:
+                        d['where'] = m.groups()[0]
+                    else:
+                        d['where'] = orig_line.strip()
+            else:
+                d['where'] = orig_line.strip()
+
+            res.append(d)
+        else:
+            if last_line:
+                assert '^' in line
+                res[-1]['where'] = last_line[line.index('^'):line.rindex('^')+1]
+                last_line = None
+            else:
+                last_line = line
+
+    for r in res:
+        result.append( (r['lineno'], r['where'], r['message']) )
 
     return result
 
