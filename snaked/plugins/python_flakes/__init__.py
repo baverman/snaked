@@ -60,6 +60,7 @@ def mark_problems(editor, problems):
 
     for num, (line, name, message) in enumerate(problems):
         iter = editor.buffer.get_iter_at_line(line-1)
+        nstart = nend = None
         while iter.get_line() == line - 1:
             result = iter.forward_search(name, gtk.TEXT_SEARCH_VISIBLE_ONLY)
             if result is None:
@@ -70,7 +71,10 @@ def mark_problems(editor, problems):
 
             iter = nend
 
-        editor.buffer.apply_tag(get_tag(editor, num, message), nstart, nend)
+        if nstart:
+            editor.buffer.apply_tag(get_tag(editor, num, message), nstart, nend)
+        else:
+            print "python_flakes: can't find name [%s] on line %d in %s" % (name, line, editor.uri)
 
 def get_problem_list(filename):
     import subprocess
