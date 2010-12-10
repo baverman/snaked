@@ -89,7 +89,7 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
             self.update_top_level_title()
 
     def on_delete_event(self, *args):
-        self.quit(None)
+        self.quit(self.get_context()[0])
 
     def close_editor(self, editor):
         idx = self.note.page_num(editor.widget)
