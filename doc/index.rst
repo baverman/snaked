@@ -2,38 +2,39 @@ Snaked user manual
 ====================
 
 `Snaked`_ (**snak**\ e **ed**\ itor) is light and :ref:`minimalist <minimalist-mean>`
-editor inspired by `Scribes`_, indented mostly for python developers, but
-other users may find it useful too.
+editor inspired by `Scribes`_, mainly targeting python developers, it's
+generic enough to please other kind of users too.
 
 Features:
 
 * Light UI. There are no menu, tool bar, status bar or project browser at all.
-  Only editor view itself.
+  Only lasts the editor view itself.
 
 * `gtksourceview2`_ based.
 
 * Keyboard oriented control.
 
-* Auto projects. In most cases you do not need such boring operation like
-  :menuselection:`File --> New project`. Just start edit your file.
+* Automatic projects. In most cases you do not need such boring operation like
+  :menuselection:`File --> New project`.
+  With `Snaked`_ you just start editing your file!
 
-* Project navigation via Quick Open dialog.
+* Project navigation via ``Quick Open dialog``.
 
-* Sessions to store last opened editors.
+* Sessions - restore the last state (or any explicit session).
 
-* Restoring last edit position.
+* The current position is also stored of each edited file.
 
-* Python auto complete and navigation via rope with very flexible type hinting
-  framework. PyGtk, Django support.
+* Python auto completion and navigation via rope with very flexible type hinting
+  framework. Plus an advanced support for PyGtk and Django.
 
-* Basic python code lint via pyflakes.
+* Basic python code hints via pyflakes.
 
-* Snippets.
+* Snippets (macro-like code expansion for common coding patterns).
 
 * Unittests (with `py.test <http://pytest.org/>`_ as backend, so there is
-  support for usual UnitTest   cases, nose cases and ``py.test`` itself).
+  support for usual UnitTest cases, nose cases and ``py.test`` itself).
 
-* Spell check.
+* Multilingual Spell checking.
 
 
 .. image:: /images/snaked.*

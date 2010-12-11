@@ -17,7 +17,7 @@ Dependencies
 From PYPI
 ---------
 
-I'm regularly upload packages of new versions. So you can install Snaked with
+I'm regularly uploading new versions. So you can install Snaked with
 ``easy_install``::
 
    sudo easy_install snaked
@@ -44,16 +44,16 @@ From source
    python setup.py build
    sudo python setup.py install
 
-If you often pull changes from master brunch I recommend you following recipe:
+If you often pull changes from master branch I recommend you the following recipe:
 
 * First install snaked in develop mode (remove any snaked dirs in site-packages
   before that)::
 
      sudo python setup.py develop
 
-* Then, if you want use latest snaked from master branch simply do::
+* Then, if you want use latest snaked version (from "master" branch) simply
+  go the the closed snaked directory and type::
 
-     cd cloned/snaked/dir
      git pull
 
 
