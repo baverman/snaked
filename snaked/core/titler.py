@@ -7,47 +7,75 @@ fsm_cache = {}
 def init(manager):
     """:type manager:snaked.core.plugins.ShortcutsHolder"""
     manager.add_context('title', on_set_title_context)
+    manager.add_context('wtitle', on_set_wtitle_context)
 
     manager.add_global_option('TAB_TITLE_FORMAT', '{%pypkg|%name2}{%writeable|[ro]}',
         'Default format string for tab titles')
 
+    manager.add_global_option('WINDOW_TITLE_FORMAT', '{%project|NOP}:{%path|%fullpath}{%writeable|[ro]}',
+        'Default format string for window title')
+
     add_title_handler('name', name_handler)
     add_title_handler('name2', name2_handler)
     add_title_handler('project', project_handler)
+    add_title_handler('path', path_handler)
+    add_title_handler('fullpath', fullpath_handler)
     add_title_handler('writeable', writable_handler)
 
 def editor_created(editor):
     editor.connect('get-title', on_editor_get_title)
+    editor.connect('get-window-title', on_editor_get_window_title)
 
 def on_editor_get_title(editor):
     return get_title(editor, editor.snaked_conf['TAB_TITLE_FORMAT'])
 
+def on_editor_get_window_title(editor):
+    return get_title(editor, editor.snaked_conf['WINDOW_TITLE_FORMAT'])
+
 def on_set_title_context(root, contexts):
+    pass
+
+def on_set_wtitle_context(root, contexts):
     pass
 
 def add_title_handler(name, callback):
     title_handlers[name] = callback
 
 def name_handler(editor):
+    """Return file basename"""
     return os.path.basename(editor.uri)
 
 def name2_handler(editor):
+    """Return file basename with descending directory name"""
     dirname, basename = os.path.split(editor.uri)
     return os.path.basename(dirname) + '/' + basename
 
 def project_handler(editor):
+    """Return project name (basename of project path). None if project is not defined"""
     root = editor.project_root
     if root:
         return os.path.basename(root)
 
 def writable_handler(editor):
+    """Return empty string if file is writeable else None. Useful for ``ro`` marks"""
     if os.access(editor.uri, os.W_OK):
         return ''
 
     return None
 
 def empty_handler(editor):
+    """Always return None"""
     return None
+
+def path_handler(editor):
+    """Return file path within project. None if project is not defined"""
+    root = editor.project_root
+    if root:
+        return os.path.relpath(editor.uri, root)
+
+def fullpath_handler(editor):
+    """Return absolute file path"""
+    return editor.uri
 
 def get_title(editor, format):
     try:

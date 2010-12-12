@@ -79,7 +79,13 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
         if idx < 0:
             return
 
-        title = self.note.get_tab_label_text(self.note.get_nth_page(idx))
+        editor = self.get_context()[0]
+        if editor:
+            title = editor.get_window_title.emit()
+
+        if not title:
+            title = self.note.get_tab_label_text(self.note.get_nth_page(idx))
+
         if title is not None:
             self.window.set_title(title)
 

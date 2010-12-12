@@ -15,6 +15,7 @@ class Editor(SignalManager):
     request_close = Signal()
     settings_changed = Signal()
     get_title = Signal(return_type=str)
+    get_window_title = Signal(return_type=str)
     get_project_larva = Signal(return_type=str)
     get_file_position = Signal(return_type=int)
     before_close = Signal()
