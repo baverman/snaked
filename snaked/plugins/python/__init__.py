@@ -28,12 +28,14 @@ def init(manager):
     manager.add_shortcut('toggle-test-panel', '<alt>1', 'Window',
         'Toggle test panel', toggle_test_panel)
 
+    manager.add_title_handler('pypkg', pypkg_handler)
+
     from snaked.core.prefs import register_dialog
     register_dialog('Rope hints', edit_rope_hints, 'rope', 'hints')
     register_dialog('Rope config', edit_rope_config, 'rope', 'config')
 
+
 def editor_created(editor):
-    editor.connect('get-title', on_editor_get_title)
     editor.connect('get-project-larva', on_editor_get_project_larva)
 
 def editor_opened(editor):
@@ -70,11 +72,6 @@ def show_calltips(editor):
 
     h.show_calltips()
 
-def on_editor_get_title(editor):
-    if editor.uri.endswith('.py'):
-        editor.stop_emission('get-title')
-        return get_python_title(editor.uri)
-
 def get_package_root(module_path):
     import os.path
 
@@ -102,9 +99,12 @@ def on_editor_get_project_larva(editor):
         root, packages = get_package_root(editor.uri)
         return os.path.join(root, packages.partition('.')[0])
 
-def get_python_title(uri):
-    from os.path import dirname, basename, exists, join
+def pypkg_handler(editor):
+    uri = editor.uri
+    if not uri.endswith('.py'):
+        return None
 
+    from os.path import dirname, basename, exists, join
     title = basename(uri)
     packages = []
     while True:

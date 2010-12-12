@@ -45,6 +45,9 @@ class ShortcutsHolder(object):
         from snaked.core.context import add_setter
         add_setter(ctx, callback)
 
+    def add_title_handler(self, name, callback):
+        from snaked.core.titler import add_title_handler
+        add_title_handler(name, callback)
 
 class PluginManager(object):
     def __init__(self):
