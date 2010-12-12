@@ -75,10 +75,9 @@ def project_handler(editor):
 
 def writable_handler(editor):
     """Return empty string if file is writeable else None. Useful for ``ro`` marks"""
-    if os.access(editor.uri, os.W_OK):
+    path = editor.uri if os.path.exists(editor.uri) else os.path.dirname(editor.uri)
+    if os.access(path, os.W_OK):
         return ''
-
-    return None
 
 def empty_handler(editor):
     """Always return None"""
