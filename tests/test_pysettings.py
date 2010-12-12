@@ -60,17 +60,19 @@ def test_prefs_must_provide_its_source():
         key3_doc = 'Another key'
 
     p = Pref()
+    p.add_source('parent', {'key3': False})
+
     p.add_source('d', {})
     p['key1'] = 'key11'
     p['key4'] = '50'
 
-    result = p.get_config('d')
+    result = p.get_config('d', 'parent')
 
     assert '# Example key' in result
     assert "key1 = 'key11'" in result
     assert 'key2' not in result
     assert '# Another key' in result
-    assert '# key3 = True' in result
+    assert '# key3 = False' in result
     assert 'key4' not in result
 
     data = {}

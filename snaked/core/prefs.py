@@ -159,7 +159,7 @@ class PySettings(object):
         return name not in self.data[source] and \
             getattr(self.__class__, name, None) is not None and not self.is_special(name)
 
-    def get_config(self, source):
+    def get_config(self, source, parent_source=None):
         result = ''
         for name in sorted(self.__class__.__dict__):
             if name not in self:
@@ -175,6 +175,9 @@ class PySettings(object):
             is_default = False
             if name in self.data[source]:
                 value = self.data[source][name]
+            elif parent_source and name in self.data[parent_source]:
+                value = self.data[parent_source][name]
+                is_default = True
             else:
                 value = getattr(self.__class__, name, None)
                 is_default = True
@@ -207,7 +210,10 @@ class PySettings(object):
         self.add_source(name, data)
 
     def save(self):
-        for s in self.sources:
+        ps = None
+        for s in reversed(self.sources):
             filename = get_settings_path(s)
             with open(filename, 'w') as f:
-                f.write(self.get_config(s))
+                f.write(self.get_config(s, ps))
+
+            ps = s
