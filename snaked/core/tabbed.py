@@ -65,7 +65,7 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
 
     def manage_editor(self, editor):
         label = gtk.Label('Unknown')
-        self.note.insert_page(editor.widget, label, -1)
+        self.note.append_page(editor.widget, label)
         self.note.set_tab_reorderable(editor.widget, True)
         self.focus_editor(editor)
         editor.view.grab_focus()

@@ -3,6 +3,8 @@ import os.path
 
 title_handlers = {}
 fsm_cache = {}
+title_contexts = {}
+wtitle_contexts = {}
 
 def init(manager):
     """:type manager:snaked.core.plugins.ShortcutsHolder"""
@@ -26,17 +28,32 @@ def editor_created(editor):
     editor.connect('get-title', on_editor_get_title)
     editor.connect('get-window-title', on_editor_get_window_title)
 
+def get_format_from_contexts(editor, contexts):
+    root = editor.project_root
+    if root in contexts:
+        for fstr, matcher in contexts[root].items():
+            if matcher.match(editor.uri):
+                return fstr
+
 def on_editor_get_title(editor):
-    return get_title(editor, editor.snaked_conf['TAB_TITLE_FORMAT'])
+    format = get_format_from_contexts(editor, title_contexts)
+    if not format:
+        format = editor.snaked_conf['TAB_TITLE_FORMAT']
+
+    return get_title(editor, format)
 
 def on_editor_get_window_title(editor):
-    return get_title(editor, editor.snaked_conf['WINDOW_TITLE_FORMAT'])
+    format = get_format_from_contexts(editor, wtitle_contexts)
+    if not format:
+        format = editor.snaked_conf['WINDOW_TITLE_FORMAT']
+
+    return get_title(editor, format)
 
 def on_set_title_context(root, contexts):
-    pass
+    title_contexts[root] = contexts
 
 def on_set_wtitle_context(root, contexts):
-    pass
+    wtitle_contexts[root] = contexts
 
 def add_title_handler(name, callback):
     title_handlers[name] = callback
