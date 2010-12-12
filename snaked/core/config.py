@@ -16,6 +16,9 @@ class SnakedConf(prefs.PySettings):
     SHOW_TABS = True
     SHOW_TABS_DOC = 'State of tabs visibility'
 
+    TAB_BAR_PLACEMENT = 'top'
+    TAB_BAR_PLACEMENT_DOC = 'Tab bar placement position. One of "top", "bottom", "left", "right"'
+
     OPENED_FILES = []
     OPENED_FILES_DOC = 'Last opened files'
 

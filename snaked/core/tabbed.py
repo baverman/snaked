@@ -7,6 +7,13 @@ from snaked.core.shortcuts import ContextShortcutActivator, register_shortcut
 import snaked.core.manager
 import snaked.core.editor
 
+tab_bar_pos_mapping = {
+    'top': gtk.POS_TOP,
+    'bottom': gtk.POS_BOTTOM,
+    'left': gtk.POS_LEFT,
+    'right': gtk.POS_RIGHT
+}
+
 class TabbedEditorManager(snaked.core.manager.EditorManager):
     def __init__(self, session):
         super(TabbedEditorManager, self).__init__(session)
@@ -33,6 +40,8 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
         self.note.connect_after('switch-page', self.on_switch_page)
         self.note.connect('page_removed', self.on_page_removed)
         self.note.connect('page_reordered', self.on_page_reordered)
+        self.note.props.tab_pos = tab_bar_pos_mapping.get(
+            self.snaked_conf['TAB_BAR_PLACEMENT'], gtk.POS_TOP)
         self.box.pack_start(self.note)
 
         register_shortcut('toggle-tabs-visibility', '<alt>F11', 'Window', 'Toggles tabs visibility')
