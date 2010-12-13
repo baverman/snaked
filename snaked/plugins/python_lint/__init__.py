@@ -56,6 +56,8 @@ def parse_name(line, lineno, what, where, message):
 
     return line.strip()
 
+active_process = [None]
+
 def get_problem_list(filename, pylint_cmd):
     import subprocess
     import shlex
@@ -66,8 +68,9 @@ def get_problem_list(filename, pylint_cmd):
     cmd.extend(shlex.split(pylint_cmd))
     cmd.append(filename)
 
-    stdout, stderr = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE).communicate()
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    active_process[0] = proc
+    stdout, stderr = proc.communicate()
 
     last_line = None
 
@@ -93,6 +96,12 @@ def get_problem_list(filename, pylint_cmd):
 
     return [(r['lineno'], r['where'], r['what'] + ' ' + r['message']) for r in res]
 
+def stop_already_runned_jobs():
+    proc = active_process[0]
+    if proc and proc.poll() is None:
+        proc.terminate()
+        proc.wait()
+
 def add_job(editor):
     from threading import Thread
     from snaked.util import idle
@@ -106,4 +115,5 @@ def add_job(editor):
 
         idle(mark_problems, editor, 'pylint', problems)
 
+    stop_already_runned_jobs()
     Thread(target=job).start()
