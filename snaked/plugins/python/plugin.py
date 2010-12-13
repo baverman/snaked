@@ -61,7 +61,6 @@ class Plugin(object):
         provider = self.completion_provider
         completion = self.editor.view.get_completion()
         completion.add_provider(provider)
-        #completion.get_info_window().set_sizing(300, 400, False, False)
 
     @lazy_property
     def project_manager(self):
@@ -71,19 +70,27 @@ class Plugin(object):
         except KeyError:
             pass
 
-        if os.access(root, os.W_OK):
-            kwargs = {}
-        else:
-            kwargs = dict(ropefolder=None)
-
-        from rope.base.project import Project
+        from rope.base.project import Project, NoProject
         from rope.base.fscommands import FileSystemCommands
 
-        project = Project(root, fscommands=FileSystemCommands(), **kwargs)
-        project.snaked_project_root = root
+        if not root:
+            self.editor.message('Rope warning: there is no project. Assist was degraded')
+            project = NoProject()
+            project.validate = lambda *args: None
+            project.root = None
+        else:
+            if os.access(root, os.W_OK):
+                kwargs = {}
+            else:
+                kwargs = dict(ropefolder=None)
 
+            project = Project(root, fscommands=FileSystemCommands(), **kwargs)
+
+        project.snaked_project_root = root
         pm = RopeProjectManager(project)
-        project_managers[root] = pm
+        if root:
+            project_managers[root] = pm
+
         return pm
 
     @lazy_property
@@ -94,13 +101,17 @@ class Plugin(object):
     def get_rope_resource(self, project, uri=None):
         from rope.base import libutils, exceptions
         uri = uri or self.editor.uri
-        try:
-            return libutils.path_to_resource(project, uri)
-        except exceptions.ResourceNotFoundError:
-            from rope.base.project import NoProject
-            resource = NoProject().get_file(uri)
-            resource.read = lambda: ''
-            return resource
+
+        if not hasattr(project, 'address'):
+            return project.get_file(uri)
+        else:
+            try:
+                return libutils.path_to_resource(project, uri)
+            except exceptions.ResourceNotFoundError:
+                from rope.base.project import NoProject
+                resource = NoProject().get_file(uri)
+                resource.read = lambda: ''
+                return resource
 
     def get_source_and_offset(self):
         offset = self.editor.cursor.get_offset()
