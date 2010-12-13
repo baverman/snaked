@@ -49,10 +49,12 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
         register_shortcut('prev-editor', '<alt>Left', 'Window', 'Switches to previous editor')
         register_shortcut('next-editor-alt', '<ctrl>Page_Down', 'Window', 'Switches to next editor')
         register_shortcut('prev-editor-alt', '<ctrl>Page_Up', 'Window', 'Switches to previous editor')
+        register_shortcut('move-tab-left', '<shift><ctrl>Left', 'Window', 'Move tab to the left')
+        register_shortcut('move-tab-right', '<shift><ctrl>Right', 'Window', 'Move tab to the right')
+
         register_shortcut('fullscreen', 'F11', 'Window', 'Toggles fullscreen mode')
 
         register_shortcut('toggle-console', '<alt>grave', 'Window', 'Toggles console')
-
 
         if self.snaked_conf['RESTORE_POSITION'] and 'LAST_POSITION' in self.snaked_conf:
             pos, size = self.snaked_conf['LAST_POSITION']
@@ -136,6 +138,9 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
         self.activator.bind_to_name('goto-next-spot', self.goto_next_prev_spot, True)
         self.activator.bind_to_name('goto-prev-spot', self.goto_next_prev_spot, False)
 
+        self.activator.bind_to_name('move-tab-left', self.move_tab, False)
+        self.activator.bind_to_name('move-tab-right', self.move_tab, True)
+
         self.activator.bind_to_name('toggle-console', self.toggle_console)
 
         self.activator.bind('Escape', self.process_escape)
@@ -217,3 +222,16 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
             if e.widget is child:
                 self.editors[i], self.editors[num] = self.editors[num], self.editors[i]
                 break
+
+    def move_tab(self, editor, is_right):
+        pos = self.note.page_num(editor.widget)
+        if is_right:
+            pos += 1
+        else:
+            pos -= 1
+
+        if pos < 0 or pos >= self.note.get_n_pages():
+            editor.message('This is dead end')
+            return
+
+        self.note.reorder_child(editor.widget, pos)
