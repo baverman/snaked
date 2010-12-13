@@ -18,6 +18,7 @@ from .context import add_setter as add_context_setter, Processor as ContextProce
 
 import snaked.core.quick_open
 import snaked.core.titler
+import snaked.core.editor_list
 
 class EditorManager(object):
     def __init__(self, session):
@@ -60,6 +61,7 @@ class EditorManager(object):
         # Init core plugins
         self.plugin_manager.load_core_plugin(snaked.core.quick_open)
         self.plugin_manager.load_core_plugin(snaked.core.titler)
+        self.plugin_manager.load_core_plugin(snaked.core.editor_list)
 
         add_context_setter('lang', self.set_lang_context)
         add_context_setter('ctx', self.set_ctx_context)
