@@ -126,7 +126,7 @@ def process_stdout(editor, stdout, stderr, id):
         replace(editor, editor.buffer.get_selection_bounds(), stdout)
     elif id == 'replace-buffer':
         replace(editor, editor.buffer.get_bounds(), stdout)
-    elif id == 'replace-selection-or-buffer':
+    elif id == 'replace-buffer-or-selection':
         if editor.buffer.get_has_selection():
             replace(editor, editor.buffer.get_selection_bounds(), stdout)
         else:
@@ -137,7 +137,8 @@ def process_stdout(editor, stdout, stderr, id):
         last_line = editor.buffer.get_line_count()
         insert(editor, editor.buffer.get_bounds()[1], stdout)
         editor.goto_line(last_line)
-    elif id == 'tp-clipboard':
+    elif id == 'to-clipboard':
+        print stdout
         clipboard = editor.view.get_clipboard(gtk.gdk.SELECTION_CLIPBOARD)
         clipboard.set_text(stdout)
         editor.message('Command output was placed on clipboard')
