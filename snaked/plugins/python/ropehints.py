@@ -90,7 +90,7 @@ def get_attributes_with_hints(func):
     def inner(self):
         result = func(self)
 
-        if isinstance(self, PyModule) and self.resource.name == '__init__.py':
+        if isinstance(self, PyModule) and self.resource and self.resource.name == '__init__.py':
             return result
 
         #print 'request attributes for', get_attribute_scope_path(self), self
@@ -128,11 +128,8 @@ def get_superclasses_wrapper(func):
     def inner(self):
         bases = func(self)
         for i, base in enumerate(bases):
-            if base.get_module() is self.get_module() and \
-                    base.get_name() ==  self.get_name():
-
-                if hasattr(self, 'replaces_name'):
-                    bases[i] = self.replaces_name.get_object()
+            if self is base and hasattr(self, 'replaces_name'):
+                bases[i] = self.replaces_name.get_object()
 
         return bases
 
