@@ -1,7 +1,7 @@
 Getting started
 ===============
 
-This section explains how to start Snaked, perform basic editing and configure
+This section explains how to start Snaked, perform basic editing tasks and configure
 it.
 
 Running
@@ -16,7 +16,7 @@ You can run it either from terminal or run dialog::
 allow one open first file.
 
 
-This command will run snaked with specified file::
+This command will start snaked with a specified file opened::
 
    snaked /tmp/first_snaked_file.py
 
@@ -26,9 +26,9 @@ This command will run snaked with specified file::
 
 .. note::
 
-   Specified file do not need to exist. Snaked will create it after first save.
+   Specified file do not need to exist. Snaked will create it automatically on save operation.
 
-You can give several filenames to snaked::
+You can provide several filenames to snaked::
 
    snaked /tmp/first_snaked_file.py /tmp/second_snaked_file.py
 
@@ -44,51 +44,55 @@ One can switch tabs on ``<alt>Left``/``<alt>Right`` keys.
 Project navigation
 ------------------
 
-But specifying file names every time is too annoying, how can one open project
-file from Snaked itself? Solution is `Quick Open` dialog. Default shortcut
+Since specifying file names every time is too annoying, how one can open project
+file from Snaked itself?
+The solution is `Quick Open` dialog. Default shortcut
 ``<ctrl><alt>r``:
 
 .. image:: /images/quick-open.*
 
-Here it is very common Snaked dialog -- search entry at of the top and list view
-below. It is used for preferences finding and python outline navigation also.
+Here is a very common Snaked dialog -- search entry at of the top and list view
+below. It is also used for preferences finding and python outline navigation.
 
-Behavior is very simple: you type several characters of subject to find,
+Behavior is very simple: you type several characters contained in the name you search,
 "``se``" in my case and dialog shows variants to select. ``Up``/``Down``
 navigate between items, ``Enter`` activates selection, ``<alt>s`` focuses search
-entry again. Also if there is only the one item you can press ``Enter`` without
-need to put focus on list view.
+entry again.
+
+.. note::
+   If there is only one item in the list you can press ``Enter`` without
+   setting the focus on the list view.
 
 `Quick Open` searches files only in current project
 following these matching rules:
 
-* filename starts with search term.
+* filename starts with the search term.
 
-* filename contains search term
+* filename contains the search term
 
-* file path contains search term
+* file path contains the search term
 
 * fuzzy match. if search term contains slashes it matches similar file paths. For
   example ``pl/py`` will match ``plugin/python/__init__.py`` or
   ``plugin/name/python.py``
 
 If search entry is empty, `browser mode` is activated. With it you can investigate
-project structure in more common way: ``Enter`` opens directory content and
+project structure in a more common way: ``Enter`` opens directory content and
 ``Backspace`` returns to upper level.
 
 Shortcuts
 *********
 
 * ``<ctrl>Enter`` opens selected item with default system editor. This important
-  feature is missed in many other editors. For example you may open glade file
+  feature is missing in many other editors. For example you may open glade file
   as xml in Snaked (``Enter``) or show it in Glade Designer (``<ctrl>Enter``).
 
-* At very bottom there is project combo box, it allows switch between project
+* At very bottom there is the project choice widget, it allows switching between project
   paths being searched. ``<alt>Up`` and ``<alt>Down`` keys change its value.
 
 * ``<ctrl>p`` popups project combo box for easy selecting from large list.
 
-* ``<ctrl>o`` shows standard file choose dialog.
+* ``<ctrl>o`` shows standard file opener dialog.
 
 * ``<ctrl>Delete`` deletes current project from list.
 
@@ -97,46 +101,46 @@ Creating new file
 -----------------
 
 Standard GTK open dialog is too frustrating and hard to use from keyboard, so
-I implemented file create panel.
+I implemented the file create panel.
 
 .. image:: /images/create-new-file.*
 
-It provides folder autocomplete as you type. With ``Tab`` key you can cycle
-through proposals. ``Esc`` hides dialog, ``Enter`` opens editor with created file.
+It provides folder auto-completion as you type. With ``Tab`` key you can cycle
+through proposals. ``Esc`` hides dialog, ``Enter`` opens an editor page associated to that file name.
 
 
 Sessions
 --------
 
-Snaked provides sessions to store open editors on quit, they allow you omit
-files at all. What you have to do to enable sessions?
+Snaked provides sessions to store open editors state on quit, this allow you forget about
+files at all. The following steps are required to enable sessions:
 
-Run Snaked with ``-s`` (``--session``) option with session name. For example::
+Run Snaked with ``-s`` (or ``--session``) option giving a session name. For example::
 
    snaked -s test /tmp/first_snaked_file.py
 
 Now, after closing editor by ``<ctrl>q`` key or closing window by wm facilities
-``test`` session will be created and you can open it with simple command::
+``test`` session will be created. Thus you can open it with that simple command::
 
    snaked -s test
 
-Also there is ability to select session at snaked start::
+You can also select a session on snaked startup::
 
    snaked --select-session
 
-Think about sessions like some sort of workspaces which are separate you tasks.
-One session for task or project or whatever.
+Think about sessions as some sort of separate workspaces to group your files.
+One session for task or project or whatever, use it freely.
 
 
 Preferences
 -----------
 
-Preferences dialog is shown on ``<ctrl>p`` key:
+Preferences dialog is made available on ``<ctrl>p`` key press:
 
 .. image:: /images/prefs.*
 
-It is alike Eclipse's quick settings. You need to type what you want to
-configure (`font`, `key`, etc.) and select wanted item.
+It is like Eclipse's quick settings. You need to type what you want to
+configure it (`font`, `key`, etc.) and select wanted item.
 
 There are only three core configuration dialogs.
 
@@ -155,17 +159,17 @@ Allow one to tune editor theme, font, tabs, margin and so on.
 
 .. image:: /images/editor-prefs.*
 
-Every gtksourceview language can have own settings. Also there is special
-language ``default``, it's settings spread over all langs. For example you can
-change style theme for ``default`` language and editors for other langs will be
-use it automatically.
+Every gtksourceview language can have its own settings. Also there is a special
+language: ``default``, its settings are spread over all langs. For example you can
+change style theme for ``default`` language and all editors will
+inherit this setting by default.
 
 
 Plugins
 *******
 
 Simple list with available extensions. Check to enable, uncheck to disable,
-nothing more. If plugin will provide it's own configuration dialog it will
+nothing more. If a plugin provide it's own configuration dialog it will
 appear in preferences.
 
 .. image:: /images/plugins.*
@@ -180,7 +184,7 @@ least now).
 * ``Tab`` / ``<shift>Tab`` -- (de)indents current line or selection.
 
 * ``<ctrl>Space`` -- pop up completion dialog if any completions providers
-  was associated with editor. There is only python provider now.
+  is associated with editor. Currently the only available provider works for python.
 
 * ``<ctrl>c`` / ``<ctrl>v`` / ``<ctrl>x`` -- standard copy/paste/cut editor
   shortcuts. Also there are common ``<ctrl>Insert`` / ``<shift>Insert`` /
@@ -188,7 +192,7 @@ least now).
 
 * ``<ctrl>z`` / ``<ctrl>y`` -- undo/redo
 
-* ``<alt>Up`` / ``<alt>Down`` -- moves selection up or down. Very useful
+* ``<alt>Up`` / ``<alt>Down`` -- moves selection content up or down. Very useful
   feature,   especially with smart select.
 
 
@@ -198,15 +202,14 @@ Spot navigation
 Snaked tries to remember important editing places and allows one to
 navigate between such spots.
 
-Behavior is not fine tuned yet, but spot navigation satisfy my needs in
-bookmarks plugin.
+Behavior is not fine tuned yet, but spot navigation satisfy my bookmarking requirements.
 
 How does it work?
 *****************
 
 If you move cursor to big distance (PageUp/Down, buffer start/end, switch tab,
-goto line, goto definition or moving to spot) spot is placed. Also you can place
-spot manually by ``<alt>T``. Spots are orginized as fixed length stack.
+goto line, goto definition or moving to spot) a spot is placed. You can also place
+some spot manually by pressing ``<alt>T``. Spots are organized in a fixed length stack.
 
 Shortcuts
 *********
@@ -216,7 +219,5 @@ Shortcuts
 
 * ``<ctrl><alt>Left/Right`` moves to previous/next spot in stack.
 
-* ``<alt>T`` adds current cursor position as spot at top of stack.
-
-
+* ``<alt>T`` adds a spot with current cursor position on top of stack.
 
