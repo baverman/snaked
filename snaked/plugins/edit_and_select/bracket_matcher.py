@@ -25,7 +25,7 @@ def attach(editor):
     editor.buffer.connect_after('changed', on_buffer_changed)
 
 def reset_tags(buf):
-    if matched_tags[0]:
+    if matched_tags[0] and buf.get_tag_table().lookup(matched_tags[0]):
         start, end = buf.get_bounds()
         buf.remove_tag_by_name(matched_tags[0], start, end)
         matched_tags[0] = None
