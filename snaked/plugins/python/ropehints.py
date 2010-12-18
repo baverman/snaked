@@ -88,9 +88,12 @@ def get_attribute_scope_path(obj, collected=''):
 
 def get_attributes_with_hints(func):
     def inner(self):
-        #print 'request attributes for', get_attribute_scope_path(self)
-
         result = func(self)
+
+        if isinstance(self, PyModule) and self.resource.name == '__init__.py':
+            return result
+
+        #print 'request attributes for', get_attribute_scope_path(self), self
 
         try:
             hintdb = self.pycore.hintdb
@@ -105,7 +108,8 @@ def get_attributes_with_hints(func):
 
         self.__dict__[recursion_guard] = True
         try:
-            result.update(hintdb.get_attributes(scope_path, self, result))
+            hinted_attrs = hintdb.get_attributes(scope_path, self, result)
+            result.update(hinted_attrs)
         except:
             raise
         finally:
@@ -118,6 +122,23 @@ def get_attributes_with_hints(func):
 PyClass._get_structural_attributes = get_attributes_with_hints(PyClass._get_structural_attributes)
 PyModule._get_structural_attributes = get_attributes_with_hints(PyModule._get_structural_attributes)
 PyPackage._get_structural_attributes = get_attributes_with_hints(PyPackage._get_structural_attributes)
+
+
+def get_superclasses_wrapper(func):
+    def inner(self):
+        bases = func(self)
+        for i, base in enumerate(bases):
+            if base.get_module() is self.get_module() and \
+                    base.get_name() ==  self.get_name():
+
+                if hasattr(self, 'replaces_name'):
+                    bases[i] = self.replaces_name.get_object()
+
+        return bases
+
+    return inner
+
+PyClass.get_superclasses = get_superclasses_wrapper(PyClass.get_superclasses)
 
 
 class HintProvider(object):
@@ -187,7 +208,7 @@ class ScopeHintProvider(HintProvider):
 
         return result
 
-    def get_attributes(self, scope_path, pyclass, attrs):
+    def get_attributes(self, scope_path, pyclass, oldattrs):
         attrs = {}
         for name, type_name in self.matcher.find_attributes(scope_path):
             type = self.get_type(type_name)
@@ -197,6 +218,10 @@ class ScopeHintProvider(HintProvider):
                     attrs[name] = ReplacedName(obj, type)
                 else:
                     attrs[name] = type
+
+                existing_attributes = pyclass.get_attributes()
+                if name in existing_attributes:
+                    type.get_object().replaces_name = existing_attributes[name]
 
         return attrs
 

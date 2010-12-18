@@ -63,3 +63,14 @@ def test_getting_recursive_attribute(project):
 
     result = pset(get_proposals(project, 'Trololo().'))
     assert 'anatolievich' in result
+
+def test_getting_recursive_attribute_from_extension(project):
+    project.prefs['extension_modules'] = ['gtk._gtk']
+
+    project.db.add_attribute('gtk$', 'TextView', 'tests.scopetest.ModifiedTextView')
+
+    result = pset(get_proposals(project, 'gtk.TextView().'))
+    assert 'set_buffer' in result
+
+    result = pset(get_proposals(project, 'gtk.TextView().get_buffer().'))
+    assert 'get_iter_at_mark' in result

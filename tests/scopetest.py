@@ -1,3 +1,5 @@
+import gtk
+
 class Lolwhat(object):
     def star(self):
         pass
@@ -15,3 +17,7 @@ class Trololo(object):
 class ModifiedTrololo(Trololo):
     def anatolievich(self):
         pass
+
+class ModifiedTextView(gtk.TextView):
+    def get_buffer(self):
+        return gtk.TextBuffer()
