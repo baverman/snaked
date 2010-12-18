@@ -12,6 +12,10 @@ pydoc_glade_file_matcher = re.compile('(?m)^.*glade-file\s*:(.*)$')
 
 def add_gtk_support(composite_provider):
     add_gtk_extension_modules(composite_provider.project)
+    composite_provider.db.add_attribute('gtk$', 'TextView', 'snaked.plugins.python.pygtk_stubs.TextView')
+    composite_provider.db.add_attribute('gtk$', 'TextBuffer',
+        'snaked.plugins.python.pygtk_stubs.TextBuffer')
+
     return composite_provider.add_hint_provider(PyGtkHintProvider(composite_provider.project))
 
 def add_gtk_extension_modules(project):

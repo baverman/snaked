@@ -31,6 +31,7 @@ def reset_tags(buf):
         matched_tags[0] = None
 
 def highlight_matching_brackets(buf):
+    """:type buf: gtk.TextBuffer()"""
     highlight_task_added[0] = False
 
     iter = buf.get_iter_at_mark(buf.get_insert())
