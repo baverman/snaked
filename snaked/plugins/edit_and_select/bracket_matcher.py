@@ -12,7 +12,12 @@ brackets = {
 }
 
 matched_tags = [None]
-queue = []
+highlight_task_added = [False]
+
+def add_highlight_task(buf):
+    if not highlight_task_added[0]:
+        highlight_task_added[0] = True
+        idle(highlight_matching_brackets, buf)
 
 def attach(editor):
     editor.buffer.set_highlight_matching_brackets(False)
@@ -26,9 +31,7 @@ def reset_tags(buf):
         matched_tags[0] = None
 
 def highlight_matching_brackets(buf):
-    queue.pop()
-    if len(queue):
-        return
+    highlight_task_added[0] = False
 
     iter = buf.get_iter_at_mark(buf.get_insert())
     char = iter.get_char()
@@ -60,15 +63,13 @@ def highlight_matching_brackets(buf):
         mark_brackets(buf, iter, find_bracket(iter, rbr, char, rd))
 
 def on_view_move_cursor(view, step_size, count, extend_selection):
-    queue.append(True)
-    idle(highlight_matching_brackets, view.get_buffer())
+    add_highlight_task(view.get_buffer())
 
 def on_buffer_changed(buf):
-    queue.append(True)
-    idle(highlight_matching_brackets, buf)
+    add_highlight_task(buf)
 
 def find_bracket(from_iter, br, obr, dir):
-    limit = 1000
+    limit = 500
     iter = from_iter.copy()
     depth = 1
     while limit > 0:
