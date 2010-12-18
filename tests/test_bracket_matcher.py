@@ -1,6 +1,8 @@
 from snaked.util.pairs_parser import get_brackets, find_closing_quote_pos
 
-def test_bracket_matcher():
+def test_parentheses_matcher():
+    assert get_brackets('foo()\nboo()', 4) == ('(', 4, 5)
+
     assert get_brackets('foo(1,2, boo(a, b))', 13) == ('(', 13, 18)
     assert get_brackets('foo(1,2, boo(a, b))', 12) == ('(', 4, 19)
 

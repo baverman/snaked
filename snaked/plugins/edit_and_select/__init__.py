@@ -1,4 +1,4 @@
-author = 'Anton Bobrov<bobrov@vl.ru>'
+eauthor = 'Anton Bobrov<bobrov@vl.ru>'
 name = 'Edit and Select'
 desc = 'Various edit shortcuts'
 
@@ -15,6 +15,13 @@ def init(manager):
     manager.add_shortcut('show_offset', '<ctrl><alt>o', 'Edit',
         'Show cursor offset and column', show_offset)
     manager.add_shortcut('wrap-text', '<alt>f', 'Edit', 'Wrap text on right margin width', wrap_text)
+
+    manager.add_global_option('DOUBLE_BRACKET_MATCHER', True, "Enable custom bracket matcher")
+
+def editor_created(editor):
+    if editor.snaked_conf['DOUBLE_BRACKET_MATCHER']:
+        from bracket_matcher import attach
+        attach(editor)
 
 def delete_line(editor):
     from util import get_line_bounds, line_is_empty

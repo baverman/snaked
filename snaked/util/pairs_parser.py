@@ -53,6 +53,7 @@ def get_brackets(text, cursor):
         elif open and bracket in [')', ']', '}']:
             close.append((inverted[bracket], start))
 
+        #print open, close, text, text[4]
         while open and close and open[-1][0] == close[-1][0]:
             br, opos = open.pop()
             br, cpos = close.pop()
