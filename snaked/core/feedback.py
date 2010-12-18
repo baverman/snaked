@@ -6,8 +6,14 @@ class EscapeObject(object): pass
 class FeedbackPopup(object):
     def __init__(self):
 
-        self.window = gtk.Window(gtk.WINDOW_POPUP)
+        self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.set_property('allow-shrink', True)
+        self.window.set_type_hint(gtk.gdk.WINDOW_TYPE_HINT_POPUP_MENU)
+
+        self.window.props.skip_pager_hint = True
+        self.window.props.skip_taskbar_hint = True
+        self.window.props.accept_focus = False
+        self.window.set_decorated(False)
 
         self.bar = gtk.EventBox()
         self.bar.set_border_width(5)
@@ -47,6 +53,7 @@ class FeedbackPopup(object):
         x, y = win.get_origin()
         mw, mh = self.window.get_size()
 
+        editor.request_transient_for.emit(self.window)
         self.window.move(x + w - mw, y + h - mh)
         self.window.show()
 
