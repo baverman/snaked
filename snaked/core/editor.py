@@ -62,8 +62,6 @@ class Editor(SignalManager):
         self.snaked_conf = snaked_conf
 
     def update_title(self):
-        modified = '*' if self.buffer.get_modified() else ''
-
         if self.uri:
             title = self.get_title.emit()
 
@@ -72,7 +70,7 @@ class Editor(SignalManager):
         else:
             title = 'Unknown'
 
-        self.change_title.emit(modified + title)
+        self.change_title.emit(title)
 
     def load_file(self, filename, line=None):
         self.uri = os.path.abspath(filename)

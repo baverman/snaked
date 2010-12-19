@@ -11,10 +11,11 @@ def init(manager):
     manager.add_context('title', on_set_title_context)
     manager.add_context('wtitle', on_set_wtitle_context)
 
-    manager.add_global_option('TAB_TITLE_FORMAT', '{%pypkg|%name2}{%writeable|[ro]}',
+    manager.add_global_option('TAB_TITLE_FORMAT', '%modified{%pypkg|%name2}{%writeable|[ro]}',
         'Default format string for tab titles')
 
-    manager.add_global_option('WINDOW_TITLE_FORMAT', '{%project|NOP}:{%path|%fullpath}{%writeable|[ro]}',
+    manager.add_global_option('WINDOW_TITLE_FORMAT',
+        '%modified{%project|NOP}:{%path|%fullpath}{%writeable|[ro]}',
         'Default format string for window title')
 
     add_title_handler('name', name_handler)
@@ -23,6 +24,7 @@ def init(manager):
     add_title_handler('path', path_handler)
     add_title_handler('fullpath', fullpath_handler)
     add_title_handler('writeable', writable_handler)
+    add_title_handler('modified', modified_handler)
 
 def editor_created(editor):
     editor.connect('get-title', on_editor_get_title)
@@ -78,6 +80,10 @@ def writable_handler(editor):
     path = editor.uri if os.path.exists(editor.uri) else os.path.dirname(editor.uri)
     if os.access(path, os.W_OK):
         return ''
+
+def modified_handler(editor):
+    """Return asteriks if editor's buffer is changed, empty string otherwise"""
+    return '*' if editor.buffer.get_modified() else ''
 
 def empty_handler(editor):
     """Always return None"""
