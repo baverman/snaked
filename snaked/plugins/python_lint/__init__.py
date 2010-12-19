@@ -22,8 +22,6 @@ def editor_opened(editor):
 
     if editor.snaked_conf['PYLINT_CHECK_ON_SAVE']:
         editor.connect('file-saved', on_file_saved)
-        if editor.uri and os.path.exists(editor.uri):
-            add_job(editor)
 
 def on_file_saved(editor):
     add_job(editor)
