@@ -189,6 +189,7 @@ class EditorManager(object):
 
     @Editor.editor_closed(idle=True)
     def on_editor_closed(self, editor):
+        editor.on_close()
         self.plugin_manager.editor_closed(editor)
         self.editors.remove(editor)
 
@@ -236,9 +237,12 @@ class EditorManager(object):
         new_file.show_create_file(editor)
 
     def quit(self, editor):
+        for e in self.editors:
+            e.on_close()
+            self.plugin_manager.editor_closed(e)
+
         self.save_conf(editor)
 
-        map(self.plugin_manager.editor_closed, self.editors)
         self.plugin_manager.quit()
 
         if gtk.main_level() > 0:

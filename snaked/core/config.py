@@ -25,6 +25,10 @@ class SnakedConf(prefs.PySettings):
     ACTIVE_FILE = ''
     ACTIVE_FILE_DOC = 'Last active file'
 
+    MODIFIED_FILES = None
+    MODIFIED_FILES_DOC = 'Backup content for modified files'
+
+
 def add_option(name, default, doc=None):
     setattr(SnakedConf, name, default)
     if doc:

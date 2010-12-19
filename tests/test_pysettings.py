@@ -59,12 +59,16 @@ def test_prefs_must_provide_its_source():
         key3 = True
         key3_doc = 'Another key'
 
+        key5 = {}
+        key5_doc = 'AAA'
+
     p = Pref()
     p.add_source('parent', {'key3': False})
 
     p.add_source('d', {})
     p['key1'] = 'key11'
     p['key4'] = '50'
+    p['key5'] = {1:2}
 
     result = p.get_config('d', 'parent')
 
@@ -75,6 +79,10 @@ def test_prefs_must_provide_its_source():
     assert '# key3 = False' in result
     assert 'key4' not in result
 
+    assert '# key5' not in result
+    assert 'key5' in result
+
     data = {}
     exec result in data
     assert data['key1'] == p['key1']
+    assert data['key5'] == p['key5']

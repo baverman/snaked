@@ -16,7 +16,7 @@ def idle_callback(callable, args):
 def idle(callable, *args, **kwargs):
     return gobject.idle_add(idle_callback, callable, (args, kwargs))
 
-def save_file(filename, data, encoding):
+def save_file(filename, data, encoding, keep_tmp=False):
     tmpfilename = realpath(filename) + '.bak'
 
     try:
@@ -38,7 +38,10 @@ def save_file(filename, data, encoding):
         except OSError:
             pass
 
-    os.rename(tmpfilename, filename)
+    if keep_tmp:
+        return tmpfilename
+    else:
+        os.rename(tmpfilename, filename)
 
 def connect(sender, signal, obj, attr, idle=False, after=False):
     return Handler(weak_connect(

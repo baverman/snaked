@@ -103,6 +103,15 @@ class Editor(SignalManager):
             self.buffer.set_modified(False)
 
             self.buffer.end_not_undoable_action()
+
+            if 'MODIFIED_FILES' in self.snaked_conf and self.uri in self.snaked_conf['MODIFIED_FILES']:
+                tmpfilename = self.snaked_conf['MODIFIED_FILES'][self.uri]
+                if os.path.exists(tmpfilename):
+                    self.buffer.begin_user_action()
+                    utext = open(tmpfilename).read().decode(self.encoding)
+                    self.buffer.set_text(utext)
+                    self.buffer.end_user_action()
+
             self.on_modified_changed_handler.unblock()
             self.view.window.thaw_updates()
 
@@ -243,3 +252,16 @@ class Editor(SignalManager):
 
     def popup_widget(self, widget):
         self.stack_popup_request.emit(widget)
+
+    def on_close(self):
+        if self.buffer.get_modified():
+            if 'MODIFIED_FILES' not in self.snaked_conf:
+                self.snaked_conf['MODIFIED_FILES'] = {}
+
+            self.snaked_conf['MODIFIED_FILES'][self.uri] = save_file(self.uri, self.utext,
+                self.encoding, True)
+        else:
+            try:
+                del self.snaked_conf['MODIFIED_FILES'][self.uri]
+            except KeyError:
+                pass

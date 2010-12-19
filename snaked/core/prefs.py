@@ -139,7 +139,7 @@ class PySettings(object):
             except KeyError:
                 pass
 
-        value = getattr(self, name, None)
+        value = getattr(self.__class__, name, None)
         if value is None:
             raise KeyError()
 
@@ -173,6 +173,7 @@ class PySettings(object):
 
             write_value = True
             is_default = False
+
             if name in self.data[source]:
                 value = self.data[source][name]
             elif parent_source and name in self.data[parent_source]:
