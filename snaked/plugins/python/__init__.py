@@ -44,7 +44,10 @@ def editor_opened(editor):
     handlers[editor] = h
 
 def editor_closed(editor):
-    del handlers[editor]
+    try:
+        del handlers[editor]
+    except KeyError:
+        pass
 
 def quit():
     global outline_dialog
