@@ -49,8 +49,8 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
         register_shortcut('prev-editor', '<alt>Left', 'Window', 'Switches to previous editor')
         register_shortcut('next-editor-alt', '<ctrl>Page_Down', 'Window', 'Switches to next editor')
         register_shortcut('prev-editor-alt', '<ctrl>Page_Up', 'Window', 'Switches to previous editor')
-        register_shortcut('move-tab-left', '<shift><ctrl>Left', 'Window', 'Move tab to the left')
-        register_shortcut('move-tab-right', '<shift><ctrl>Right', 'Window', 'Move tab to the right')
+        register_shortcut('move-tab-left', '<shift><ctrl>Page_Up', 'Window', 'Move tab to the left')
+        register_shortcut('move-tab-right', '<shift><ctrl>Page_Down', 'Window', 'Move tab to the right')
 
         register_shortcut('fullscreen', 'F11', 'Window', 'Toggles fullscreen mode')
 
