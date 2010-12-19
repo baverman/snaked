@@ -13,6 +13,10 @@ def pangonify_rst(text):
     result = ''
 
     lines = text.strip().expandtabs().splitlines()
+
+    if len(lines) > 1 and lines[1].strip():
+        lines = [lines[0]] + [''] + lines[1:]
+
     indent = 1000
     for l in lines[1:]:
         stripped = l.lstrip()
