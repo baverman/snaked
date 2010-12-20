@@ -71,7 +71,7 @@ def on_buffer_changed(buf):
     add_highlight_task(buf)
 
 def find_bracket(from_iter, br, obr, dir):
-    limit = 500
+    limit = 3000
     iter = from_iter.copy()
     depth = 1
     while limit > 0:
