@@ -50,6 +50,8 @@ def search(editor):
             widget.entry.set_text(search)
             editor.buffer.place_cursor(start)
             on_search_activate(widget.entry, editor, widget)
+        else:
+            widget.entry.grab_focus()
     else:
         widget.entry.grab_focus()
 
