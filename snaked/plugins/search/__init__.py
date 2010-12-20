@@ -4,11 +4,15 @@ desc = 'Searches words in document'
 
 import re
 import weakref
+
 import gtk
+import glib
+
 from snaked.util import idle, refresh_gui
 
 active_widgets = weakref.WeakKeyDictionary()
 search_selections = []
+mark_task_is_in_queue = [False]
 
 class SearchSelection(object):
     def __init__(self, search):
@@ -118,7 +122,7 @@ def create_widget(editor):
     widget.entry = entry
     label.set_mnemonic_widget(entry)
     entry.connect('activate', on_search_activate, editor, widget)
-
+    entry.connect_after('changed', on_search_changed, editor, widget)
 
     label = gtk.Label()
     label.set_text('_Replace:')
@@ -200,7 +204,14 @@ def get_matcher(editor, search, ignore_case, regex):
     else:
         return re.compile(re.escape(unicode(search)), flags)
 
-def mark_occurences(editor, search, ignore_case, regex):
+def add_mark_task(editor, search, ignore_case, regex, show_feedback=True):
+    if not mark_task_is_in_queue[0]:
+        mark_task_is_in_queue[0] = True
+        idle(mark_occurences, editor, search, ignore_case, regex,
+            show_feedback, priority=glib.PRIORITY_LOW)
+
+def mark_occurences(editor, search, ignore_case, regex, show_feedback=True):
+    mark_task_is_in_queue[0] = False
     matcher = get_matcher(editor, search, ignore_case, regex)
     if not matcher:
         return False
@@ -213,11 +224,14 @@ def mark_occurences(editor, search, ignore_case, regex):
         count += 1
 
     if count == 1:
-        idle(editor.message, 'One occurrence is marked')
+        if show_feedback:
+            idle(editor.message, 'One occurrence is marked')
     elif count > 1:
-        idle(editor.message, '%d occurrences are marked' % count)
+        if show_feedback:
+            idle(editor.message, '%d occurrences are marked' % count)
     else:
-        idle(editor.message, 'Text not found')
+        if show_feedback:
+            idle(editor.message, 'Text not found')
         return False
 
     return True
@@ -228,6 +242,15 @@ def on_search_activate(sender, editor, widget):
     if mark_occurences(editor, widget.entry.get_text(),
             widget.ignore_case.get_active(), widget.regex.get_active()):
         find_next(editor, True)
+
+def on_search_changed(sender, editor, widget):
+    search = widget.entry.get_text()
+    idle(delete_all_marks, editor)
+
+    if search and ( len(search) != 1 or ( not search.isdigit() and not search.isalpha()
+            and not search.isspace() ) ):
+        idle(add_mark_task, editor, search,
+                widget.ignore_case.get_active(), widget.regex.get_active(), False)
 
 def hide(editor, widget):
     delete_all_marks(editor)

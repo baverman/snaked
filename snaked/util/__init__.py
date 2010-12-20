@@ -14,7 +14,11 @@ def idle_callback(callable, args):
     return False
 
 def idle(callable, *args, **kwargs):
-    return gobject.idle_add(idle_callback, callable, (args, kwargs))
+    options = {}
+    if 'priority' in kwargs:
+        options['priority'] = kwargs['priority']
+        del kwargs['priority']
+    return gobject.idle_add(idle_callback, callable, (args, kwargs), **options)
 
 def save_file(filename, data, encoding, keep_tmp=False):
     tmpfilename = realpath(filename) + '.bak'

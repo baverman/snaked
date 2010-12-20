@@ -1,4 +1,5 @@
 import pango
+import glib
 
 from snaked.util import idle
 
@@ -17,7 +18,7 @@ highlight_task_added = [False]
 def add_highlight_task(buf):
     if not highlight_task_added[0]:
         highlight_task_added[0] = True
-        idle(highlight_matching_brackets, buf)
+        idle(highlight_matching_brackets, buf, priority=glib.PRIORITY_LOW)
 
 def attach(editor):
     editor.buffer.set_highlight_matching_brackets(False)
