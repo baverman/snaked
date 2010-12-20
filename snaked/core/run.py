@@ -40,7 +40,7 @@ def get_manager():
     options, args = parser.parse_args()
 
     distant = False
-    FIFO = '/tmp/snaked.io'
+    FIFO = '/tmp/snaked.io.%s'%options.session
 
     if os.path.exists(FIFO):
         try:
@@ -55,10 +55,8 @@ def get_manager():
             except OSError:
                 pass
 
-    print distant
-
-
     if distant:
+        print "Transmitting file information to snaked"
         for fname in args:
             msg = "FILE:%s\n"%os.path.abspath(fname)
             out_descr.write('%05d%s'%(len(msg), msg))
@@ -66,7 +64,6 @@ def get_manager():
     else:
         os.mkfifo(FIFO)
         out_descr = open(FIFO, 'r+')
-
 
     import gobject
     gobject.threads_init()
