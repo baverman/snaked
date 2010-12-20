@@ -71,10 +71,9 @@ def on_buffer_changed(buf):
     add_highlight_task(buf)
 
 def find_bracket(from_iter, br, obr, dir):
-    limit = 3000
     iter = from_iter.copy()
     depth = 1
-    while limit > 0:
+    while True:
         if not iter.forward_cursor_positions(dir):
             break
 
@@ -86,8 +85,6 @@ def find_bracket(from_iter, br, obr, dir):
 
         if depth == 0:
             return iter
-
-        limit -= 1
 
     return None
 
