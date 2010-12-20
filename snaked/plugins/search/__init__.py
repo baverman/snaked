@@ -42,7 +42,12 @@ def search(editor):
         start, end = editor.buffer.get_selection_bounds()
         if start.get_line() == end.get_line():
             refresh_gui()
-            widget.entry.set_text(start.get_text(end))
+
+            search = start.get_text(end)
+            if widget.regex.get_active():
+                search = re.escape(search)
+
+            widget.entry.set_text(search)
             editor.buffer.place_cursor(start)
             on_search_activate(widget.entry, editor, widget)
     else:
@@ -188,7 +193,7 @@ def delete_all_marks(editor):
     if editor.buffer.get_tag_table().lookup('search'):
         editor.buffer.remove_tag_by_name('search', start, end)
 
-def get_matcher(editor, search, ignore_case, regex):
+def get_matcher(editor, search, ignore_case, regex, show_feedback=True):
     flags = re.UNICODE
     if ignore_case:
         flags |= re.IGNORECASE
@@ -197,9 +202,11 @@ def get_matcher(editor, search, ignore_case, regex):
         try:
             return re.compile(unicode(search), flags)
         except Exception, e:
-            editor.message('Bad regex: ' + str(e), 3000)
-            if editor in active_widgets:
-                idle(active_widgets[editor].entry.grab_focus)
+            if show_feedback:
+                editor.message('Bad regex: ' + str(e), 3000)
+                if editor in active_widgets:
+                    idle(active_widgets[editor].entry.grab_focus)
+
             return None
     else:
         return re.compile(re.escape(unicode(search)), flags)
@@ -212,7 +219,7 @@ def add_mark_task(editor, search, ignore_case, regex, show_feedback=True):
 
 def mark_occurences(editor, search, ignore_case, regex, show_feedback=True):
     mark_task_is_in_queue[0] = False
-    matcher = get_matcher(editor, search, ignore_case, regex)
+    matcher = get_matcher(editor, search, ignore_case, regex, show_feedback)
     if not matcher:
         return False
 
