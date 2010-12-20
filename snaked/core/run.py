@@ -1,5 +1,6 @@
 from optparse import OptionParser
 import os
+import glib
 
 def select_session():
     import gtk
@@ -38,6 +39,35 @@ def get_manager():
 
     options, args = parser.parse_args()
 
+    distant = False
+    FIFO = '/tmp/snaked.io'
+
+    if os.path.exists(FIFO):
+        try:
+            fd = open(FIFO, 'w+')
+            fd.write('00005PING\n')
+            distant = True
+            out_descr = fd
+        except Exception, e:
+            print "Error opening socket: %r"%(e)
+            try:
+                os.unlink(FIFO)
+            except OSError:
+                pass
+
+    print distant
+
+
+    if distant:
+        for fname in args:
+            msg = "FILE:%s\n"%os.path.abspath(fname)
+            out_descr.write('%05d%s'%(len(msg), msg))
+        raise SystemExit()
+    else:
+        os.mkfifo(FIFO)
+        out_descr = open(FIFO, 'r+')
+
+
     import gobject
     gobject.threads_init()
     from .tabbed import TabbedEditorManager
@@ -71,6 +101,20 @@ def get_manager():
     if editor_to_focus and active_file != opened_files[-1]:
         manager.focus_editor(editor_to_focus)
 
+    if not distant:
+        def file_injector(fd, flag):
+            sz = int(fd.read(5))
+            data = fd.read(sz)
+            if data == 'PING\n':
+                return file_injector(fd, flag)
+            print data
+            if data.startswith('FILE:'):
+                fname = data[5:-1]
+                if fname not in opened_files:
+                    manager.open(fname)
+                    opened_files.append(fname)
+            return True
+        glib.io_add_watch(out_descr, glib.IO_IN|glib.IO_HUP, file_injector)
     return manager
 
 def run():
