@@ -27,12 +27,10 @@ def init(manager):
 def search(editor):
     if editor in active_widgets:
         widget = active_widgets[editor]
-        widget.entry.grab_focus()
     else:
         widget = create_widget(editor)
         active_widgets[editor] = widget
         editor.widget.pack_start(widget, False)
-        widget.entry.grab_focus()
         editor.push_escape(hide, widget)
         widget.show_all()
 
@@ -43,6 +41,8 @@ def search(editor):
             widget.entry.set_text(start.get_text(end))
             editor.buffer.place_cursor(start)
             on_search_activate(widget.entry, editor, widget)
+    else:
+        widget.entry.grab_focus()
 
 def backward_search(matcher, text, endpos):
     match = None
