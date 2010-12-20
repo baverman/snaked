@@ -56,6 +56,9 @@ def get_manager():
                 pass
 
     if distant:
+        if not args:
+            print "Snaked (%s) is already running !\nIf not try to remove %s"%(options.session, FIFO)
+            raise SystemExit(1)
         print "Transmitting file information to snaked"
         for fname in args:
             msg = "FILE:%s\n"%os.path.abspath(fname)
@@ -99,15 +102,22 @@ def get_manager():
         manager.focus_editor(editor_to_focus)
 
     if not distant:
+        import atexit
+        def remove_socket(fd, fname):
+            fd.close()
+            os.unlink(fname)
+
+        atexit.register(remove_socket, out_descr, FIFO)
+
         def file_injector(fd, flag):
             sz = int(fd.read(5))
             data = fd.read(sz)
             if data == 'PING\n':
+                # ignore PING command and reads next
                 return file_injector(fd, flag)
-            print data
             if data.startswith('FILE:'):
                 fname = data[5:-1]
-                if fname not in opened_files:
+                if fname not in opened_files: # FIXME: this is unreliable, is there some list in manager ?
                     manager.open(fname)
                     opened_files.append(fname)
             return True
