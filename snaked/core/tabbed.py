@@ -29,8 +29,9 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
 
         self.activator = ContextShortcutActivator(self.window, self.get_context)
 
-        self.box = gtk.VBox()
-        self.window.add(self.box)
+        self.main_pane = gtk.VPaned()
+        self.main_pane_position_set = False
+        self.window.add(self.main_pane)
 
         self.note = gtk.Notebook()
         self.note.set_show_tabs(self.snaked_conf['SHOW_TABS'])
@@ -41,8 +42,8 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
         self.note.connect('page_removed', self.on_page_removed)
         self.note.connect('page_reordered', self.on_page_reordered)
         self.note.props.tab_pos = tab_bar_pos_mapping.get(
-            self.snaked_conf['TAB_BAR_PLACEMENT'], gtk.POS_TOP)
-        self.box.pack_start(self.note)
+        self.snaked_conf['TAB_BAR_PLACEMENT'], gtk.POS_TOP)
+        self.main_pane.add1(self.note)
 
         register_shortcut('toggle-tabs-visibility', '<alt>F11', 'Window', 'Toggles tabs visibility')
         register_shortcut('next-editor', '<alt>Right', 'Window', 'Switches to next editor')
@@ -148,6 +149,10 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
     def quit(self, editor):
         self.snaked_conf['LAST_POSITION'] = self.window.get_position(), self.window.get_size()
 
+        if self.main_pane_position_set:
+            _, _, _, wh, _ = self.window.window.get_geometry()
+            self.snaked_conf['PANEL_HEIGHT'] = wh - self.main_pane.get_position()
+
         self.window.hide()
         super(TabbedEditorManager, self).quit(editor)
 
@@ -194,21 +199,21 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
     @snaked.core.editor.Editor.stack_add_request
     def on_stack_add_request(self, editor, widget, on_popup):
         self.panels[widget] = on_popup
-        self.box.pack_end(widget, False, False)
 
     @snaked.core.editor.Editor.stack_popup_request
     def on_stack_popup_request(self, editor, widget):
         if widget in self.panels:
             for w in self.panels:
-                if w is not widget:
-                    w.hide()
+                if w is not widget and w is self.main_pane.get_child2():
+                    self.main_pane.remove(w)
 
+            if not self.main_pane_position_set:
+                self.main_pane_position_set = True
+                _, _, _, wh, _ = self.window.window.get_geometry()
+                self.main_pane.set_position(wh - self.snaked_conf['PANEL_HEIGHT'])
+
+            self.main_pane.add2(widget)
             widget.show()
-
-            _, _, _, wh, _ = self.window.window.get_geometry()
-            w, _ = widget.get_size_request()
-            h = max(200, wh/3)
-            widget.set_size_request(w, h)
 
             if self.panels[widget]:
                 self.panels[widget](widget, editor)
