@@ -114,8 +114,8 @@ else:
 ipython_runner = []
 
 def init(manager):
-    manager.add_shortcut('ipython', '<ctrl>i', 'IPython', 'Toggle IPython', show_ipython)
-    manager.add_shortcut('run-current-code', '<ctrl>r', 'IPython', 'Send current line or selection in IPython', run_code)
+    manager.add_shortcut('ipython', '<ctrl>i', 'IPython', 'Toggle IPython console', show_ipython)
+    manager.add_shortcut('run-current-code', '<ctrl>r', 'IPython', 'Send current line or selection to IPython', send_code)
     manager.add_shortcut('run-code-file', 'F6', 'IPython', 'Run current file in IPython', run_file)
     manager.add_shortcut('restart-ipython', '<ctrl><shift>i','IPython', 'Restart IPython', restart_ipython)
 
@@ -131,7 +131,6 @@ def get_ipython_runner(editor):
 
 def show_ipython(editor):
     runner = get_ipython_runner(editor)
-    #editor.popup_widget(runner.widget)
     if runner.visible():
         runner.hide()
         editor.view.grab_focus()
@@ -146,7 +145,7 @@ def get_selection_or_buffer(editor):
     else:
         return editor.text
 
-def run_code(editor):
+def send_code(editor):
     runner = get_ipython_runner(editor)
     lines = get_selection_or_current_line(editor)
     runner.run_lines(lines)
