@@ -28,6 +28,8 @@ class SnakedConf(prefs.PySettings):
     MODIFIED_FILES = None
     MODIFIED_FILES_DOC = 'Backup content for modified files'
 
+    PANEL_HEIGHT = 200
+    PANEL_HEIGHT_DOC = "Console, test and other panels height"
 
 def add_option(name, default, doc=None):
     setattr(SnakedConf, name, default)

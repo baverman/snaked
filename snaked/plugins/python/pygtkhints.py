@@ -20,7 +20,7 @@ def add_gtk_support(composite_provider):
 
 def add_gtk_extension_modules(project):
     existing_modules = project.prefs['extension_modules']
-    for m in ('gtk._gtk', 'gtk.gdk', 'gobject._gobject', 'pango'):
+    for m in ('gtk._gtk', 'gtk.gdk', 'glib._glib', 'gobject._gobject', 'pango'):
         if m not in existing_modules:
             existing_modules.append(m)
 

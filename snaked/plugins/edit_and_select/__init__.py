@@ -17,6 +17,7 @@ def init(manager):
     manager.add_shortcut('wrap-text', '<alt>f', 'Edit', 'Wrap text on right margin width', wrap_text)
 
     manager.add_global_option('DOUBLE_BRACKET_MATCHER', True, "Enable custom bracket matcher")
+    manager.add_global_option('COPY_DELETED_LINE', True, "Put deleted line into clipboard")
 
 def editor_created(editor):
     if editor.snaked_conf['DOUBLE_BRACKET_MATCHER']:
@@ -27,7 +28,7 @@ def delete_line(editor):
     from util import get_line_bounds, line_is_empty
 
     bounds = get_line_bounds(editor.cursor)
-    if not line_is_empty(editor.cursor):
+    if not line_is_empty(editor.cursor) and editor.snaked_conf['COPY_DELETED_LINE']:
         clipboard = editor.view.get_clipboard(gtk.gdk.SELECTION_CLIPBOARD)
         editor.buffer.select_range(*bounds)
         editor.buffer.copy_clipboard(clipboard)
