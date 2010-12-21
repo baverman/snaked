@@ -227,10 +227,10 @@ class EditorManager(object):
 
     @Editor.settings_changed(idle=True)
     def on_editor_settings_changed(self, editor):
-        self.set_editor_prefs(editor, editor.uri, editor.contexts)
+        self.set_editor_prefs(editor, editor.uri, editor.lang)
         for e in self.editors:
             if e is not editor:
-                idle(self.set_editor_prefs, e, e.uri, e.contexts)
+                idle(self.set_editor_prefs, e, e.uri, e.lang)
 
     def new_file_action(self, editor):
         from snaked.core.gui import new_file
