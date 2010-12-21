@@ -1,13 +1,12 @@
-'''
-IPythonView plugin for snaked editor
-Author: Gu Ye <cooyeah at gmail dot com>
-'''
+author = 'Gu Ye <cooyeah at gmail dot com>'
+name = 'IPython console'
+desc = 'IPythonView plugin for snaked editor'
 
 import gtk
 from ipython_view import IPythonView
 import pango
 import sys
-
+import os
 
 class SnakedIPythonView(IPythonView):
     def __init__(self):
@@ -115,9 +114,11 @@ ipython_runner = []
 
 def init(manager):
     manager.add_shortcut('ipython', '<ctrl>i', 'IPython', 'Toggle IPython console', show_ipython)
-    manager.add_shortcut('run-current-code', '<ctrl>r', 'IPython', 'Send current line or selection to IPython', send_code)
+    manager.add_shortcut('run-current-code', '<ctrl>r', 'IPython',
+        'Send current line or selection to IPython', send_code)
     manager.add_shortcut('run-code-file', 'F6', 'IPython', 'Run current file in IPython', run_file)
-    manager.add_shortcut('restart-ipython', '<ctrl><shift>i','IPython', 'Restart IPython', restart_ipython)
+    manager.add_shortcut('restart-ipython', '<ctrl><shift>i',
+        'IPython', 'Restart IPython', restart_ipython)
 
 def get_ipython_runner(editor):
     try:
@@ -125,9 +126,22 @@ def get_ipython_runner(editor):
     except IndexError:
         pass
 
+    root = editor.project_root
+    if root:
+        os.chdir(root)
+
     ipython_runner.append(IPythonRunner())
-    editor.add_widget_to_stack(ipython_runner[0].panel)
+    editor.add_widget_to_stack(ipython_runner[0].panel, on_ipython_popup)
     return ipython_runner[0]
+
+def hide(editor, widget, escape):
+    widget.hide()
+    editor.view.grab_focus()
+
+def on_ipython_popup(widget, editor):
+    class Escape(object): pass
+    widget.escape = Escape()
+    editor.push_escape(hide, widget, widget.escape)
 
 def show_ipython(editor):
     runner = get_ipython_runner(editor)
@@ -138,6 +152,8 @@ def show_ipython(editor):
         runner.show()
         editor.popup_widget(runner.panel)
         runner.widget.grab_focus()
+
+
 
 def get_selection_or_buffer(editor):
     if editor.buffer.get_has_selection():
@@ -157,8 +173,13 @@ def run_file(editor):
 
 def restart_ipython(editor):
     runner = get_ipython_runner(editor)
+
+    root = editor.project_root
+    if root:
+        os.chdir(root)
+
     runner.reset()
-    editor.add_widget_to_stack(ipython_runner[0].panel)
+    editor.add_widget_to_stack(ipython_runner[0].panel, on_ipython_popup)
     runner.show()
     editor.popup_widget(runner.panel)
     runner.widget.grab_focus()
