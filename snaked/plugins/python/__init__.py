@@ -98,7 +98,7 @@ def on_editor_get_project_larva(editor):
     import os.path
 
     if os.path.exists(join_to_file_dir(editor.uri, '__init__.py')):
-        editor.stop_emission('get-project-larva')
+        editor.get_project_larva.stop_emission()
         root, packages = get_package_root(editor.uri)
         return os.path.join(root, packages.partition('.')[0])
 

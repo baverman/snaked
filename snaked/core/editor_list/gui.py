@@ -85,7 +85,10 @@ class EditorListDialog(BuilderAware):
             self.path2editor[p].request_close.emit()
 
         refresh_gui()
-        idle(self.fill)
+        if self.editor_list:
+            idle(self.fill)
+        else:
+            self.hide()
 
     def activate_editor(self, path):
         idle(self.editor().open_file, self.path2editor[path].uri)
