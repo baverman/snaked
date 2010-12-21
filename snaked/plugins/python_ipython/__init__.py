@@ -137,7 +137,7 @@ def show_ipython(editor):
         editor.view.grab_focus()
     else:
         runner.show()
-        #editor.popup_widget(runner.widget)
+        editor.popup_widget(runner.panel)
         runner.widget.grab_focus()
 
 def get_selection_or_buffer(editor):
@@ -161,4 +161,5 @@ def restart_ipython(editor):
     runner.reset()
     editor.add_widget_to_stack(ipython_runner[0].panel)
     runner.show()
+    editor.popup_widget(runner.panel)
     runner.widget.grab_focus()
