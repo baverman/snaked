@@ -1,8 +1,6 @@
 import pango
 import glib
 
-from snaked.util import idle
-
 brackets = {
     '(': (')', 1),
     ')': ('(', -1),
@@ -13,12 +11,24 @@ brackets = {
 }
 
 matched_tags = [None]
-highlight_task_added = [False]
+cursor_movement_occurs = [False]
+highlight_timer_id = [None]
+
+def match_brackets_timeout(buf):
+    if not cursor_movement_occurs[0]:
+        highlight_matching_brackets(buf)
+        highlight_timer_id[0] = None
+        return False
+
+    cursor_movement_occurs[0] = False
+    return True
 
 def add_highlight_task(buf):
-    if not highlight_task_added[0]:
-        highlight_task_added[0] = True
-        idle(highlight_matching_brackets, buf, priority=glib.PRIORITY_LOW)
+    if not highlight_timer_id[0]:
+        cursor_movement_occurs[0] = True
+        highlight_timer_id[0] = glib.timeout_add(100, match_brackets_timeout, buf)
+    else:
+        cursor_movement_occurs[0] = True
 
 def attach(editor):
     editor.buffer.set_highlight_matching_brackets(False)
@@ -32,8 +42,6 @@ def reset_tags(buf):
 
 def highlight_matching_brackets(buf):
     """:type buf: gtk.TextBuffer()"""
-    highlight_task_added[0] = False
-
     iter = buf.get_iter_at_mark(buf.get_insert())
     char = iter.get_char()
     piter = iter.copy()
