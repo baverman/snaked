@@ -229,9 +229,9 @@ class Editor(SignalManager):
         from .feedback import FeedbackPopup
         return FeedbackPopup()
 
-    def message(self, message, timeout=1500):
+    def message(self, message, timeout=1500, markup=False):
         popup = self.feedback_popup
-        popup.show(self, message, timeout)
+        popup.show(self, message, timeout, markup)
         self.push_escape(popup.hide, popup.escape)
 
     def push_escape(self, callback, *args):

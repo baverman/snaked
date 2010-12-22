@@ -7,7 +7,13 @@ langs = ['python']
 import weakref
 import time
 
+import glib
+
 last_saves = weakref.WeakKeyDictionary()
+
+def init(manager):
+    manager.add_global_option('PYTHON_BCSP_GOTO_TO_ERROR', True,
+        'Automatically jumps to line where syntax error occured')
 
 def editor_created(editor):
     editor.connect('before-file-save', on_editor_before_file_save)
@@ -31,11 +37,16 @@ def on_editor_before_file_save(editor):
     try:
         ast.parse(editor.utext, editor.uri)
     except SyntaxError, e:
-        editor.message(str(e) + '\n\n' + e.text, 10000)
+        message = '%s at line <b>%d</b>' % (glib.markup_escape_text(e.msg), e.lineno)
+        if e.text:
+            message += '\n\n' + glib.markup_escape_text(e.text)
 
-        if editor.cursor.get_line() != e.lineno - 1:
-            editor.add_spot()
-            editor.goto_line(e.lineno)
+        editor.message(message, 10000, markup=True)
+
+        if editor.snaked_conf['PYTHON_BCSP_GOTO_TO_ERROR']:
+            if editor.cursor.get_line() != e.lineno - 1:
+                editor.add_spot()
+                editor.goto_line(e.lineno)
 
         return process_error(editor)
     except Exception, e:
