@@ -168,17 +168,16 @@ def run(editor, tool):
     proc = Popen(command_to_run, stdout=PIPE, stderr=PIPE, bufsize=1,
         stdin=PIPE if stdin else None, cwd=editor.project_root, env=env)
 
-    proc.stdin.write(stdin)
-    proc.stdin.close()
-
     def on_finish():
         os.remove(filename)
 
     if tool.output == 'to-console':
         from snaked.core.console import consume_output
+        proc.stdin.write(stdin)
+        proc.stdin.close()
         consume_output(editor, proc, on_finish)
     else:
-        stdout, stderr = proc.communicate()
+        stdout, stderr = proc.communicate(stdin)
         on_finish()
         process_stdout(editor, stdout, stderr, tool.output)
 
