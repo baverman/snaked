@@ -105,9 +105,9 @@ def get_selection_or_current_line(editor):
 
 import platform
 if platform.system()=="Windows":
-        FONT = "Lucida Console 9"
+    FONT = "Lucida Console 9"
 else:
-        FONT = "Luxi Mono 10"
+    FONT = "Luxi Mono 10"
 
 
 ipython_runner = []
@@ -119,6 +119,9 @@ def init(manager):
     manager.add_shortcut('run-code-file', 'F6', 'IPython', 'Run current file in IPython', run_file)
     manager.add_shortcut('restart-ipython', '<ctrl><shift>i',
         'IPython', 'Restart IPython', restart_ipython)
+
+    manager.add_global_option('IPYTHON_GRAB_FOCUS_ON_SHOW', True,
+        'Option controls ipython panel focus grabbing on its show')
 
 def get_ipython_runner(editor):
     try:
@@ -135,8 +138,14 @@ def get_ipython_runner(editor):
     return ipython_runner[0]
 
 def hide(editor, widget, escape):
-    widget.hide()
-    editor.view.grab_focus()
+    if widget.get_focus_child():
+        editor.view.grab_focus()
+        class Escape(object): pass
+        widget.escape = Escape()
+        editor.push_escape(hide, widget, widget.escape)
+    else:
+        widget.hide()
+        editor.view.grab_focus()
 
 def on_ipython_popup(widget, editor):
     class Escape(object): pass
@@ -146,14 +155,16 @@ def on_ipython_popup(widget, editor):
 def show_ipython(editor):
     runner = get_ipython_runner(editor)
     if runner.visible():
-        runner.hide()
-        editor.view.grab_focus()
+        if not runner.widget.is_focus():
+            runner.widget.grab_focus()
+        else:
+            editor.view.grab_focus()
+            runner.hide()
     else:
         runner.show()
         editor.popup_widget(runner.panel)
-        runner.widget.grab_focus()
-
-
+        if editor.snaked_conf['IPYTHON_GRAB_FOCUS_ON_SHOW']:
+            runner.widget.grab_focus()
 
 def get_selection_or_buffer(editor):
     if editor.buffer.get_has_selection():
@@ -163,11 +174,17 @@ def get_selection_or_buffer(editor):
 
 def send_code(editor):
     runner = get_ipython_runner(editor)
+    if not runner.visible():
+        runner.show()
+
     lines = get_selection_or_current_line(editor)
     runner.run_lines(lines)
 
 def run_file(editor):
     runner = get_ipython_runner(editor)
+    if not runner.visible():
+        runner.show()
+
     line = [ 'run %s' % editor.uri ]
     runner.run_lines(line)
 
