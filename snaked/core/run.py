@@ -1,5 +1,6 @@
 from optparse import OptionParser
 import os
+import glib
 
 def select_session():
     import gtk
@@ -38,6 +39,35 @@ def get_manager():
 
     options, args = parser.parse_args()
 
+    distant = False
+    FIFO = '/tmp/snaked.io.%s'%options.session
+
+    if os.path.exists(FIFO):
+        try:
+            fd = open(FIFO, 'w+')
+            fd.write('00005PING\n')
+            distant = True
+            out_descr = fd
+        except Exception, e:
+            print "Error opening socket: %r"%(e)
+            try:
+                os.unlink(FIFO)
+            except OSError:
+                pass
+
+    if distant:
+        if not args:
+            print "Snaked (%s) is already running !\nIf not try to remove %s"%(options.session, FIFO)
+            raise SystemExit(1)
+        print "Transmitting file information to snaked"
+        for fname in args:
+            msg = "FILE:%s\n"%os.path.abspath(fname)
+            out_descr.write('%05d%s'%(len(msg), msg))
+        raise SystemExit()
+    else:
+        os.mkfifo(FIFO)
+        out_descr = open(FIFO, 'r+')
+
     import gobject
     gobject.threads_init()
     from .tabbed import TabbedEditorManager
@@ -71,6 +101,27 @@ def get_manager():
     if editor_to_focus and active_file != opened_files[-1]:
         manager.focus_editor(editor_to_focus)
 
+    if not distant:
+        import atexit
+        def remove_socket(fd, fname):
+            fd.close()
+            os.unlink(fname)
+
+        atexit.register(remove_socket, out_descr, FIFO)
+
+        def file_injector(fd, flag):
+            sz = int(fd.read(5))
+            data = fd.read(sz)
+            if data == 'PING\n':
+                # ignore PING command and reads next
+                return file_injector(fd, flag)
+            if data.startswith('FILE:'):
+                fname = data[5:-1]
+                if fname not in opened_files: # FIXME: this is unreliable, is there some list in manager ?
+                    manager.open(fname)
+                    opened_files.append(fname)
+            return True
+        glib.io_add_watch(out_descr, glib.IO_IN|glib.IO_HUP, file_injector)
     return manager
 
 def run():
