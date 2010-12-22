@@ -41,11 +41,12 @@ def get_manager():
 
     distant = False
     FIFO = '/tmp/snaked.io.%s'%options.session
+    fifo_start = '00005'
 
     if os.path.exists(FIFO):
         try:
             fd = open(FIFO, 'w+')
-            fd.write('00005PING\n')
+            fd.write('%s%04d\n'%(fifo_start, len(args)))
             distant = True
             out_descr = fd
         except Exception, e:
@@ -111,15 +112,17 @@ def get_manager():
 
         def file_injector(fd, flag):
             sz = int(fd.read(5))
-            data = fd.read(sz)
-            if data == 'PING\n':
-                # ignore PING command and reads next
-                return file_injector(fd, flag)
-            if data.startswith('FILE:'):
-                fname = data[5:-1]
-                if fname not in opened_files: # FIXME: this is unreliable, is there some list in manager ?
-                    manager.open(fname)
-                    opened_files.append(fname)
+            count = int(fd.read(sz))
+            for n in xrange(count):
+                sz = int(fd.read(5))
+                data = fd.read(sz)
+                if data.startswith('FILE:'):
+                    fname = data[5:-1]
+                    if fname not in opened_files: # FIXME: this is unreliable, is there some list in manager ?
+                        manager.open(fname)
+                        opened_files.append(fname)
+                else:
+                    print "Unknown descriptor"
             return True
         glib.io_add_watch(out_descr, glib.IO_IN|glib.IO_HUP, file_injector)
     return manager
