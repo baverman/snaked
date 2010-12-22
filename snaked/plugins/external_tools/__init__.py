@@ -157,10 +157,6 @@ def run(editor, tool):
     os.close(fd)
 
     stdin = get_stdin(editor, tool.input)
-    if stdin:
-        stdin_fd, stdin_fname = tempfile.mkstemp()
-        os.write(stdin_fd, stdin)
-        os.close(stdin_fd)
 
     command_to_run = ['/usr/bin/env', 'sh', filename]
 
@@ -169,13 +165,14 @@ def run(editor, tool):
     env['FILENAME'] = editor.uri
     env['OFFSET'] = str(editor.cursor.get_offset())
 
-    proc = Popen(command_to_run, stdout=PIPE, stderr=PIPE, bufsize=1, close_fds=True,
-        stdin=open(stdin_fname) if stdin else None, cwd=editor.project_root, env=env)
+    proc = Popen(command_to_run, stdout=PIPE, stderr=PIPE, bufsize=1,
+        stdin=PIPE if stdin else None, cwd=editor.project_root, env=env)
+
+    proc.stdin.write(stdin)
+    proc.stdin.close()
 
     def on_finish():
         os.remove(filename)
-        if stdin:
-            os.remove(stdin_fname)
 
     if tool.output == 'to-console':
         from snaked.core.console import consume_output
