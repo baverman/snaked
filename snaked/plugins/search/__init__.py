@@ -47,9 +47,8 @@ def search(editor):
             if widget.regex.get_active():
                 search = re.escape(search)
 
-            widget.entry.set_text(search)
             editor.buffer.place_cursor(start)
-            on_search_activate(widget.entry, editor, widget)
+            widget.entry.set_text(search)
         else:
             widget.entry.grab_focus()
     else:
