@@ -28,6 +28,8 @@ class EditorManager(object):
         self.lang_manager = gtksourceview2.language_manager_get_default()
         self.modify_lang_search_path(self.lang_manager)
 
+        self.on_quit = []
+
         self.plugin_manager = PluginManager()
         prefs.register_dialog('Plugins', self.plugin_manager.show_plugins_prefs, 'plugin',
             'extension')
@@ -245,6 +247,13 @@ class EditorManager(object):
 
         self.plugin_manager.quit()
 
+        for q in self.on_quit:
+            try:
+                q()
+            except:
+                import traceback
+                traceback.print_exc()
+
         if gtk.main_level() > 0:
             gtk.main_quit()
 
@@ -393,6 +402,7 @@ class EditorManager(object):
 
     def set_ctx_context(self, project_root, contexts):
         self.ctx_contexts[project_root] = contexts
+
 
 class EditorSpot(object):
     def __init__(self, manager, editor):

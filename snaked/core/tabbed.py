@@ -240,3 +240,7 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
             return
 
         self.note.reorder_child(editor.widget, pos)
+
+    def activate_main_window(self):
+        self.window.present()
+        self.window.present_with_time(gtk.get_current_event_time())
