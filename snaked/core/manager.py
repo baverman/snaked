@@ -82,8 +82,9 @@ class EditorManager(object):
 
     def register_app_shortcuts(self):
         register_shortcut('quit', '<ctrl>q', 'Application', 'Quit')
-        register_shortcut('close-window', '<ctrl>w', 'Window', 'Closes window')
-        register_shortcut('save', '<ctrl>s', 'File', 'Saves file')
+        register_shortcut('close-window', '<ctrl>w', 'Window', 'Close window')
+        register_shortcut('save', '<ctrl>s', 'File', 'Save file')
+        register_shortcut('save-all', '<ctrl><shift>s', 'File', 'Save all opened files')
         register_shortcut('new-file', '<ctrl>n', 'File',
             'Open dialog to choose new file directory and name')
         register_shortcut('show-preferences', '<ctrl>p', 'Window', 'Open preferences dialog')
@@ -403,6 +404,9 @@ class EditorManager(object):
     def set_ctx_context(self, project_root, contexts):
         self.ctx_contexts[project_root] = contexts
 
+    def save_all(self, editor):
+        for e in self.editors:
+            e.save()
 
 class EditorSpot(object):
     def __init__(self, manager, editor):
