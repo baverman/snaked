@@ -109,6 +109,7 @@ class TestRunner(BuilderAware):
         self.tests.set(iter, 0, u'\u2718 '.encode('utf8') + testname, 1, pango.WEIGHT_BOLD)
 
         self.show()
+        self.resize_tests_view()
         self.tests_view.grab_focus()
         self.prevent_scroll = True
 
@@ -136,17 +137,18 @@ class TestRunner(BuilderAware):
                 node_name = node[len(common_parent)+2:]
             append(node, node_name)
 
-        if self.tests_count:
-            self.tests_view.expand_all()
-            nw = self.tests_view.size_request()[0]
-            w = self.tests_view_sw.get_size_request()[0]
-            tw = self.panel.window.get_size()[0]
-            if nw > w:
-                if nw > tw/2: nw = tw/2
-                self.tests_view_sw.set_size_request(nw, -1)
-
         if self.tests_count > 1:
             self.show()
+            self.resize_tests_view()
+
+    def resize_tests_view(self):
+        self.tests_view.expand_all()
+        nw = self.tests_view.size_request()[0]
+        w = self.tests_view_sw.get_size_request()[0]
+        tw = self.panel.window.get_size()[0]
+        if nw > w:
+            if nw > tw/2: nw = tw/2
+            self.tests_view_sw.set_size_request(nw, -1)
 
     def handle_item_call(self, node):
         self.executed_tests += 1
@@ -194,6 +196,7 @@ class TestRunner(BuilderAware):
         if self.failed_tests_count == 1:
             self.tests_view.set_cursor(self.tests.get_path(iter))
             self.show()
+            self.resize_tests_view()
             self.tests_view.grab_focus()
 
     def handle_error(self, node, msg, err):
