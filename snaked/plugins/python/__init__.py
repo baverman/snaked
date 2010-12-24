@@ -28,7 +28,11 @@ def init(manager):
     manager.add_shortcut('toggle-test-panel', '<alt>1', 'Window',
         'Toggle test panel', toggle_test_panel)
 
+    manager.add_global_option('PYTHON_SPYPKG_HANDLER_MAX_CHARS', 25,
+        'Maximum allowed python package title length')
+
     manager.add_title_handler('pypkg', pypkg_handler)
+    manager.add_title_handler('spypkg', spypkg_handler)
 
     from snaked.core.prefs import register_dialog
     register_dialog('Rope hints', edit_rope_hints, 'rope', 'hints')
@@ -129,6 +133,31 @@ def pypkg_handler(editor):
         return '.'.join(reversed(packages))
     else:
         return None
+
+def spypkg_handler(editor):
+    package = pypkg_handler(editor)
+    if not package:
+        return None
+
+    import re
+
+    max_chars_in_title = editor.snaked_conf['PYTHON_SPYPKG_HANDLER_MAX_CHARS']
+
+    parts = package.split('.')
+    if parts < 3 or len(package) <= max_chars_in_title:
+        return package
+
+    index = len(parts) - 2
+    while len(package) > max_chars_in_title:
+        parts[index] = '.'
+        index -= 1
+        package = '.'.join(parts)
+        package = re.sub(r'\.{4,}', '...', package)
+
+        if index == 0:
+            break
+
+    return package
 
 def open_outline(editor):
     global outline_dialog
