@@ -2,6 +2,7 @@ import weakref
 
 editors = weakref.WeakKeyDictionary()
 dialog = [None]
+recent_editors = {}
 
 def init(manager):
     """:type manager:snaked.core.plugins.ShortcutsHolder"""
@@ -21,9 +22,11 @@ def editor_closed(editor):
     except KeyError:
         pass
 
+    recent_editors[editor.uri] = editor.get_title.emit()
+
 def show_editor_list(editor):
     if not dialog[0]:
         from gui import EditorListDialog
         dialog[0] = EditorListDialog()
 
-    dialog[0].show(editor, editors)
+    dialog[0].show(editor, editors, recent_editors)
