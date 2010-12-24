@@ -197,7 +197,7 @@ class EditorManager(object):
         self.editors.remove(editor)
 
         if not self.editors:
-            snaked.core.quick_open.activate(self.get_fake_editor())
+            snaked.core.quick_open.quick_open(self.get_fake_editor())
 
     @Editor.change_title
     def on_editor_change_title(self, editor, title):

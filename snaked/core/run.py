@@ -68,7 +68,7 @@ def get_manager():
 
         if not manager.editors:
             import snaked.core.quick_open
-            snaked.core.quick_open.activate(manager.get_fake_editor())
+            snaked.core.quick_open.quick_open(manager.get_fake_editor())
 
         if editor_to_focus and active_file != opened_files[-1]:
             manager.focus_editor(editor_to_focus)
