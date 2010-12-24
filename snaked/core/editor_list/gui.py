@@ -98,9 +98,10 @@ class EditorListDialog(BuilderAware):
         self.activate_editor(path)
 
     def on_editors_view_cursor_changed(self, *args):
-        if self.editor and not self.block_cursor:
+        editor = self.editor()
+        if editor and editor.snaked_conf['EDITOR_LIST_SWITCH_ON_SELECT'] and not self.block_cursor:
             path, _ = self.editors_view.get_cursor()
-            idle(self.editor().open_file, self.path2editor[path].uri)
+            idle(editor.open_file, self.path2editor[path].uri)
 
     def mnemonic_activate(self, idx):
         if idx < len(self.paths):

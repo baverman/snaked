@@ -9,6 +9,9 @@ def init(manager):
     manager.add_shortcut('show-editor-list', '<alt>e', 'Window',
         'Show editor list', show_editor_list)
 
+    manager.add_global_option('EDITOR_LIST_SWITCH_ON_SELECT', True,
+        'Activates editor on item select (i.e cursor move) in editor list dialog')
+
 def editor_created(editor):
     editors[editor] = True
 
