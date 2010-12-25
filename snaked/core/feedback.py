@@ -40,12 +40,16 @@ class FeedbackPopup(object):
 
         self.timeout_id = None
 
-    def show(self, editor, text, timeout=1500):
+    def show(self, editor, text, timeout=1500, markup=False):
         self.remove_timeout()
         if self.escape:
             self.hide()
 
-        self.label.set_text(text)
+        if markup:
+            self.label.set_markup(text)
+        else:
+            self.label.set_text(text)
+
         self.window.resize(*self.window.size_request())
 
         win = editor.view.get_window(gtk.TEXT_WINDOW_TEXT)

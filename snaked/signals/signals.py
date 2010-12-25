@@ -79,10 +79,12 @@ class Signal(object):
         return attach_signal_connect_info('signals_to_connect', self, func, after, idle)
 
     def emit(self):
-        """
-        Only hint for IDE
-        """
+        """IDE hint"""
         raise Exception('You cannot emit unbounded signals')
+
+    def stop_emission(self):
+        """IDE hint"""
+        raise Exception('You cannot stop emission of unbounded signals')
 
 
 class SignalManager(object):
@@ -201,6 +203,10 @@ class BoundedSignal(object):
         if manager:
             return manager.emit(self.signal.name, *args)
 
+    def stop_emission(self):
+        manager = self.manager()
+        if manager:
+            return manager.stop_emission(self.signal.name)
 
 def connect_external(sender_name, signal_name, after=False, idle=False):
     def inner(func):

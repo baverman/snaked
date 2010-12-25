@@ -1,7 +1,8 @@
-dialog = None
+dialog = [None]
 
 def init(manager):
-    manager.add_shortcut('quick-open', '<ctrl><alt>r', 'File', "Shows quick open dialog", activate)
+    manager.add_shortcut('quick-open', '<ctrl><alt>r', 'File', "Show quick open dialog", quick_open)
+    manager.add_shortcut('slow-open', '<ctrl>F12', 'File', "Show standard open dialog", slow_open)
 
     manager.add_global_option('QUICK_OPEN_HIDDEN_FILES',
         ['.pyc','.pyo','.svn','.git','.hg','.ropeproject','.snaked_project'],
@@ -26,17 +27,34 @@ def editor_opened(editor):
         if root and root not in settings.larva_projects:
             settings.larva_projects.append(root)
 
-def activate(editor):
-    global dialog
-    if not dialog:
+def quick_open(editor):
+    if not dialog[0]:
         from gui import QuickOpenDialog
-        dialog = QuickOpenDialog()
+        dialog[0] = QuickOpenDialog()
 
-    dialog.show(editor)
+    dialog[0].show(editor)
+
+def slow_open(editor):
+    import gtk
+    import os.path
+
+    dialog = gtk.FileChooserDialog("Open file...",
+        None,
+        gtk.FILE_CHOOSER_ACTION_OPEN,
+        (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+        gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+
+    dialog.set_default_response(gtk.RESPONSE_OK)
+    dialog.set_current_folder(os.path.dirname(editor.uri))
+
+    response = dialog.run()
+    if response == gtk.RESPONSE_OK:
+        editor.open_file(dialog.get_filename())
+
+    dialog.destroy()
 
 def quit():
-    global dialog
-    dialog = dialog
+    dialog[0] = None
 
 def set_context(project_root, contexts):
     import settings

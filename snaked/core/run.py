@@ -37,44 +37,55 @@ def get_manager():
         help="Show dialog to select session at startup", default=False)
 
     options, args = parser.parse_args()
-
-    import gobject
-    gobject.threads_init()
-    from .tabbed import TabbedEditorManager
-
     if options.select_session:
         options.session = select_session()
 
-    manager = TabbedEditorManager(options.session)
+    from .app import is_master, serve
 
-    opened_files = []
+    master, conn = is_master(options.session)
+    if master:
+        import gobject
+        gobject.threads_init()
+        from .tabbed import TabbedEditorManager
 
-    session_files = []
-    active_file = None
+        manager = TabbedEditorManager(options.session)
+        opened_files = []
 
-    session_files = manager.snaked_conf['OPENED_FILES']
-    active_file = manager.snaked_conf['ACTIVE_FILE']
+        session_files = []
+        active_file = None
 
-    editor_to_focus = None
-    for f in session_files + args:
-        f = os.path.abspath(f)
-        if f not in opened_files and (not os.path.exists(f) or os.path.isfile(f)):
-            e = manager.open(f)
-            if f == active_file:
-                editor_to_focus = e
-            opened_files.append(f)
+        session_files = manager.snaked_conf['OPENED_FILES']
+        active_file = manager.snaked_conf['ACTIVE_FILE']
 
-    if not manager.editors:
-        import snaked.core.quick_open
-        snaked.core.quick_open.activate(manager.get_fake_editor())
+        editor_to_focus = None
+        for f in session_files + args:
+            f = os.path.abspath(f)
+            if f not in opened_files and (not os.path.exists(f) or os.path.isfile(f)):
+                e = manager.open(f)
+                if f == active_file:
+                    editor_to_focus = e
+                opened_files.append(f)
 
-    if editor_to_focus and active_file != opened_files[-1]:
-        manager.focus_editor(editor_to_focus)
+        if not manager.editors:
+            import snaked.core.quick_open
+            snaked.core.quick_open.quick_open(manager.get_fake_editor())
 
-    return manager
+        if editor_to_focus and active_file != opened_files[-1]:
+            manager.focus_editor(editor_to_focus)
+
+        serve(manager, conn)
+
+        return manager
+    else:
+        conn.send(['OPEN'] + list(map(os.path.abspath, args)))
+        conn.send(['END'])
+        conn.close()
+        return None
 
 def run():
     manager = get_manager()
+    if not manager:
+        return
 
     import gtk
 

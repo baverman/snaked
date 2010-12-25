@@ -81,9 +81,6 @@ class IPythonRunner:
             self.widget._processLine()
 
     def show(self):
-
-        # self.widget.show()
-
         self.panel.show_all()
 
     def hide(self):
@@ -107,13 +104,10 @@ class IPythonRunner:
 
 
 def get_selection_or_current_line(editor):
-
-    # these routines are borrowed from hash_comment plugin
-
+    #these routines are borrowed from hash_comment plugin
     def make_line_traversor(buffer, r):
-        (start, end) = r
-        (start, stop) = (start.get_line(), end.get_line() + 1)
-
+        start, end = r
+        start, stop = start.get_line(), end.get_line() + 1
         def inner():
             for i in xrange(start, stop):
                 yield buffer.get_iter_at_line(i)
@@ -133,17 +127,17 @@ def get_selection_or_current_line(editor):
 
     def get_bounds(editor):
         if editor.buffer.get_has_selection():
-            (start, end) = editor.buffer.get_selection_bounds()
+            start, end = editor.buffer.get_selection_bounds()
             if start.ends_line():
                 start.set_line(start.get_line() + 1)
 
             if end.starts_line():
                 end.set_line(end.get_line() - 1)
 
-            return (start, end)
+            return start, end
         else:
             cursor = editor.cursor
-            return (cursor, cursor.copy())
+            return cursor, cursor.copy()
 
     r = get_bounds(editor)
     traversor = make_line_traversor(editor.buffer, r)
@@ -171,6 +165,9 @@ def init(manager):
                          , 'Restart IPython', restart_ipython)
 
 
+    manager.add_global_option('IPYTHON_GRAB_FOCUS_ON_SHOW', True,
+        'Option controls ipython panel focus grabbing on its show')
+
 def get_ipython_runner(editor):
     try:
         return ipython_runner[0]
@@ -188,16 +185,18 @@ def get_ipython_runner(editor):
 
 
 def hide(editor, widget, escape):
-    widget.hide()
-    editor.view.grab_focus()
+    if widget.get_focus_child():
+        editor.view.grab_focus()
+        class Escape(object): pass
+        widget.escape = Escape()
+        editor.push_escape(hide, widget, widget.escape)
+    else:
+        widget.hide()
+        editor.view.grab_focus()
 
 
 def on_ipython_popup(widget, editor):
-
-    class Escape(object):
-
-        pass
-
+    class Escape(object): pass
     widget.escape = Escape()
     editor.push_escape(hide, widget, widget.escape)
 
@@ -205,13 +204,16 @@ def on_ipython_popup(widget, editor):
 def show_ipython(editor):
     runner = get_ipython_runner(editor)
     if runner.visible():
-        runner.hide()
-        editor.view.grab_focus()
+        if not runner.widget.is_focus():
+            runner.widget.grab_focus()
+        else:
+            editor.view.grab_focus()
+            runner.hide()
     else:
         runner.show()
         editor.popup_widget(runner.panel)
-        runner.widget.grab_focus()
-
+        if editor.snaked_conf['IPYTHON_GRAB_FOCUS_ON_SHOW']:
+            runner.widget.grab_focus()
 
 def get_selection_or_buffer(editor):
     if editor.buffer.get_has_selection():
@@ -222,13 +224,19 @@ def get_selection_or_buffer(editor):
 
 def send_code(editor):
     runner = get_ipython_runner(editor)
+    if not runner.visible():
+        runner.show()
+
     lines = get_selection_or_current_line(editor)
     runner.run_lines(lines)
 
 
 def run_file(editor):
     runner = get_ipython_runner(editor)
-    line = ['%%run %s' % editor.uri]
+    if not runner.visible():
+        runner.show()
+
+    line = [ '%%run %s' % editor.uri ]
     runner.run_lines(line)
 
 

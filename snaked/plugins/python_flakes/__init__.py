@@ -6,10 +6,14 @@ langs = ['python']
 import os.path
 from snaked.core.problems import mark_problems, attach_to_editor
 
+def init(manager):
+    manager.add_global_option('PYFLAKES_RUN_ON_FILE_LOAD', True, 'Run pyflakes check on file load')
+
 def editor_opened(editor):
     editor.connect('file-saved', on_file_saved)
     attach_to_editor(editor)
-    if editor.uri and os.path.exists(editor.uri):
+    if editor.snaked_conf['PYFLAKES_RUN_ON_FILE_LOAD'] \
+            and editor.uri and os.path.exists(editor.uri):
         add_job(editor)
 
 def on_file_saved(editor):

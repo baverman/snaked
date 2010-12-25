@@ -10,22 +10,30 @@ from ..util import save_file, idle, get_project_root, single_ref
 from ..signals import SignalManager, Signal, connect_all, connect_external
 
 class Editor(SignalManager):
+    add_spot_request = Signal()
+
+    before_close = Signal()
+    before_file_save = Signal(return_type=bool) # Handlers can return True to prevent file saving
+
+    change_title = Signal(str)
     editor_closed = Signal()
-    request_to_open_file = Signal(str, object, object, return_type=object)
-    request_close = Signal()
-    settings_changed = Signal()
+
+    file_loaded = Signal()
+    file_saved = Signal()
+
+    get_file_position = Signal(return_type=int)
+    get_project_larva = Signal(return_type=str)
     get_title = Signal(return_type=str)
     get_window_title = Signal(return_type=str)
-    get_project_larva = Signal(return_type=str)
-    get_file_position = Signal(return_type=int)
-    before_close = Signal()
-    file_loaded = Signal()
-    change_title = Signal(str)
-    request_transient_for = Signal(object)
-    file_saved = Signal()
-    push_escape_callback = Signal(object, object)
+
     plugins_changed = Signal()
-    add_spot_request = Signal()
+    push_escape_callback = Signal(object, object)
+
+    request_close = Signal()
+    request_to_open_file = Signal(str, object, object, return_type=object)
+    request_transient_for = Signal(object)
+
+    settings_changed = Signal()
     stack_add_request = Signal(object, object)
     stack_popup_request = Signal(object)
 
@@ -89,9 +97,13 @@ class Editor(SignalManager):
                 try:
                     import chardet
                     result = chardet.detect(text)
-                    utext = text.decode(result['encoding'])
-                    self.encoding = result['encoding']
-                    idle(self.message, 'Automatically selected ' + self.encoding + 'encoding', 5000)
+                    if result['encoding']:
+                        utext = text.decode(result['encoding'])
+                        self.encoding = result['encoding']
+                        idle(self.message, 'Automatically selected ' + self.encoding + 'encoding', 5000)
+                    else:
+                        self.saveable = False
+                        utext = 'Is this a text file?'
                 except ImportError:
                     self.saveable = False
                     utext = str(e)
@@ -136,6 +148,9 @@ class Editor(SignalManager):
             return
 
         if self.uri:
+            if self.before_file_save.emit():
+                return
+
             if self.prefs['remove-trailing-space']:
                 from snaked.core.processors import remove_trailing_spaces
                 remove_trailing_spaces(self.buffer)
@@ -202,10 +217,13 @@ class Editor(SignalManager):
         """
         return unicode(self.buffer.get_text(*self.buffer.get_bounds()), 'utf-8')
 
-    def goto_line(self, line):
+    def goto_line(self, line, minimal=False):
         iterator = self.buffer.get_iter_at_line(line - 1)
         self.buffer.place_cursor(iterator)
-        self.view.scroll_to_mark(self.buffer.get_insert(), 0.001, use_align=True, xalign=1.0)
+        if minimal:
+            self.view.scroll_mark_onscreen(self.buffer.get_insert())
+        else:
+            self.view.scroll_to_mark(self.buffer.get_insert(), 0.001, use_align=True, xalign=1.0)
 
     def scroll_to_cursor(self):
         self.view.scroll_to_mark(self.buffer.get_insert(), 0.001, use_align=True, xalign=1.0)
@@ -215,9 +233,9 @@ class Editor(SignalManager):
         from .feedback import FeedbackPopup
         return FeedbackPopup()
 
-    def message(self, message, timeout=1500):
+    def message(self, message, timeout=1500, markup=False):
         popup = self.feedback_popup
-        popup.show(self, message, timeout)
+        popup.show(self, message, timeout, markup)
         self.push_escape(popup.hide, popup.escape)
 
     def push_escape(self, callback, *args):

@@ -28,6 +28,8 @@ class EditorManager(object):
         self.lang_manager = gtksourceview2.language_manager_get_default()
         self.modify_lang_search_path(self.lang_manager)
 
+        self.on_quit = []
+
         self.plugin_manager = PluginManager()
         prefs.register_dialog('Plugins', self.plugin_manager.show_plugins_prefs, 'plugin',
             'extension')
@@ -80,8 +82,9 @@ class EditorManager(object):
 
     def register_app_shortcuts(self):
         register_shortcut('quit', '<ctrl>q', 'Application', 'Quit')
-        register_shortcut('close-window', '<ctrl>w', 'Window', 'Closes window')
-        register_shortcut('save', '<ctrl>s', 'File', 'Saves file')
+        register_shortcut('close-window', '<ctrl>w', 'Window', 'Close window')
+        register_shortcut('save', '<ctrl>s', 'File', 'Save file')
+        register_shortcut('save-all', '<ctrl><shift>s', 'File', 'Save all opened files')
         register_shortcut('new-file', '<ctrl>n', 'File',
             'Open dialog to choose new file directory and name')
         register_shortcut('show-preferences', '<ctrl>p', 'Window', 'Open preferences dialog')
@@ -194,7 +197,7 @@ class EditorManager(object):
         self.editors.remove(editor)
 
         if not self.editors:
-            snaked.core.quick_open.activate(self.get_fake_editor())
+            snaked.core.quick_open.quick_open(self.get_fake_editor())
 
     @Editor.change_title
     def on_editor_change_title(self, editor, title):
@@ -227,10 +230,10 @@ class EditorManager(object):
 
     @Editor.settings_changed(idle=True)
     def on_editor_settings_changed(self, editor):
-        self.set_editor_prefs(editor, editor.uri, editor.contexts)
+        self.set_editor_prefs(editor, editor.uri, editor.lang)
         for e in self.editors:
             if e is not editor:
-                idle(self.set_editor_prefs, e, e.uri, e.contexts)
+                idle(self.set_editor_prefs, e, e.uri, e.lang)
 
     def new_file_action(self, editor):
         from snaked.core.gui import new_file
@@ -244,6 +247,13 @@ class EditorManager(object):
         self.save_conf(editor)
 
         self.plugin_manager.quit()
+
+        for q in self.on_quit:
+            try:
+                q()
+            except:
+                import traceback
+                traceback.print_exc()
 
         if gtk.main_level() > 0:
             gtk.main_quit()
@@ -393,6 +403,10 @@ class EditorManager(object):
 
     def set_ctx_context(self, project_root, contexts):
         self.ctx_contexts[project_root] = contexts
+
+    def save_all(self, editor):
+        for e in self.editors:
+            e.save()
 
 class EditorSpot(object):
     def __init__(self, manager, editor):
