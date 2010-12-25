@@ -11,11 +11,11 @@ import pango
 import os
 
 
-
-
 def getText(prompt='', title=''):
+
     def responseToDialog(entry, dialog, response):
         dialog.response(response)
+
     dialog = gtk.MessageDialog(None, gtk.DIALOG_MODAL
                                | gtk.DIALOG_DESTROY_WITH_PARENT,
                                gtk.MESSAGE_QUESTION, gtk.BUTTONS_OK,
@@ -39,10 +39,6 @@ def getText(prompt='', title=''):
 class SnakedIPythonView(IPythonView):
 
     def __init__(self):
-
-        def flush():
-            self.flush()
-
         IPythonView.__init__(self)
         self.cout.write = self._write
         self.cout.flush = self.flush
@@ -64,8 +60,8 @@ class SnakedIPythonView(IPythonView):
     def _raw_input(self, prompt=''):
         title = ''
         if prompt == 'ipdb> ':
-            title='Input pdb command'
-        return getText(prompt=prompt,title=title)
+            title = 'Input pdb command'
+        return getText(prompt=prompt, title=title)
 
 
 class IPythonRunner:
@@ -79,6 +75,10 @@ class IPythonRunner:
         for line in code_lines:
             self.widget.write(line)
             self.widget._processLine()
+
+    def run_lines_hidden(self, code_lines):
+        for line in code_lines:
+            self.widget.IP.api.ex(line)
 
     def show(self):
         self.panel.show_all()
@@ -102,12 +102,24 @@ class IPythonRunner:
         self.widget.set_wrap_mode(gtk.WRAP_CHAR)
         self.panel.add(self.widget)
 
+    def enable_matplotlib_support(self):
+        try:
+            import matplotlib
+        except ImportError:
+            pass
+        else:
+            self.run_lines_hidden(['import matplotlib',
+                                  'matplotlib.use("GTKAgg")',
+                                  'matplotlib.interactive(1)'])
+
 
 def get_selection_or_current_line(editor):
-    #these routines are borrowed from hash_comment plugin
+
+    # these routines are borrowed from hash_comment plugin
     def make_line_traversor(buffer, r):
         start, end = r
         start, stop = start.get_line(), end.get_line() + 1
+
         def inner():
             for i in xrange(start, stop):
                 yield buffer.get_iter_at_line(i)
@@ -166,9 +178,14 @@ def init(manager):
     manager.add_shortcut('restart-ipython', '<ctrl><shift>i', 'IPython'
                          , 'Restart IPython', restart_ipython)
 
-
     manager.add_global_option('IPYTHON_GRAB_FOCUS_ON_SHOW', True,
-        'Option controls ipython panel focus grabbing on its show')
+                              'Option controls ipython panel focus grabbing on its show'
+                              )
+    manager.add_global_option('IPYTHON_MATPLOTLIB_INTERACTIVE_SUPPORT',
+                              False,
+                              'Option controls matplotlib interactive mode in ipython console'
+                              )
+
 
 def get_ipython_runner(editor):
     try:
@@ -181,6 +198,8 @@ def get_ipython_runner(editor):
         os.chdir(root)
 
     ipython_runner.append(IPythonRunner())
+    if editor.snaked_conf['IPYTHON_MATPLOTLIB_INTERACTIVE_SUPPORT']:
+        ipython_runner[0].enable_matplotlib_support()
     editor.add_widget_to_stack(ipython_runner[0].panel,
                                on_ipython_popup)
     return ipython_runner[0]
@@ -217,6 +236,7 @@ def show_ipython(editor):
         if editor.snaked_conf['IPYTHON_GRAB_FOCUS_ON_SHOW']:
             runner.widget.grab_focus()
 
+
 def get_selection_or_buffer(editor):
     if editor.buffer.get_has_selection():
         return editor.buffer.get_text(*editor.buffer.get_selection_bounds())
@@ -232,6 +252,7 @@ def send_code(editor):
     lines = get_selection_or_current_line(editor)
     runner.run_lines(lines)
 
+
 def show_and_run(editor, lines):
     runner = get_ipython_runner(editor)
     if not runner.visible():
@@ -239,13 +260,16 @@ def show_and_run(editor, lines):
         editor.popup_widget(runner.panel)
     runner.run_lines(lines)
 
+
 def run_file(editor):
-    lines = [ '%%run %s' % editor.uri ]
+    lines = ['%%run %s' % editor.uri]
     show_and_run(editor, lines)
 
+
 def debug_file(editor):
-    lines = [ '%%run -d %s' %editor.uri ]
+    lines = ['%%run -d %s' % editor.uri]
     show_and_run(editor, lines)
+
 
 def restart_ipython(editor):
     runner = get_ipython_runner(editor)

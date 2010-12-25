@@ -74,9 +74,8 @@ class IterableIPShell:
         if argv is None:
             argv = []
 
-    # This is to get rid of the blockage that occurs during
-    # IPython.Shell.InteractiveShell.user_setup()
-
+        # This is to get rid of the blockage that occurs during
+        # IPython.Shell.InteractiveShell.user_setup()
         IPython.iplib.raw_input = lambda x: None
 
         orig_stdout = sys.stdout
@@ -116,13 +115,10 @@ class IterableIPShell:
             if self.IP.autoindent:
                 self.IP.readline_startup_hook(None)
         except KeyboardInterrupt:
-            self.IP.write('''
-KeyboardInterrupt
-''')
+            self.IP.write('KeyboardInterrupt')
             self.IP.resetbuffer()
 
-      # keep cache in sync with the prompt counter:
-
+            # keep cache in sync with the prompt counter:
             self.IP.outputcache.prompt_count -= 1
 
             if self.IP.autoindent:
@@ -171,7 +167,7 @@ KeyboardInterrupt
             completed = line[:-len(split_line[-1])] + common_prefix
         else:
             completed = line
-        return (completed, possibilities)
+        return completed, possibilities
 
     def _commonPrefix(self, str1, str2):
         for i in range(len(str1)):
@@ -191,12 +187,9 @@ KeyboardInterrupt
         if verbose or debug:
             print header + cmd
 
-    # flush stdout so we don't mangle python's buffering
-
+        # flush stdout so we don't mangle python's buffering
         if not debug:
-
-      # input, output = os.popen4(cmd)
-
+            # input, output = os.popen4(cmd)
             p = subprocess.Popen(
                 cmd,
                 shell=True,
@@ -205,7 +198,7 @@ KeyboardInterrupt
                 stderr=subprocess.STDOUT,
                 close_fds=True,
                 )
-            (input, output) = (p.stdin, p.stdout)
+            input, output = p.stdin, p.stdout
             print output.read()
             output.close()
             input.close()
@@ -346,7 +339,7 @@ class IPythonView(ConsoleView, IterableIPShell):
         elif event.keyval == gtk.keysyms.Tab:
             if not self.getCurrentLine().strip():
                 return False
-            (completed, possibilities) = \
+            completed, possibilities = \
                 self.complete(self.getCurrentLine())
             if len(possibilities) > 1:
                 slice = self.getCurrentLine()
