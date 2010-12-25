@@ -58,7 +58,7 @@ def get_manager():
         active_file = manager.snaked_conf['ACTIVE_FILE']
 
         #open the last file specified in args, if any
-        active_file = ( len(args)>0 and args[-1] ) or active_file
+        active_file = ( args and args[-1] ) or active_file
 
         editor_to_focus = None
         for f in session_files + args:
