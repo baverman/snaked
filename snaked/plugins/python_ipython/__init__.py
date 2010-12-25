@@ -161,6 +161,8 @@ def init(manager):
                          send_code)
     manager.add_shortcut('run-code-file', 'F6', 'IPython',
                          'Run current file in IPython', run_file)
+    manager.add_shortcut('debug', '<ctrl>F6', 'IPython',
+                         'Debug current file in IPython', debug_file)
     manager.add_shortcut('restart-ipython', '<ctrl><shift>i', 'IPython'
                          , 'Restart IPython', restart_ipython)
 
@@ -230,16 +232,20 @@ def send_code(editor):
     lines = get_selection_or_current_line(editor)
     runner.run_lines(lines)
 
-
-def run_file(editor):
+def show_and_run(editor, lines):
     runner = get_ipython_runner(editor)
     if not runner.visible():
         runner.show()
         editor.popup_widget(runner.panel)
+    runner.run_lines(lines)
 
-    line = [ '%%run %s' % editor.uri ]
-    runner.run_lines(line)
+def run_file(editor):
+    lines = [ '%%run %s' % editor.uri ]
+    show_and_run(editor, lines)
 
+def debug_file(editor):
+    lines = [ '%%run -d %s' %editor.uri ]
+    show_and_run(editor, lines)
 
 def restart_ipython(editor):
     runner = get_ipython_runner(editor)
