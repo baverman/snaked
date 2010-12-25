@@ -102,6 +102,7 @@ class IterableIPShell:
         self.complete_sep = re.compile('[\s\{\}\[\]\(\)]')
         sys.stdout = orig_stdout
         sys.stderr = orig_stderr
+        self.interrupt_in_last_line = False
 
     def execute(self):
         self.history_level = 0
@@ -115,7 +116,7 @@ class IterableIPShell:
             if self.IP.autoindent:
                 self.IP.readline_startup_hook(None)
         except KeyboardInterrupt:
-            self.IP.write('KeyboardInterrupt')
+            self.IP.write('KeyboardInterrupt\n')
             self.IP.resetbuffer()
 
             # keep cache in sync with the prompt counter:
@@ -124,13 +125,20 @@ class IterableIPShell:
             if self.IP.autoindent:
                 self.IP.indent_current_nsp = 0
             self.iter_more = 0
+            self.interrupt_in_last_line = True
         except:
             self.IP.showtraceback()
+            self.interrupt_in_last_line = True
         else:
             self.iter_more = self.IP.push(line)
             if self.IP.SyntaxTB.last_syntax_error \
                 and self.IP.rc.autoedit_syntax:
                 self.IP.edit_syntax_error()
+                self.interrupt_in_last_line = True
+            if self.IP.SyntaxTB.last_syntax_error or self.iter_more is None:
+                self.interrupt_in_last_line = True
+            else:
+                self.interrupt_in_last_line = False
         if self.iter_more:
             self.prompt = str(self.IP.outputcache.prompt2).strip()
             if self.IP.autoindent:
@@ -227,6 +235,7 @@ class ConsoleView(gtk.TextView):
                 self.text_buffer.get_end_iter(), True)
         self.connect('key-press-event', self._onKeypress)
         self.last_cursor_pos = 0
+        self.auto_indent = True
 
     def write(self, text, editable=False):
         segments = self.color_pat.split(text)
@@ -254,7 +263,8 @@ class ConsoleView(gtk.TextView):
         self.write(prompt)
         self.text_buffer.move_mark(self.line_start,
                                    self.text_buffer.get_end_iter())
-        self.write(' ' * self.IP.indent_current_nsp)
+        if self.auto_indent:
+            self.write(' ' * self.IP.indent_current_nsp, editable=True)
         self.text_buffer.place_cursor(self.text_buffer.get_end_iter())
 
     def changeLine(self, text):
