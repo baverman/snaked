@@ -235,6 +235,7 @@ def run_file(editor):
     runner = get_ipython_runner(editor)
     if not runner.visible():
         runner.show()
+        editor.popup_widget(runner.panel)
 
     line = [ '%%run %s' % editor.uri ]
     runner.run_lines(line)
