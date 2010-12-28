@@ -78,31 +78,33 @@ class IterableIPShell:
         # IPython.Shell.InteractiveShell.user_setup()
         IPython.iplib.raw_input = lambda x: None
 
+        self.interrupt_in_last_line = False
+
         orig_stdout = sys.stdout
         orig_stderr = sys.stderr
         sys.stdout = IPython.Shell.Term.cout
         sys.stderr = IPython.Shell.Term.cerr
+        try:
+            self.term = IPython.genutils.IOTerm(cin=cin, cout=cout,
+                    cerr=cerr)
+            os.environ['TERM'] = 'dumb'
+            excepthook = sys.excepthook
 
-        self.term = IPython.genutils.IOTerm(cin=cin, cout=cout,
-                cerr=cerr)
-        os.environ['TERM'] = 'dumb'
-        excepthook = sys.excepthook
-
-        self.IP = IPython.Shell.make_IPython(argv, user_ns=user_ns,
-                user_global_ns=user_global_ns, embedded=True,
-                shell_class=IPython.Shell.InteractiveShell)
-        self.IP.system = lambda cmd: \
-            self.shell(self.IP.var_expand(cmd),
-                       header='IPython system call: ',
-                       verbose=self.IP.rc.system_verbose)
-        self.IP.api.system = self.IP.system
-        sys.excepthook = excepthook
-        self.iter_more = 0
-        self.history_level = 0
-        self.complete_sep = re.compile('[\s\{\}\[\]\(\)]')
-        sys.stdout = orig_stdout
-        sys.stderr = orig_stderr
-        self.interrupt_in_last_line = False
+            self.IP = IPython.Shell.make_IPython(argv, user_ns=user_ns,
+                    user_global_ns=user_global_ns, embedded=True,
+                    shell_class=IPython.Shell.InteractiveShell)
+            self.IP.system = lambda cmd: \
+                self.shell(self.IP.var_expand(cmd),
+                           header='IPython system call: ',
+                           verbose=self.IP.rc.system_verbose)
+            self.IP.api.system = self.IP.system
+            sys.excepthook = excepthook
+            self.iter_more = 0
+            self.history_level = 0
+            self.complete_sep = re.compile('[\s\{\}\[\]\(\)]')
+        finally:
+            sys.stdout = orig_stdout
+            sys.stderr = orig_stderr
 
     def execute(self):
         self.history_level = 0
@@ -135,18 +137,21 @@ class IterableIPShell:
                 and self.IP.rc.autoedit_syntax:
                 self.IP.edit_syntax_error()
                 self.interrupt_in_last_line = True
-            if self.IP.SyntaxTB.last_syntax_error or self.iter_more is None:
+            if self.IP.SyntaxTB.last_syntax_error or self.iter_more \
+                is None:
                 self.interrupt_in_last_line = True
             else:
                 self.interrupt_in_last_line = False
+        finally:
+            sys.stdout = orig_stdout
+            sys.stderr = orig_stderr
+
         if self.iter_more:
             self.prompt = str(self.IP.outputcache.prompt2).strip()
             if self.IP.autoindent:
                 self.IP.readline_startup_hook(self.IP.pre_readline)
         else:
             self.prompt = str(self.IP.outputcache.prompt1).strip()
-        sys.stdout = orig_stdout
-        sys.stderr = orig_stderr
 
     def historyBack(self):
         self.history_level -= 1
@@ -251,6 +256,7 @@ class ConsoleView(gtk.TextView):
                 i = segments.index(tag)
                 self.text_buffer.insert_with_tags_by_name(self.text_buffer.get_end_iter(),
                         segments[i + 1], tag)
+                segments.pop(i)
                 segments.pop(i)
         if not editable:
             self.text_buffer.apply_tag_by_name('notouch',
