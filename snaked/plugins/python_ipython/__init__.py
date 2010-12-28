@@ -250,12 +250,8 @@ def get_selection_or_buffer(editor):
 
 
 def send_code(editor):
-    runner = get_ipython_runner(editor)
-    if not runner.visible():
-        runner.show()
-
     lines = get_selection_or_current_line(editor)
-    runner.run_lines(lines)
+    show_and_run(editor, lines)
 
 
 def show_and_run(editor, lines):
