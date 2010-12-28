@@ -299,6 +299,10 @@ class ConsoleView(gtk.TextView):
         self.showPrompt(self.prompt)
 
     def _onKeypress(self, obj, event):
+        start_iter = self.text_buffer.get_iter_at_mark(self.line_start)
+        if event.keyval == gtk.keysyms.Home:
+            self.text_buffer.place_cursor(start_iter)
+            return True
         if not event.string:
             return
         insert_mark = self.text_buffer.get_insert()
@@ -306,7 +310,8 @@ class ConsoleView(gtk.TextView):
         selection_mark = self.text_buffer.get_selection_bound()
         selection_iter = \
             self.text_buffer.get_iter_at_mark(selection_mark)
-        start_iter = self.text_buffer.get_iter_at_mark(self.line_start)
+
+
         if start_iter.compare(insert_iter) <= 0 \
             and start_iter.compare(selection_iter) <= 0:
             return
@@ -317,6 +322,11 @@ class ConsoleView(gtk.TextView):
             self.text_buffer.move_mark(insert_mark, start_iter)
         elif insert_iter.compare(selection_iter) > 0:
             self.text_buffer.move_mark(selection_mark, start_iter)
+
+    def cursor_at_last_line(self):
+        insert_iter = self.text_buffer.get_iter_at_mark(self.text_buffer.get_insert())
+        start_iter = self.text_buffer.get_iter_at_mark(self.line_start)
+        return start_iter.compare(insert_iter)<=0
 
 
 class IPythonView(ConsoleView, IterableIPShell):
@@ -347,10 +357,10 @@ class IPythonView(ConsoleView, IterableIPShell):
         elif event.keyval == gtk.keysyms.Return:
             self._processLine()
             return True
-        elif event.keyval == gtk.keysyms.Up:
+        elif (not event.state & gtk.gdk.CONTROL_MASK) and self.cursor_at_last_line() and event.keyval == gtk.keysyms.Up:
             self.changeLine(self.historyBack())
             return True
-        elif event.keyval == gtk.keysyms.Down:
+        elif (not event.state & gtk.gdk.CONTROL_MASK) and self.cursor_at_last_line() and event.keyval == gtk.keysyms.Down:
             self.changeLine(self.historyForward())
             return True
         elif event.keyval == gtk.keysyms.Tab:
