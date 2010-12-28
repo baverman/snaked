@@ -142,16 +142,18 @@ class IterableIPShell:
                 self.interrupt_in_last_line = True
             else:
                 self.interrupt_in_last_line = False
+
+            if self.iter_more:
+                self.prompt = str(self.IP.outputcache.prompt2).strip()
+                if self.IP.autoindent:
+                    self.IP.readline_startup_hook(self.IP.pre_readline)
+            else:
+                self.prompt = str(self.IP.outputcache.prompt1).strip()
+
         finally:
             sys.stdout = orig_stdout
             sys.stderr = orig_stderr
 
-        if self.iter_more:
-            self.prompt = str(self.IP.outputcache.prompt2).strip()
-            if self.IP.autoindent:
-                self.IP.readline_stxartup_hook(self.IP.pre_readline)
-        else:
-            self.prompt = str(self.IP.outputcache.prompt1).strip()
 
     def historyBack(self):
         history = ''
