@@ -100,7 +100,7 @@ class IterableIPShell:
             self.IP.api.system = self.IP.system
             sys.excepthook = excepthook
             self.iter_more = 0
-            self.history_level = 0
+            self.initHistoryIndex()
             self.complete_sep = re.compile('[\s\{\}\[\]\(\)]')
         finally:
             sys.stdout = orig_stdout
@@ -149,24 +149,47 @@ class IterableIPShell:
         if self.iter_more:
             self.prompt = str(self.IP.outputcache.prompt2).strip()
             if self.IP.autoindent:
-                self.IP.readline_startup_hook(self.IP.pre_readline)
+                self.IP.readline_stxartup_hook(self.IP.pre_readline)
         else:
             self.prompt = str(self.IP.outputcache.prompt1).strip()
 
     def historyBack(self):
-        self.history_level -= 1
-        return self._getHistory()
+        history = ''
+        # the below while loop is used to suppress empty history lines
+        while (history == '' or history == '\n') \
+            and self._history_level > 0:
+            if self._history_level >= 1:
+                self._history_level -= 1
+            history = self._getHistory()
+        return history
 
     def historyForward(self):
-        self.history_level += 1
-        return self._getHistory()
+        history = ''
+        # the below while loop is used to suppress empty history lines
+        while (history == '' or history == '\n') \
+            and self._history_level <= self._getHistoryMaxIndex():
+            if self._history_level < self._getHistoryMaxIndex():
+                self._history_level += 1
+                history = self._getHistory()
+            else:
+                if self._history_level == self._getHistoryMaxIndex():
+                    history = self._getHistory()
+                    self._history_level += 1
+                else:
+                    history = ''
+        return history
+
+    def initHistoryIndex(self):
+        self._history_level = self._getHistoryMaxIndex() + 1
+
+    def _getRawHistoryList(self):
+        return self.IP.input_hist_raw
+
+    def _getHistoryMaxIndex(self):
+        return len(self._getRawHistoryList()) - 1
 
     def _getHistory(self):
-        try:
-            rv = self.IP.user_ns['In'][self.history_level].strip('\n')
-        except IndexError:
-            self.history_level = 0
-            rv = ''
+        rv = self.IP.input_hist_raw[self._history_level].strip('\n')
         return rv
 
     def updateNamespace(self, ns_dict):
@@ -311,7 +334,6 @@ class ConsoleView(gtk.TextView):
         selection_iter = \
             self.text_buffer.get_iter_at_mark(selection_mark)
 
-
         if start_iter.compare(insert_iter) <= 0 \
             and start_iter.compare(selection_iter) <= 0:
             return
@@ -324,9 +346,10 @@ class ConsoleView(gtk.TextView):
             self.text_buffer.move_mark(selection_mark, start_iter)
 
     def cursor_at_last_line(self):
-        insert_iter = self.text_buffer.get_iter_at_mark(self.text_buffer.get_insert())
+        insert_iter = \
+            self.text_buffer.get_iter_at_mark(self.text_buffer.get_insert())
         start_iter = self.text_buffer.get_iter_at_mark(self.line_start)
-        return start_iter.compare(insert_iter)<=0
+        return start_iter.compare(insert_iter) <= 0
 
 
 class IPythonView(ConsoleView, IterableIPShell):
@@ -357,10 +380,14 @@ class IPythonView(ConsoleView, IterableIPShell):
         elif event.keyval == gtk.keysyms.Return:
             self._processLine()
             return True
-        elif (not event.state & gtk.gdk.CONTROL_MASK) and self.cursor_at_last_line() and event.keyval == gtk.keysyms.Up:
+        elif not event.state & gtk.gdk.CONTROL_MASK \
+            and self.cursor_at_last_line() and event.keyval \
+            == gtk.keysyms.Up:
             self.changeLine(self.historyBack())
             return True
-        elif (not event.state & gtk.gdk.CONTROL_MASK) and self.cursor_at_last_line() and event.keyval == gtk.keysyms.Down:
+        elif not event.state & gtk.gdk.CONTROL_MASK \
+            and self.cursor_at_last_line() and event.keyval \
+            == gtk.keysyms.Down:
             self.changeLine(self.historyForward())
             return True
         elif event.keyval == gtk.keysyms.Tab:
@@ -379,12 +406,12 @@ class IPythonView(ConsoleView, IterableIPShell):
 
     def _processLine(self):
         self.write('\n')
-        self.history_level = 0
         self.execute()
         rv = self.cout.getvalue()
         if rv:
             rv = rv.strip('\n')
         self.showReturned(rv)
         self.cout.truncate(0)
+        self.initHistoryIndex()
 
 
