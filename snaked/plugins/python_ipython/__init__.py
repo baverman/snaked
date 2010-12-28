@@ -45,6 +45,8 @@ class SnakedIPythonView(IPythonView):
         import __builtin__
         __builtin__.raw_input = self._raw_input
 
+        self.last_run_command = None
+
     def _write(self, txt):
         self.write(txt)
         self.flush()
@@ -62,6 +64,11 @@ class SnakedIPythonView(IPythonView):
         if prompt == 'ipdb> ':
             title = 'Input pdb command'
         return getText(prompt=prompt, title=title)
+
+    def commandProcessed(self, cmd):
+        cmd = cmd.strip()
+        if cmd.startswith('run ') or cmd.startswith('%run '):
+            self.last_run_command = cmd
 
 
 class IPythonRunner:
@@ -116,6 +123,9 @@ class IPythonRunner:
             self.run_lines_hidden(['import matplotlib',
                                   'matplotlib.use("GTKAgg")',
                                   'matplotlib.interactive(1)'])
+
+    def get_last_run_command(self):
+        return self.widget.last_run_command
 
 
 def get_selection_or_current_line(editor):
@@ -176,8 +186,10 @@ def init(manager):
     manager.add_shortcut('run-current-code', '<ctrl>r', 'IPython',
                          'Send current line or selection to IPython',
                          send_code)
-    manager.add_shortcut('run-code-file', 'F6', 'IPython',
+    manager.add_shortcut('run-file', 'F6', 'IPython',
                          'Run current file in IPython', run_file)
+    manager.add_shortcut('run-last', '<shift>F6', 'IPython',
+                         'Execute last run command', run_last)
     manager.add_shortcut('debug', '<ctrl>F6', 'IPython',
                          'Debug current file in IPython', debug_file)
     manager.add_shortcut('restart-ipython', '<ctrl><shift>i', 'IPython'
@@ -260,6 +272,15 @@ def show_and_run(editor, lines):
         runner.show()
         editor.popup_widget(runner.panel)
     runner.run_lines(lines)
+
+
+def run_last(editor):
+    runner = get_ipython_runner(editor)
+    cmd = runner.get_last_run_command()
+    if cmd is not None:
+        show_and_run(editor, [cmd])
+    else:
+        editor.message('No recent run command.')
 
 
 def run_file(editor):

@@ -149,11 +149,16 @@ class IterableIPShell:
                     self.IP.readline_startup_hook(self.IP.pre_readline)
             else:
                 self.prompt = str(self.IP.outputcache.prompt1).strip()
-
+                if self._getRawHistoryList() \
+                    and self._getRawHistoryList()[-1]:
+                    self.commandProcessed(self._getRawHistoryList()[-1])
         finally:
+
             sys.stdout = orig_stdout
             sys.stderr = orig_stderr
 
+    def commandProcessed(self, command):
+        pass
 
     def historyBack(self):
         history = ''
@@ -221,7 +226,7 @@ class IterableIPShell:
         header='',
         ):
 
-        stat = 0
+        #stat = 0
         if verbose or debug:
             print header + cmd
 
