@@ -254,8 +254,9 @@ class ConsoleView(gtk.TextView):
             ansi_tags = self.color_pat.findall(text)
             for tag in ansi_tags:
                 i = segments.index(tag)
-                self.text_buffer.insert_with_tags_by_name(self.text_buffer.get_end_iter(),
-                        segments[i + 1], tag)
+                if segments[i + 1]:
+                    self.text_buffer.insert_with_tags_by_name(self.text_buffer.get_end_iter(),
+                            segments[i + 1], tag)
                 segments.pop(i)
                 segments.pop(i)
         if not editable:
