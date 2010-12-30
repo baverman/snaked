@@ -178,14 +178,21 @@ def get_tag(editor):
     table = editor.buffer.get_tag_table()
     tag = table.lookup('search')
     if not tag:
-        style = editor.buffer.get_style_scheme().get_style('search-match')
         tag = editor.buffer.create_tag('search')
+        style = editor.buffer.get_style_scheme().get_style('search-match')
+        if style:
+            if style.props.background_set:
+                tag.props.background = style.props.background
 
-        if style.props.background_set:
-            tag.props.background = style.props.background
+            if style.props.foreground_set:
+                tag.props.foreground = style.props.foreground
+        else:
+            style = editor.buffer.get_style_scheme().get_style('text')
+            if style.props.background_set:
+                tag.props.foreground = style.props.background
 
-        if style.props.foreground_set:
-            tag.props.foreground = style.props.foreground
+            if style.props.foreground_set:
+                tag.props.background = style.props.foreground
 
     return tag
 
