@@ -114,46 +114,51 @@ class IterableIPShell:
         sys.stderr = IPython.Shell.Term.cerr
 
         try:
-            line = self.IP.raw_input(None, self.iter_more)
-            if self.IP.autoindent:
-                self.IP.readline_startup_hook(None)
-        except KeyboardInterrupt:
-            self.IP.write('KeyboardInterrupt\n')
-            self.IP.resetbuffer()
+            lines = self.IP.raw_input(None, self.iter_more).split('\n')
+            for line in lines:
+                try:
+                    if self.IP.autoindent:
+                        self.IP.readline_startup_hook(None)
+                except KeyboardInterrupt:
+                    self.IP.write('KeyboardInterrupt\n')
+                    self.IP.resetbuffer()
 
-            # keep cache in sync with the prompt counter:
-            self.IP.outputcache.prompt_count -= 1
+                    # keep cache in sync with the prompt counter:
+                    self.IP.outputcache.prompt_count -= 1
 
-            if self.IP.autoindent:
-                self.IP.indent_current_nsp = 0
-            self.iter_more = 0
-            self.interrupt_in_last_line = True
-        except:
-            self.IP.showtraceback()
-            self.interrupt_in_last_line = True
-        else:
-            self.iter_more = self.IP.push(line)
-            if self.IP.SyntaxTB.last_syntax_error \
-                and self.IP.rc.autoedit_syntax:
-                self.IP.edit_syntax_error()
-                self.interrupt_in_last_line = True
-            if self.IP.SyntaxTB.last_syntax_error or self.iter_more \
-                is None:
-                self.interrupt_in_last_line = True
-            else:
-                self.interrupt_in_last_line = False
+                    if self.IP.autoindent:
+                        self.IP.indent_current_nsp = 0
+                    self.iter_more = 0
+                    self.interrupt_in_last_line = True
+                except:
+                    self.IP.showtraceback()
+                    self.interrupt_in_last_line = True
+                else:
+                    self.iter_more = self.IP.push(line)
+                    if self.IP.SyntaxTB.last_syntax_error \
+                        and self.IP.rc.autoedit_syntax:
+                        self.IP.edit_syntax_error()
+                        self.interrupt_in_last_line = True
+                    if self.IP.SyntaxTB.last_syntax_error \
+                        or self.iter_more is None:
+                        self.interrupt_in_last_line = True
+                    else:
+                        self.interrupt_in_last_line = False
 
-            if self.iter_more:
-                self.prompt = str(self.IP.outputcache.prompt2).strip()
-                if self.IP.autoindent:
-                    self.IP.readline_startup_hook(self.IP.pre_readline)
-            else:
-                self.prompt = str(self.IP.outputcache.prompt1).strip()
-                if self._getRawHistoryList() \
-                    and self._getRawHistoryList()[-1]:
-                    self.commandProcessed(self._getRawHistoryList()[-1])
+                    if self.iter_more:
+                        self.prompt = \
+                            str(self.IP.outputcache.prompt2).strip()
+                        if self.IP.autoindent:
+                            self.IP.readline_startup_hook(self.IP.pre_readline)
+                    else:
+                        self.prompt = \
+                            str(self.IP.outputcache.prompt1).strip()
+                        if self._getRawHistoryList() \
+                            and self._getRawHistoryList()[-1]:
+                            self.commandProcessed(self._getRawHistoryList()[-1])
+                if self.interrupt_in_last_line:
+                    break
         finally:
-
             sys.stdout = orig_stdout
             sys.stderr = orig_stderr
 
@@ -226,7 +231,7 @@ class IterableIPShell:
         header='',
         ):
 
-        #stat = 0
+        # stat = 0
         if verbose or debug:
             print header + cmd
 
@@ -305,8 +310,7 @@ class ConsoleView(gtk.TextView):
         self.text_buffer.place_cursor(self.text_buffer.get_end_iter())
 
     def changeLine(self, text):
-        iter = self.text_buffer.get_iter_at_mark(self.line_start)
-        iter.forward_to_line_end()
+        iter = self.text_buffer.get_end_iter()
         self.text_buffer.delete(self.text_buffer.get_iter_at_mark(self.line_start),
                                 iter)
         self.write(text, True)
