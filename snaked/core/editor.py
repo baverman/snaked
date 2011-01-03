@@ -97,9 +97,13 @@ class Editor(SignalManager):
                 try:
                     import chardet
                     result = chardet.detect(text)
-                    utext = text.decode(result['encoding'])
-                    self.encoding = result['encoding']
-                    idle(self.message, 'Automatically selected ' + self.encoding + 'encoding', 5000)
+                    if result['encoding']:
+                        utext = text.decode(result['encoding'])
+                        self.encoding = result['encoding']
+                        idle(self.message, 'Automatically selected ' + self.encoding + 'encoding', 5000)
+                    else:
+                        self.saveable = False
+                        utext = 'Is this a text file?'
                 except ImportError:
                     self.saveable = False
                     utext = str(e)

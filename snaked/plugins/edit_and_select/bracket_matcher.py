@@ -109,11 +109,14 @@ def mark_bracket(buf, iter, tag):
 
     buf.apply_tag(tag, iter, end)
 
-def get_tag(buf, type):
+def get_tag(buf, type, fallback='bracket-match'):
     table = buf.get_tag_table()
     tag = table.lookup(type)
     if not tag:
         style = buf.get_style_scheme().get_style(type)
+        if not style:
+            style = buf.get_style_scheme().get_style(fallback)
+
         tag = buf.create_tag(type)
 
         if style.props.background_set:

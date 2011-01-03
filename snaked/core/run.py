@@ -1,6 +1,5 @@
 from optparse import OptionParser
 import os
-import glib
 
 def select_session():
     import gtk
@@ -38,97 +37,58 @@ def get_manager():
         help="Show dialog to select session at startup", default=False)
 
     options, args = parser.parse_args()
-
-    distant = False
-    FIFO = '/tmp/snaked.io.%s'%options.session
-    fifo_start = '00005'
-
-    if os.path.exists(FIFO):
-        try:
-            fd = open(FIFO, 'w+')
-            fd.write('%s%04d\n'%(fifo_start, len(args)))
-            distant = True
-            out_descr = fd
-        except Exception, e:
-            print "Error opening socket: %r"%(e)
-            try:
-                os.unlink(FIFO)
-            except OSError:
-                pass
-
-    if distant:
-        if not args:
-            print "Snaked (%s) is already running !\nIf not try to remove %s"%(options.session, FIFO)
-            raise SystemExit(1)
-        print "Transmitting file information to snaked"
-        for fname in args:
-            msg = "FILE:%s\n"%os.path.abspath(fname)
-            out_descr.write('%05d%s'%(len(msg), msg))
-        raise SystemExit()
-    else:
-        os.mkfifo(FIFO)
-        out_descr = open(FIFO, 'r+')
-
-    import gobject
-    gobject.threads_init()
-    from .tabbed import TabbedEditorManager
-
     if options.select_session:
         options.session = select_session()
 
-    manager = TabbedEditorManager(options.session)
+    from .app import is_master, serve
 
-    opened_files = []
+    master, conn = is_master(options.session)
+    if master:
+        import gobject
+        gobject.threads_init()
+        from .tabbed import TabbedEditorManager
 
-    session_files = []
-    active_file = None
+        manager = TabbedEditorManager(options.session)
+        opened_files = []
 
-    session_files = manager.snaked_conf['OPENED_FILES']
-    active_file = manager.snaked_conf['ACTIVE_FILE']
+        session_files = []
+        active_file = None
 
-    editor_to_focus = None
-    for f in session_files + args:
-        f = os.path.abspath(f)
-        if f not in opened_files and (not os.path.exists(f) or os.path.isfile(f)):
-            e = manager.open(f)
-            if f == active_file:
-                editor_to_focus = e
-            opened_files.append(f)
+        session_files = manager.snaked_conf['OPENED_FILES']
+        active_file = manager.snaked_conf['ACTIVE_FILE']
 
-    if not manager.editors:
-        import snaked.core.quick_open
-        snaked.core.quick_open.activate(manager.get_fake_editor())
+        #open the last file specified in args, if any
+        active_file = ( args and args[-1] ) or active_file
 
-    if editor_to_focus and active_file != opened_files[-1]:
-        manager.focus_editor(editor_to_focus)
+        editor_to_focus = None
+        for f in session_files + args:
+            f = os.path.abspath(f)
+            if f not in opened_files and (not os.path.exists(f) or os.path.isfile(f)):
+                e = manager.open(f)
+                if f == active_file:
+                    editor_to_focus = e
+                opened_files.append(f)
 
-    if not distant:
-        import atexit
-        def remove_socket(fd, fname):
-            fd.close()
-            os.unlink(fname)
+        if not manager.editors:
+            import snaked.core.quick_open
+            snaked.core.quick_open.quick_open(manager.get_fake_editor())
 
-        atexit.register(remove_socket, out_descr, FIFO)
+        if editor_to_focus and active_file != opened_files[-1]:
+            manager.focus_editor(editor_to_focus)
 
-        def file_injector(fd, flag):
-            sz = int(fd.read(5))
-            count = int(fd.read(sz))
-            for n in xrange(count):
-                sz = int(fd.read(5))
-                data = fd.read(sz)
-                if data.startswith('FILE:'):
-                    fname = data[5:-1]
-                    if fname not in opened_files: # FIXME: this is unreliable, is there some list in manager ?
-                        manager.open(fname)
-                        opened_files.append(fname)
-                else:
-                    print "Unknown descriptor"
-            return True
-        glib.io_add_watch(out_descr, glib.IO_IN|glib.IO_HUP, file_injector)
-    return manager
+        serve(manager, conn)
+
+        return manager
+    else:
+        conn.send(['OPEN'] + list(map(os.path.abspath, args)))
+        conn.send(['END'])
+        conn.close()
+        return None
 
 def run():
     manager = get_manager()
+    if not manager:
+        return
 
     import gtk
 
