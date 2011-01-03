@@ -23,6 +23,7 @@ import os
 import pango
 import subprocess
 from StringIO import StringIO
+import re
 
 try:
     import IPython
@@ -48,6 +49,22 @@ ansi_colors = {
     '1;37': 'White',
     }
 
+
+init_space_re = re.compile(r'^([\s\t]*)')
+
+def process_gap_indent(lines):
+    '''
+    Add proper indentation to the blank lines between blocks
+    '''
+    last_indent = ''
+    for l in lines[:-1]:
+        l = l.rstrip()
+        if not l:
+            l = last_indent
+        else:
+            last_indent = init_space_re.match(l).group(1)
+        yield l
+    yield lines[-1]
 
 class IterableIPShell:
 
@@ -102,12 +119,12 @@ class IterableIPShell:
             self.iter_more = 0
             self.initHistoryIndex()
             self.complete_sep = re.compile('[\s\{\}\[\]\(\)]')
+            self.prompt = str(self.IP.outputcache.prompt1).strip()
         finally:
             sys.stdout = orig_stdout
             sys.stderr = orig_stderr
 
     def execute(self):
-        self.history_level = 0
         orig_stdout = sys.stdout
         orig_stderr = sys.stderr
         sys.stdout = IPython.Shell.Term.cout
@@ -115,7 +132,7 @@ class IterableIPShell:
 
         try:
             lines = self.IP.raw_input(None, self.iter_more).split('\n')
-            for line in lines:
+            for line in process_gap_indent(lines):
                 try:
                     if self.IP.autoindent:
                         self.IP.readline_startup_hook(None)
@@ -153,6 +170,7 @@ class IterableIPShell:
                     else:
                         self.prompt = \
                             str(self.IP.outputcache.prompt1).strip()
+                        self.IP.indent_current_nsp = 0
                         if self._getRawHistoryList() \
                             and self._getRawHistoryList()[-1]:
                             self.commandProcessed(self._getRawHistoryList()[-1])
@@ -372,7 +390,7 @@ class IPythonView(ConsoleView, IterableIPShell):
                                  input_func=self.raw_input)
         self.interrupt = False
         self.connect('key_press_event', self.keyPress)
-        self.execute()
+        #self.execute()
 
         self.cout.truncate(0)
         self.showPrompt(self.prompt)

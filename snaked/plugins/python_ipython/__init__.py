@@ -82,10 +82,11 @@ class IPythonRunner:
         auto_indent = self.widget.auto_indent
         self.widget.auto_indent = False
         for line in code_lines:
-            self.widget.write(line)
-            self.widget._processLine()
-            if self.widget.interrupt_in_last_line:
-                break
+            if line.rstrip():
+                self.widget.write(line)
+                self.widget._processLine()
+                if self.widget.interrupt_in_last_line:
+                    break
         self.widget.auto_indent = auto_indent
 
     def run_lines_hidden(self, code_lines):
