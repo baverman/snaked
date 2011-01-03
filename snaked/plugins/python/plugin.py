@@ -269,7 +269,7 @@ class Plugin(object):
         source, offset = self.get_source_and_offset()
 
         # make foo.bar.baz( equivalent to foo.bar.baz
-        if source[offset-1] == '(':
+        if source[offset-1] in '(.':
             offset -= 1
 
         brackets = get_brackets(source, offset)
