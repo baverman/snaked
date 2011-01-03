@@ -28,7 +28,6 @@ def create_console_widget():
     panel.view = gtk.TextView()
     panel.view.set_editable(False)
     panel.view.set_buffer(gtk.TextBuffer())
-    panel.view.modify_font(pango.FontDescription('Mono'))
     panel.add(panel.view)
     panel.view.show()
 
@@ -48,6 +47,8 @@ def hide(editor, widget, escape):
     editor.view.grab_focus()
 
 def on_console_popup(widget, editor):
+    if editor.snaked_conf['CONSOLE_FONT']:
+        widget.view.modify_font(pango.FontDescription(editor.snaked_conf['CONSOLE_FONT']))
     widget.escape = Escape()
     editor.push_escape(hide, widget, widget.escape)
 
