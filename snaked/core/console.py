@@ -1,5 +1,6 @@
 import gtk
 import glib
+import pango
 
 from snaked.util import refresh_gui
 
@@ -27,6 +28,7 @@ def create_console_widget():
     panel.view = gtk.TextView()
     panel.view.set_editable(False)
     panel.view.set_buffer(gtk.TextBuffer())
+    panel.view.modify_font(pango.FontDescription('Mono'))
     panel.add(panel.view)
     panel.view.show()
 
