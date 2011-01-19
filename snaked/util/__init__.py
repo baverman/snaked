@@ -134,6 +134,28 @@ def set_activate_the_one_item(entry, treeview):
 
     entry.connect('activate', activate)
 
+def mimic_to_sourceview_theme(textview, sourceview):
+    """Gets font and bg settings from gtksourceview and applies it to textview
+
+    :type textview: gtk.TextView()
+    :type sourceview: gtksourceview2.View()
+
+    """
+
+    style = sourceview.get_buffer().get_style_scheme().get_style('text')
+    if style:
+        if style.props.background_set:
+            textview.modify_base(gtk.STATE_NORMAL, gtk.gdk.color_parse(style.props.background))
+        if style.props.foreground_set:
+            textview.modify_text(gtk.STATE_NORMAL, gtk.gdk.color_parse(style.props.foreground))
+
+    style = sourceview.get_buffer().get_style_scheme().get_style('selection')
+    if style:
+        if style.props.background_set:
+            textview.modify_base(gtk.STATE_SELECTED, gtk.gdk.color_parse(style.props.background))
+        if style.props.foreground_set:
+            textview.modify_text(gtk.STATE_SELECTED, gtk.gdk.color_parse(style.props.foreground))
+
 
 class BuilderAware(object):
     def __init__(self, glade_file):

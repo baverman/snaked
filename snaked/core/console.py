@@ -2,7 +2,7 @@ import gtk
 import glib
 import pango
 
-from snaked.util import refresh_gui
+from snaked.util import mimic_to_sourceview_theme
 
 console_widget = []
 
@@ -15,6 +15,10 @@ def get_console_widget(editor):
         pass
 
     w = create_console_widget()
+
+    if editor.snaked_conf['MIMIC_PANEL_COLORS_TO_EDITOR_THEME']:
+        mimic_to_sourceview_theme(w.view, editor.view)
+
     console_widget.append(w)
 
     editor.add_widget_to_stack(w, on_console_popup)
