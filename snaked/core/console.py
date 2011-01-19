@@ -1,5 +1,6 @@
 import gtk
 import glib
+import pango
 
 from snaked.util import refresh_gui
 
@@ -46,6 +47,8 @@ def hide(editor, widget, escape):
     editor.view.grab_focus()
 
 def on_console_popup(widget, editor):
+    if editor.snaked_conf['CONSOLE_FONT']:
+        widget.view.modify_font(pango.FontDescription(editor.snaked_conf['CONSOLE_FONT']))
     widget.escape = Escape()
     editor.push_escape(hide, widget, widget.escape)
 

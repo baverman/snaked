@@ -25,7 +25,7 @@ class PreferencesDialog(BuilderAware):
             self.langs.append((lang_id, ))
 
         sm = gtksourceview2.style_scheme_manager_get_default()
-        for style_id in sm.get_scheme_ids():
+        for style_id in sorted(sm.get_scheme_ids()):
             self.styles.append((style_id, ))
 
         self.checks = ['use-tabs', 'show-right-margin', 'show-line-numbers', 'wrap-text',

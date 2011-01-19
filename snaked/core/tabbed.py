@@ -125,6 +125,7 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
         self.activator.bind_to_name('quit', self.quit)
         self.activator.bind_to_name('close-window', self.close_editor)
         self.activator.bind_to_name('save', self.save)
+        self.activator.bind_to_name('save-all', self.save_all)
         self.activator.bind_to_name('next-editor', self.switch_to, 1)
         self.activator.bind_to_name('prev-editor', self.switch_to, -1)
         self.activator.bind_to_name('next-editor-alt', self.switch_to, 1)
@@ -240,3 +241,7 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
             return
 
         self.note.reorder_child(editor.widget, pos)
+
+    def activate_main_window(self):
+        self.window.present()
+        self.window.present_with_time(gtk.get_current_event_time())

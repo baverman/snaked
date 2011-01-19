@@ -31,6 +31,9 @@ class SnakedConf(prefs.PySettings):
     PANEL_HEIGHT = 200
     PANEL_HEIGHT_DOC = "Console, test and other panels height"
 
+    CONSOLE_FONT = "Mono 8"
+    CONSOLE_FONT_DOC = "Font used for console display"
+
 def add_option(name, default, doc=None):
     setattr(SnakedConf, name, default)
     if doc:

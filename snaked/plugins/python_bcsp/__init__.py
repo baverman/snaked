@@ -35,7 +35,7 @@ def process_error(editor):
 def on_editor_before_file_save(editor):
     import ast
     try:
-        ast.parse(editor.utext, editor.uri)
+        ast.parse(editor.utext.encode(editor.encoding), editor.uri)
     except SyntaxError, e:
         message = '%s at line <b>%d</b>' % (glib.markup_escape_text(e.msg), e.lineno)
         if e.text:
