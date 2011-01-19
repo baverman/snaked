@@ -31,7 +31,7 @@ class SnakedConf(prefs.PySettings):
     PANEL_HEIGHT = 200
     PANEL_HEIGHT_DOC = "Console, test and other panels height"
 
-    CONSOLE_FONT = "Monospaced 8"
+    CONSOLE_FONT = "Monospace 8"
     CONSOLE_FONT_DOC = "Font used for console display"
 
     MIMIC_PANEL_COLORS_TO_EDITOR_THEME = True
