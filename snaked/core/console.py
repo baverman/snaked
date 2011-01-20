@@ -1,3 +1,4 @@
+import os
 import gtk
 import glib
 import pango
@@ -5,6 +6,7 @@ import pango
 from snaked.util import mimic_to_sourceview_theme
 
 console_widget = []
+pty_master = [None]
 
 class Escape(object): pass
 
@@ -72,8 +74,22 @@ def consume_output(editor, proc, on_finish):
     glib.io_add_watch(proc.stderr, glib.IO_IN|glib.IO_ERR|glib.IO_HUP,
         consume_io, editor, console, proc, on_finish)
 
+def consume_pty(editor, proc, master, on_finish):
+    console = get_console_widget(editor)
+    buf = console.view.get_buffer()
+    buf.delete(*buf.get_bounds())
+    unblock_fd(master)
+    glib.io_add_watch(master, glib.IO_IN|glib.IO_ERR|glib.IO_HUP,
+        consume_io, editor, console, proc, on_finish)
+
+    pty_master[0] = master
+
 def consume_io(f, cond, editor, console, proc, on_finish):
-    data = f.read()
+    if isinstance(f, int):
+        data = os.read(f, 1024)
+    else:
+        data = f.read()
+
     if data:
         if not console.props.visible:
             editor.popup_widget(console)
@@ -87,7 +103,19 @@ def consume_io(f, cond, editor, console, proc, on_finish):
     if proc.poll() is not None:
         if not getattr(proc, 'consume_done', False):
             proc.consume_done = True
+            if pty_master[0] == f:
+                pty_master[0] = None
             on_finish()
         return False
 
     return True
+
+def send_to_console(editor):
+    selection = editor.selection
+    if selection:
+        if pty_master[0]:
+            os.write(pty_master[0], selection)
+        else:
+            editor.message('There is no interactive console')
+    else:
+        editor.message('You need to select something')

@@ -210,12 +210,34 @@ class Editor(SignalManager):
         return self.buffer.get_text(*self.buffer.get_bounds())
 
     @property
+    def selection(self):
+        """Return buffer's selection or none as utf-8 encoded string
+
+        :rtype: str
+        """
+        if self.buffer.get_has_selection():
+            return self.buffer.get_text(*self.buffer.get_selection_bounds())
+        else:
+            None
+
+    @property
+    def uselection(self):
+        """Return buffer's selection or none as unicode string
+
+        :rtype: str
+        """
+        if self.buffer.get_has_selection():
+            return self.selection
+        else:
+            None
+
+    @property
     def utext(self):
         """Return buffer's content as unicode string
 
         :rtype: unicode
         """
-        return unicode(self.buffer.get_text(*self.buffer.get_bounds()), 'utf-8')
+        return unicode(self.text, 'utf-8')
 
     def goto_line(self, line, minimal=False):
         iterator = self.buffer.get_iter_at_line(line - 1)

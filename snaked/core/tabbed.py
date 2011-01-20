@@ -56,6 +56,8 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
         register_shortcut('fullscreen', 'F11', 'Window', 'Toggles fullscreen mode')
 
         register_shortcut('toggle-console', '<alt>grave', 'Window', 'Toggles console')
+        register_shortcut('send-to-console', '<alt>Return', 'Window',
+            'Send selection or buffer to console')
 
         if self.snaked_conf['RESTORE_POSITION'] and 'LAST_POSITION' in self.snaked_conf:
             pos, size = self.snaked_conf['LAST_POSITION']
@@ -144,6 +146,7 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
         self.activator.bind_to_name('move-tab-right', self.move_tab, True)
 
         self.activator.bind_to_name('toggle-console', self.toggle_console)
+        self.activator.bind_to_name('send-to-console', self.send_to_console)
 
         self.activator.bind('Escape', self.process_escape)
 
@@ -222,6 +225,10 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
     def toggle_console(self, editor):
         from snaked.core.console import toggle_console
         toggle_console(editor)
+
+    def send_to_console(self, editor):
+        from snaked.core.console import send_to_console
+        send_to_console(editor)
 
     def on_page_reordered(self, note, child, num):
         for i, e in enumerate(self.editors):

@@ -2,7 +2,7 @@ import re
 
 allowed_inputs = ('from-buffer-or-selection', 'from-buffer', 'from-selection')
 allowed_outputs = ('replace-buffer-or-selection', 'replace-buffer', 'replace-selection',
-    'to-console', 'to-feedback', 'to-clipboard', 'insert', 'insert-at-end')
+    'to-console', 'to-iconsole', 'to-feedback', 'to-clipboard', 'insert', 'insert-at-end')
 
 remove_tags = re.compile(r'<[^<]*?/?>')
 
