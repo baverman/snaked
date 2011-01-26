@@ -165,11 +165,14 @@ def run(editor, tool):
     env['FILENAME'] = editor.uri
     env['OFFSET'] = str(editor.cursor.get_offset())
 
-    proc = Popen(command_to_run, stdout=PIPE, stderr=PIPE, bufsize=1,
-        stdin=PIPE if stdin else None, cwd=editor.project_root, env=env)
-
     def on_finish():
         os.remove(filename)
+
+    if tool.output == 'to-iconsole':
+        return run_cmd_in_tty(command_to_run, editor, env, on_finish)
+
+    proc = Popen(command_to_run, stdout=PIPE, stderr=PIPE, bufsize=1,
+        stdin=PIPE if stdin else None, cwd=editor.project_root, env=env)
 
     if tool.output == 'to-console':
         from snaked.core.console import consume_output
@@ -179,11 +182,22 @@ def run(editor, tool):
             proc.stdin.close()
 
         consume_output(editor, proc, on_finish)
-
     else:
         stdout, stderr = proc.communicate(stdin)
         on_finish()
         process_stdout(editor, stdout, stderr, tool.output)
+
+def run_cmd_in_tty(cmd, editor, env, on_finish):
+    import pty
+    from subprocess import Popen
+    from snaked.core.console import consume_pty
+
+    master, slave = pty.openpty()
+
+    proc = Popen(cmd, stdout=slave, stderr=slave,
+        stdin=slave, cwd=editor.project_root, env=env)
+
+    consume_pty(editor, proc, master, on_finish)
 
 def edit_external_tools(editor):
     import shutil

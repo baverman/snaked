@@ -40,7 +40,7 @@ class EditorManager(object):
             'editor', 'font', 'style', 'margin', 'line', 'tab', 'whitespace')
 
         prefs.register_dialog('Global preferences', self.show_global_preferences,
-            'snaked', 'preferences')
+            'snaked', 'global', 'preferences')
 
         prefs.register_dialog('Session preferences', self.show_session_preferences,
             'session', 'preferences')

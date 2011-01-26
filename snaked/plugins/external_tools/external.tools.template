@@ -26,6 +26,7 @@
 #   insert
 #   insert-at-end
 #   to-console
+#   to-iconsole               
 #   to-feedback
 #   to-clipboard
 #
