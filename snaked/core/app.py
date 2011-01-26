@@ -15,7 +15,7 @@ def create_master_listener(fd):
 
 def is_master(session):
     # Ahtung! Possible races, for example on opening multiple files from file browser.
-    filename = '/tmp/snaked.session.' + session
+    filename = '/tmp/snaked.session.%i.%s' % (os.geteuid(), session)
     try:
         fd = os.open(filename, os.O_WRONLY | os.O_CREAT | os.O_EXCL)
         return True, create_master_listener(fd)
