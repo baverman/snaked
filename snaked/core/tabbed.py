@@ -26,8 +26,6 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
 
         # set border width handling, see self.on_state_event for more details
         self.window.connect('window-state-event', self.on_state_event)
-        self.note.set_border_width(0)
-        self.note.set_show_border(False)
 
         self.window.set_property('default-width', 800)
         self.window.set_property('default-height', 500)
@@ -43,6 +41,7 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
         self.note.set_scrollable(True)
         self.note.set_property('tab-hborder', 10)
         self.note.set_property('homogeneous', False)
+        self.note.set_show_border(False)
         self.note.connect_after('switch-page', self.on_switch_page)
         self.note.connect('page_removed', self.on_page_removed)
         self.note.connect('page_reordered', self.on_page_reordered)
@@ -118,18 +117,18 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
 
     def on_state_event(self, widget, event):
         """Sets the window border depending on state
-        
+
         The window border eases the resizing of the window using the mouse.
         In maximized and fullscreen state the this use case is irrelevant.
         Removing the border in this cases makes it easier to hit the scrollbar.
-        
+
         Unfortunately this currently only works with tabs hidden.
         """
         state = event.new_window_state
         if state & gtk.gdk.WINDOW_STATE_MAXIMIZED or state & gtk.gdk.WINDOW_STATE_FULLSCREEN:
             self.window.set_border_width(0)
         else:
-            self.window.set_border_width(2)
+            self.window.set_border_width(self.snaked_conf['WINDOW_BORDER_WIDTH'])
 
     def close_editor(self, editor):
         idx = self.note.page_num(editor.widget)
