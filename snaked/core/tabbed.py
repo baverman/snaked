@@ -23,6 +23,7 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
 
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.set_name('SnakedWindow')
+        self.window.set_role('Editor')
         self.window.connect('delete-event', self.on_delete_event)
 
         # set border width handling, see self.on_state_event for more details
