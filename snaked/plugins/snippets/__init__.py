@@ -234,10 +234,10 @@ class StopManager(object):
 
         self.insert_marks = {}
         for i in sorted(insert_offsets):
-            s, e = insert_offsets[i]
-            s = buf.create_mark(None, buf.get_iter_at_offset(offset + s), True)
-            e = buf.create_mark(None, buf.get_iter_at_offset(offset + e))
-            self.insert_marks[i] = s, e
+            for s, e in insert_offsets[i]:
+                s = buf.create_mark(None, buf.get_iter_at_offset(offset + s), True)
+                e = buf.create_mark(None, buf.get_iter_at_offset(offset + e))
+                self.insert_marks.setdefault(i, []).append((s, e))
 
         try:
             self.goto_stop(min(self.stop_marks))
@@ -304,11 +304,12 @@ class StopManager(object):
             if idx is not None:
                 if idx in self.insert_marks:
                     txt = self.buffer.get_text(*self.get_iter_pair(*self.stop_marks[idx]))
-                    s, e = self.insert_marks[idx]
+
                     self.buffer.handler_block_by_func(on_buffer_changed)
                     self.buffer.begin_user_action()
-                    self.buffer.delete(*self.get_iter_pair(s, e))
-                    self.buffer.insert(self.buffer.get_iter_at_mark(s), txt)
+                    for s, e in self.insert_marks[idx]:
+                        self.buffer.delete(*self.get_iter_pair(s, e))
+                        self.buffer.insert(self.buffer.get_iter_at_mark(s), txt)
                     self.buffer.end_user_action()
                     self.buffer.handler_unblock_by_func(on_buffer_changed)
 

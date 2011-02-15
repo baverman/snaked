@@ -52,12 +52,11 @@ class Snippet(object):
                 if e >= start: e += dt
                 tab_offsets[k] = s, e
 
-            insert_offsets[idx] = start, end
+            insert_offsets.setdefault(idx, []).append((start, end))
 
             return replace
 
         body = matcher.sub(replace_stops, body)
-
         delta[0] = 0
         body = re.sub(ur'\$(\d+)', replace_inserts, body)
 
