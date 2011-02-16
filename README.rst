@@ -11,7 +11,8 @@ Documentation
 -------------
 
 May be found at http://packages.python.org/snaked/index.html
-
+Current docs are a some sort of outdated and match 0.4.6 version.
+Work in progress.
 
 Features
 --------
