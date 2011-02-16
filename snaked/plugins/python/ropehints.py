@@ -1,4 +1,4 @@
-import re
+import re, sys
 
 import weakref
 
@@ -7,6 +7,7 @@ import rope.base.pyobjects
 import rope.base.pynames
 from rope.base import exceptions
 from rope.base.pyobjectsdef import PyModule, PyPackage, PyClass
+from rope.base.builtins import BuiltinModule
 
 class ReplacedName(rope.base.pynames.PyName):
     def __init__(self, pyobject, pyname):
@@ -18,6 +19,15 @@ class ReplacedName(rope.base.pynames.PyName):
 
     def get_definition_location(self):
         return self.pyname.get_definition_location()
+
+
+def builtin_module(self):
+    try:
+        __import__(self.name)
+        return sys.modules[self.name]
+    except ImportError:
+        return
+BuiltinModule.module = property(builtin_module)
 
 
 def infer_parameter_objects_with_hints(func):
