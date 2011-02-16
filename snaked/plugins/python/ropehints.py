@@ -369,6 +369,14 @@ class CompositeHintProvider(HintProvider):
 
         self.add_hint_provider(ScopeHintProvider(project, self.db))
 
+        # prepopulate popular dynamic modules
+        existing_modules = project.prefs['extension_modules'] or []
+        for m in ('os._path', 'itertools'):
+            if m not in existing_modules:
+                existing_modules.append(m)
+        project.prefs['extension_modules'] = existing_modules
+        project.prefs['ignore_bad_imports'] = True
+
         from .dochints import DocStringHintProvider
         self.add_hint_provider(DocStringHintProvider(project))
 

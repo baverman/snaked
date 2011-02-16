@@ -21,8 +21,10 @@ class RopeProjectManager(object):
             self.hints_filename = os.path.join(project.ropefolder.real_path, 'ropehints.py')
             self.hints_monitor = gio.File(self.hints_filename).monitor_file()
             weak_connect(self.hints_monitor, 'changed', self, 'on_hints_file_changed')
+        else:
+            self.hints_filename = None
 
-            self.refresh_hints()
+        self.refresh_hints()
 
     def refresh_hints(self):
         self.project.pycore.module_cache.forget_all_data()
@@ -74,7 +76,7 @@ class Plugin(object):
         from rope.base.fscommands import FileSystemCommands
 
         if not root:
-            self.editor.message('Rope warning: there is no project. Assist was degraded')
+            self.editor.message('Rope warning: there is no project. Assist was degraded', 3000)
             project = NoProject()
             project.validate = lambda *args: None
             project.root = None

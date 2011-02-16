@@ -114,7 +114,6 @@ class RopeCompletionProvider(gobject.GObject, CompletionProvider):
 
     def do_populate(self, context):
         project = self.plugin().project_manager.project
-
         from rope.contrib import codeassist
 
         try:
