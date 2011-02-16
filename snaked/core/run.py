@@ -51,10 +51,7 @@ def get_manager():
         manager = TabbedEditorManager(options.session)
         opened_files = []
 
-        session_files = []
-        active_file = None
-
-        session_files = manager.snaked_conf['OPENED_FILES']
+        session_files = filter(os.path.exists, manager.snaked_conf['OPENED_FILES'])
         active_file = manager.snaked_conf['ACTIVE_FILE']
 
         #open the last file specified in args, if any
