@@ -1,4 +1,4 @@
-eauthor = 'Anton Bobrov<bobrov@vl.ru>'
+author = 'Anton Bobrov<bobrov@vl.ru>'
 name = 'Edit and Select'
 desc = 'Various edit shortcuts'
 
@@ -15,6 +15,11 @@ def init(manager):
     manager.add_shortcut('show_offset', '<ctrl><alt>o', 'Edit',
         'Show cursor offset and column', show_offset)
     manager.add_shortcut('wrap-text', '<alt>f', 'Edit', 'Wrap text on right margin width', wrap_text)
+
+    manager.add_shortcut('move-selection-left', '<alt>Left', 'Edit',
+        'Move selection to one char left', move_word_left)
+    manager.add_shortcut('move-selection-right', '<alt>Right', 'Edit',
+        'Move selection to one char right', move_word_right)
 
     manager.add_global_option('DOUBLE_BRACKET_MATCHER', True, "Enable custom bracket matcher")
     manager.add_global_option('COPY_DELETED_LINE', True, "Put deleted line into clipboard")
@@ -106,3 +111,53 @@ def wrap_text(editor):
     buf.delete(start, end)
     buf.insert_at_cursor(text)
     buf.end_user_action()
+
+def move_word(buf, fromiter, tomark):
+    toiter = fromiter.copy()
+    toiter.forward_char()
+
+    text = fromiter.get_text(toiter)
+
+    buf.begin_user_action()
+    buf.delete(fromiter, toiter)
+    buf.insert(buf.get_iter_at_mark(tomark), text)
+    buf.end_user_action()
+
+def has_selection(func):
+    def inner(editor):
+        if not editor.buffer.get_has_selection():
+            editor.message('Select something to move')
+            return
+
+        return func(editor)
+
+    return inner
+
+@has_selection
+def move_word_left(editor):
+    buf = editor.buffer
+    start, end = map(gtk.TextIter.copy, buf.get_selection_bounds())
+    start.order(end)
+
+    if not start.backward_char():
+        editor.message('You are already at begin of file')
+        return
+
+    move_word(buf, start, buf.create_mark(None, end))
+
+    start, end = buf.get_selection_bounds()
+    start.order(end)
+    end.backward_char()
+    buf.select_range(start, end)
+
+@has_selection
+def move_word_right(editor):
+    buf = editor.buffer
+    start, end = map(gtk.TextIter.copy, buf.get_selection_bounds())
+    start.order(end)
+
+    if end.is_end():
+        editor.message('You are already at end of file')
+        return
+
+    move_word(buf, end, buf.create_mark(None, start))
