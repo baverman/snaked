@@ -13,9 +13,12 @@ def create_master_listener(fd):
 
     return Listener(addr)
 
+def get_session_lock_file(session):
+    return '/tmp/snaked.session.%i.%s' % (os.geteuid(), session)
+
 def is_master(session):
     # Ahtung! Possible races, for example on opening multiple files from file browser.
-    filename = '/tmp/snaked.session.%i.%s' % (os.geteuid(), session)
+    filename = get_session_lock_file(session)
     try:
         fd = os.open(filename, os.O_WRONLY | os.O_CREAT | os.O_EXCL)
         return True, create_master_listener(fd)
@@ -61,7 +64,7 @@ def serve(manager, listener):
     def on_quit():
         listener.close()
         try:
-            os.unlink('/tmp/snaked.session.' + manager.session)
+            os.unlink(get_session_lock_file(manager.session))
         except:
             pass
 
