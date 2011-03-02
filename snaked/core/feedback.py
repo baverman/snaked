@@ -30,6 +30,9 @@ class FeedbackPopup(object):
 
         self.window.add(self.bar)
 
+        self.window.realize()
+        self.window.window.set_override_redirect(True)
+
         self.timeout_id = None
 
         self.escape = None
