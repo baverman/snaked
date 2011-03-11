@@ -128,7 +128,7 @@ def lazy_property(func):
 
 def set_activate_the_one_item(entry, treeview):
     def activate(*args):
-        if len(treeview.get_model()) == 1:
+        if len(treeview.get_model()):
             treeview.set_cursor((0,))
             treeview.row_activated((0,), treeview.get_column(0))
 
