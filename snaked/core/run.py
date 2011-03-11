@@ -35,6 +35,8 @@ def get_manager():
         help="Open snaked with specified session", default='default')
     parser.add_option('', '--select-session', action="store_true", dest='select_session',
         help="Show dialog to select session at startup", default=False)
+    parser.add_option('-d', '--debug', action="store_true", dest='debug',
+        help="Run embedded drainhunter", default=False)
 
     options, args = parser.parse_args()
     if options.select_session:
@@ -74,6 +76,10 @@ def get_manager():
             manager.focus_editor(editor_to_focus)
 
         serve(manager, conn)
+
+        if options.debug:
+            import drainhunter.server
+            drainhunter.server.run()
 
         return manager
     else:
