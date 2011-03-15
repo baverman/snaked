@@ -1,3 +1,4 @@
+import sys
 import time
 
 from snaked.util import join_to_file_dir
@@ -53,7 +54,7 @@ def test_runner_must_return_runned_test_results():
     assert 'AttributeError' in result[9][2]
 
 def test_runner_must_ignore_skipped_collected_items():
-    result = collect_results(*run_test(join_to_file_dir(__file__),
+    result = collect_results(*run_test(join_to_file_dir(__file__), None,
         'test_first', files=['python_test/first.py']))
 
     assert result[1] == ('COLLECTED_TESTS', ['python_test/first.py::test_first'])
