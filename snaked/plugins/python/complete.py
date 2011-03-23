@@ -1,3 +1,4 @@
+import sys
 import textwrap
 
 import weakref
@@ -8,6 +9,24 @@ from gtksourceview2 import COMPLETION_ACTIVATION_USER_REQUESTED
 
 import gobject
 from glib import markup_escape_text
+
+envs = {}
+projects = {}
+
+def get_env_and_token(executable, editor):
+    try:
+        env = envs[executable]
+    except KeyError:
+        import supplement.remote
+        env = envs[executable] = supplement.remote.Environment(executable)
+        env.run()
+
+    try:
+        token = projects[editor.project_root]
+    except KeyError:
+        token = projects[editor.project_root] = env.get_project_token(editor.project_root)
+
+    return env, token
 
 def pangonify_rst(text):
     result = ''
@@ -67,17 +86,17 @@ class Proposal(gobject.GObject, CompletionProposal):
         self.proposal = proposal
 
     def do_get_label(self):
-        return self.proposal.name
+        return self.proposal
 
     def do_get_text(self):
-        return self.proposal.name
+        return self.proposal
 
-    def do_get_info(self):
-        info = self.proposal.get_doc()
-        if info:
-            return pangonify_rst(info)
-        else:
-            return ''
+    #def do_get_info(self):
+    #    info = self.proposal.get_doc()
+    #    if info:
+    #        return pangonify_rst(info)
+    #    else:
+    #        return ''
 
 class RopeCompletionProvider(gobject.GObject, CompletionProvider):
     def __init__(self, plugin):
@@ -105,26 +124,24 @@ class RopeCompletionProvider(gobject.GObject, CompletionProvider):
     def do_get_activation(self):
         return COMPLETION_ACTIVATION_USER_REQUESTED
 
-    def do_get_info_widget(self, proposal):
-        self.info_widget.label.set_markup(proposal.get_info())
-        return self.info_widget
+    #def do_get_info_widget(self, proposal):
+    #    self.info_widget.label.set_markup(proposal.get_info())
+    #    return self.info_widget
 
     def do_update_info(self, proposal, info):
         info.get_widget().label.set_markup(proposal.get_info())
 
     def do_populate(self, context):
-        project = self.plugin().project_manager.project
-        from rope.contrib import codeassist
-
+        env, token = get_env_and_token(sys.executable, self.plugin().editor)
         try:
-            proposals = codeassist.sorted_proposals(
-                codeassist.code_assist(project, *self.plugin().get_source_and_offset(),
-                    resource=self.plugin().get_rope_resource(project), maxfixes=3))
+            source, offset = self.plugin().get_source_and_offset()
+            proposals = env.assist(token, source, offset, '<string>')
 
         except Exception, e:
             import traceback
             traceback.print_exc()
             self.plugin().editor.message(str(e), 5000)
+            context.add_proposals(self, [], True)
             return
 
         if proposals:
