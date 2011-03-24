@@ -210,6 +210,7 @@ class EditorManager(object):
     @Editor.request_to_open_file
     def on_request_to_open_file(self, editor, filename, line, lang_id):
         self.add_spot(editor)
+        filename = os.path.normpath(filename)
 
         for e in self.editors:
             if e.uri == filename:
