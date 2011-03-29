@@ -28,6 +28,8 @@ def init(manager):
     manager.add_shortcut('toggle-test-panel', '<alt>1', 'Window',
         'Toggle test panel', toggle_test_panel)
 
+    manager.add_global_option('PYTHON_EXECUTABLE', None, 'Path to python executable')
+
     manager.add_global_option('PYTHON_SPYPKG_HANDLER_MAX_CHARS', 25,
         'Maximum allowed python package title length')
 
@@ -241,25 +243,25 @@ def pytest_available(editor):
 
     return True
 
-def set_last_run_test(func_name, filenames):
+def set_last_run_test(*args):
     if last_run_test:
-        last_run_test[0] = func_name, filenames
+        last_run_test[0] = args
     else:
-        last_run_test.append((func_name, filenames))
+        last_run_test.append(args)
 
 def run_all_tests(editor):
     if pytest_available(editor):
         editor.message('Collecting tests...')
-        set_last_run_test('', [])
-        get_pytest_runner(editor).run(editor)
+        set_last_run_test(editor.project_root, '', [])
+        get_pytest_runner(editor).run(editor, editor.project_root)
 
 def run_test(editor):
     if pytest_available(editor):
         filename, func_name = handlers[editor].get_scope()
         if filename:
             editor.message('Collecting tests...')
-            set_last_run_test(func_name, [filename])
-            get_pytest_runner(editor).run(editor, func_name, [filename])
+            set_last_run_test(editor.project_root, func_name, [filename])
+            get_pytest_runner(editor).run(editor, editor.project_root, func_name, [filename])
         else:
             editor.message('Test scope can not be defined')
 
@@ -269,4 +271,4 @@ def rerun_test(editor):
             editor.message('Collecting tests...')
             get_pytest_runner(editor).run(editor, *last_run_test[0])
         else:
-            editor.message('You do not run any test yet')
+            editor.message('You did not run any test yet')

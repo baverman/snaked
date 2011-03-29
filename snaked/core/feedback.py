@@ -8,7 +8,6 @@ class FeedbackPopup(object):
 
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.set_property('allow-shrink', True)
-        self.window.set_type_hint(gtk.gdk.WINDOW_TYPE_HINT_POPUP_MENU)
 
         self.window.props.skip_pager_hint = True
         self.window.props.skip_taskbar_hint = True
@@ -30,9 +29,20 @@ class FeedbackPopup(object):
 
         self.window.add(self.bar)
 
-        self.timeout_id = None
+        self.window.realize()
+        self.window.window.set_override_redirect(True)
 
+        self.timeout_id = None
         self.escape = None
+
+        self.handlers_connected = False
+
+    def focus_out_event(self, wnd, event):
+        self.window.hide()
+
+    def focus_in_event(self, wnd, event):
+        if self.timeout_id:
+            self.window.show()
 
     def remove_timeout(self):
         if self.timeout_id:
@@ -41,6 +51,12 @@ class FeedbackPopup(object):
         self.timeout_id = None
 
     def show(self, editor, text, timeout=1500, markup=False):
+        if not self.handlers_connected:
+            self.handlers_connected = True
+            toplevel = editor.view.get_toplevel()
+            toplevel.connect('focus-out-event', self.focus_out_event)
+            toplevel.connect('focus-in-event', self.focus_in_event)
+
         self.remove_timeout()
         if self.escape:
             self.hide()

@@ -1,4 +1,4 @@
-import re
+import re, sys
 
 import weakref
 
@@ -7,6 +7,7 @@ import rope.base.pyobjects
 import rope.base.pynames
 from rope.base import exceptions
 from rope.base.pyobjectsdef import PyModule, PyPackage, PyClass
+from rope.base.builtins import BuiltinModule
 
 class ReplacedName(rope.base.pynames.PyName):
     def __init__(self, pyobject, pyname):
@@ -18,6 +19,15 @@ class ReplacedName(rope.base.pynames.PyName):
 
     def get_definition_location(self):
         return self.pyname.get_definition_location()
+
+
+def builtin_module(self):
+    try:
+        __import__(self.name)
+        return sys.modules[self.name]
+    except ImportError:
+        return
+BuiltinModule.module = property(builtin_module)
 
 
 def infer_parameter_objects_with_hints(func):
@@ -368,6 +378,14 @@ class CompositeHintProvider(HintProvider):
         self.db.add_attribute('re$', 'MatchObject', 'snaked.plugins.python.stub.MatchObject')
 
         self.add_hint_provider(ScopeHintProvider(project, self.db))
+
+        # prepopulate popular dynamic modules
+        existing_modules = project.prefs['extension_modules'] or []
+        for m in ('os._path', 'itertools'):
+            if m not in existing_modules:
+                existing_modules.append(m)
+        project.prefs['extension_modules'] = existing_modules
+        project.prefs['ignore_bad_imports'] = True
 
         from .dochints import DocStringHintProvider
         self.add_hint_provider(DocStringHintProvider(project))

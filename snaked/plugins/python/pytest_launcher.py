@@ -2,14 +2,15 @@ import sys
 import os.path
 import time
 
-def run_test(project_dir, match=None, files=[]):
+def run_test(project_dir, executable=None, match=None, files=[]):
     from subprocess import Popen
     from multiprocessing.connection import Client, arbitrary_address
 
     addr = arbitrary_address('AF_UNIX')
     filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'launcher/pt.py')
 
-    args = [sys.executable, filename, addr, '-q']
+    executable = executable or sys.executable
+    args = [executable, filename, addr, '-q']
     if match:
         args.append('-k %s' % match)
 

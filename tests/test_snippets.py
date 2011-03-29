@@ -44,3 +44,16 @@ def test_snippet_body_and_offsets2():
     assert get_slice(body, *stop_offsets[4]) == 'raise e'
 
     assert get_slice(body, *stop_offsets[3]) == 'e'
+
+def test_snippet_body_and_offsets3(tmpdir):
+    snipp = tmpdir.join('snippet')
+    snipp.write('''snippet set
+\t@${1:propname}.setter
+\tdef $1(self, value):
+\t\tself._$1 = value''')
+
+    result = parse_snippets_from(str(snipp))
+    body, stop_offsets, insert_offsets = result['set'].get_body_and_offsets()
+
+    assert get_slice(body, *stop_offsets[1]) == 'propname'
+    assert insert_offsets[1] == [(21, 29), (51, 59)]

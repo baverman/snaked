@@ -80,3 +80,7 @@ def test_provider_must_allow_to_implement_glade_handlers(project):
     result = pset(get_proposals(project, 'pass\n\n'
         '   def on'))
     assert 'on_window1_delete_event' in result
+
+def test_glib_proposals(project):
+    module = project.pycore.get_module('glib')
+    assert 'timeout_add' in module

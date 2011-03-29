@@ -1,3 +1,4 @@
+import sys
 import os.path
 import weakref
 
@@ -52,7 +53,7 @@ class TestRunner(BuilderAware):
 
         return self.test_proc.poll() is None
 
-    def run(self, editor, matches='', files=[]):
+    def run(self, editor, project_root, matches='', files=[]):
         self.editor_ref = weakref.ref(editor)
         self.stop_running_test()
 
@@ -73,7 +74,9 @@ class TestRunner(BuilderAware):
         self.stop_run.show()
         self.trace_buttons.hide()
 
-        proc, conn = pytest_launcher.run_test(editor.project_root, matches, files)
+        executable = (editor.snaked_conf['PYTHON_EXECUTABLE'] if 'PYTHON_EXECUTABLE'
+            in editor.snaked_conf else sys.executable)
+        proc, conn = pytest_launcher.run_test(project_root, executable, matches, files)
         self.test_proc = proc
         self.timer_id = glib.timeout_add(100, self.collect, conn)
 

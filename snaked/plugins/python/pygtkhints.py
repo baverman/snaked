@@ -3,6 +3,7 @@ import re
 import xml.sax.handler
 import rope.base.pynames
 import rope.base.pyobjects
+from rope.base.exceptions import ModuleNotFoundError
 
 import gobject
 
@@ -158,9 +159,12 @@ class PyGtkHintProvider(HintProvider):
 
         if names:
             for t in gobject.signal_query(signal, str(cls))[-1]:
-                tname = self.get_type(self.get_pygtk_class_name(t.name))
-                if tname:
-                    attrs[idx] = tname.get_object()
+                try:
+                    tname = self.get_type(self.get_pygtk_class_name(t.name))
+                    if tname:
+                        attrs[idx] = tname.get_object()
+                except ModuleNotFoundError:
+                    pass
 
                 idx += 1
 

@@ -7,7 +7,7 @@ import gtk
 import gtksourceview2
 
 from ..util import save_file, idle, get_project_root, single_ref
-from ..signals import SignalManager, Signal, connect_all, connect_external
+from ..signals import SignalManager, Signal, connect_all, connect_external, weak_connect
 
 class Editor(SignalManager):
     add_spot_request = Signal()
@@ -65,7 +65,7 @@ class Editor(SignalManager):
         connect_all(self, buffer=self.buffer, view=self.view)
 
         if snaked_conf['DISABLE_LEFT_CLICK']:
-            self.view.connect('button-press-event', self.on_button_press_event)
+            weak_connect(self.view, 'button-press-event', self, 'on_button_press_event')
 
         self.snaked_conf = snaked_conf
 
@@ -294,6 +294,8 @@ class Editor(SignalManager):
         self.stack_popup_request.emit(widget)
 
     def on_close(self):
+        self.view.destroy()
+
         if self.buffer.get_modified():
             if 'MODIFIED_FILES' not in self.snaked_conf:
                 self.snaked_conf['MODIFIED_FILES'] = {}

@@ -1,57 +1,108 @@
 import weakref
+import ast
 import re
 
 from snaked.util import idle, join_to_file_dir, BuilderAware, refresh_gui, set_activate_the_one_item
 from snaked.core.shortcuts import ShortcutActivator
 
-matcher = re.compile(r'(?m)^(?P<level>[ \t]*)(?P<type>def|class)\s+(?P<name>\w+)\s*(\(|:)')
+match_ws = re.compile('^[ \t]+')
+def get_ws_len(line):
+    match = match_ws.search(line)
+    if match:
+        return len(match.group(0))
+    else:
+        return 0
 
-def get_outline(source):
-    last_start = 0
-    last_line = 1
-    cpath = ()
-    cpath_levels = (0,)
-    cname = None
-    for match in matcher.finditer(source):
-        last_line = last_line + source.count('\n', last_start, match.start())
-        last_start = match.start()
+def parse_bad_code(code, tries=4):
+    try:
+        return ast.parse(code)
+    except IndentationError, e:
+        if not tries:
+            raise
 
-        level, name = match.group('level', 'name')
-        level = len(level)
-        
-        if level < cpath_levels[-1]:
-            while level < cpath_levels[-1]:
-                cpath = cpath[:-1]
-                cpath_levels = cpath_levels[:-1]
-        elif level > cpath_levels[-1]:
-            cpath += (cname,)
-            cpath_levels += (level, )
+        code = code.splitlines()
+        result = []
+        for i, l in reversed(list(enumerate(code[:e.lineno-1]))):
+            if l.strip():
+                result.extend(code[:i])
+                result.append(l + ' pass')
+                result.extend(code[i+1:])
+                break
 
-        yield cpath, name, last_line
-        
-        cname = name
-            
+        return parse_bad_code('\n'.join(result), tries-1)
+
+    except SyntaxError, e:
+        if not tries:
+            raise
+
+        code = code.splitlines()
+        level = get_ws_len(code[e.lineno - 1])
+        result = code[:e.lineno-1]
+        result.append('')
+        for i, l in enumerate(code[e.lineno:], e.lineno):
+            if l.strip() and get_ws_len(l) <= level:
+                result.extend(code[i:])
+                break
+            else:
+                result.append('')
+
+        return parse_bad_code('\n'.join(result), tries-1)
+
+
+class OutlineVisitor(ast.NodeVisitor):
+    def __init__(self):
+        self.parent = ()
+        self.nodes = []
+
+    def process_childs(self,node):
+        self.parent += (node.name,)
+        self.generic_visit(node)
+        self.parent = self.parent[:-1]
+
+    def visit_ClassDef(self, node):
+        self.nodes.append((self.parent, node))
+        self.process_childs(node)
+
+    def visit_FunctionDef(self, node):
+        self.nodes.append((self.parent, node))
+        self.process_childs(node)
+
+
 class OutlineDialog(BuilderAware):
     def __init__(self):
         super(OutlineDialog, self).__init__(join_to_file_dir(__file__, 'outline.glade'))
         self.shortcuts = ShortcutActivator(self.window)
         self.shortcuts.bind('Escape', self.hide)
         self.shortcuts.bind('<alt>s', self.focus_search)
-        
+
         set_activate_the_one_item(self.search_entry, self.outline_tree)
 
     def show(self, editor):
+        self.tree = None
         self.editor = weakref.ref(editor)
         self.search_entry.grab_focus()
-        
+
         editor.request_transient_for.emit(self.window)
         self.window.present()
-        
+
         idle(self.fill)
+
+    def get_tree(self):
+        if not self.tree:
+            visitor = OutlineVisitor()
+            try:
+                tree = parse_bad_code(self.editor().text)
+                visitor.visit(tree)
+                self.tree = visitor.nodes
+            except (SyntaxError, IndentationError), e:
+                print e
+                self.tree = []
+
+        return self.tree
 
     def hide(self):
         self.window.hide()
-        
+
     def on_delete_event(self, *args):
         self.hide()
         return True
@@ -64,78 +115,72 @@ class OutlineDialog(BuilderAware):
             self.editor().goto_line(model.get_value(iter, 2))
         else:
             self.editor().message('You need select item')
-            
+
     def on_search_entry_changed(self, *args):
         what = self.search_entry.get_text().strip()
         if what:
             idle(self.filter, what)
         else:
             idle(self.fill)
-    
+
     def fill(self):
         self.outline.clear()
         current_search = object()
         self.current_search = current_search
-        
-        roots = (None, None)
-        ptop = ()
-        
+
+        roots = {():None}
+
         i = 0
-        for top, name, line in get_outline(self.editor().text):
+        for parent, node in self.get_tree():
             if self.current_search is not current_search:
                 return
 
-            if len(top) == len(ptop):
-                roots = roots[:-1] + (self.outline.append(roots[-2], (name, '', line)),)
-            elif len(top) > len(ptop):
-                roots = roots + (self.outline.append(roots[-1], (name, '', line)),)
-            else:
-                delta = len(ptop) - len(top) + 1
-                roots = roots[:-delta] + (self.outline.append(roots[-delta-1], (name, '', line)),)
+            roots[parent + (node.name,)] = self.outline.append(roots[parent],
+                (node.name, '', node.lineno))
 
-            ptop = top
-            
             if i % 10 == 0:
                 self.outline_tree.expand_all()
                 self.outline_tree.columns_autosize()
                 refresh_gui()
-                
+
             i += 1
 
-            self.outline_tree.expand_all()
-            self.outline_tree.columns_autosize()
-                
+        self.outline_tree.expand_all()
+        self.outline_tree.columns_autosize()
+
     def filter(self, search):
         self.outline.clear()
-        
+
         current_search = object()
         self.current_search = current_search
-        
+
         already_matched = {}
         i = 0
-        
+
         def name_starts(name):
             return name.startswith(search)
-            
+
         def name_contains(name):
             return search in name
-        
-        outline = list(get_outline(self.editor().text))
-        
+
+        outline = self.get_tree()
+
         for m in (name_starts, name_contains):
-            for top, name, line in outline:
+            for top, node in outline:
                 if self.current_search is not current_search:
                     return
-                
+
+                name, line = node.name, node.lineno
+
                 if (top, name) in already_matched: continue
-                
+
                 if m(name):
-                    already_matched[(top, name)] = True            
+                    already_matched[(top, name)] = True
                     self.outline.append(None, (name, u'/'.join(top), line))
-                
+
                 if i % 10 == 0:
                     refresh_gui()
-                    
+
                 i += 1
 
         self.outline_tree.columns_autosize()

@@ -37,6 +37,8 @@ class SnakedConf(prefs.PySettings):
     MIMIC_PANEL_COLORS_TO_EDITOR_THEME = True
     MIMIC_PANEL_COLORS_TO_EDITOR_THEME_DOC = "Try to apply editor color theme to various panels"
 
+    WINDOW_BORDER_WIDTH = 0
+    WINDOW_BORDER_WIDTH_DOC = "Adjust window border width if you have bad wm"
 
 def add_option(name, default, doc=None):
     setattr(SnakedConf, name, default)

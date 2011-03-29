@@ -127,10 +127,10 @@ def backward_word_start(iter, include_hyphen=False):
     iter = iter.copy()
     iter.backward_char()
     while char_is_word(iter.get_char(), include_hyphen):
-        iter.backward_char()
+        if not iter.backward_char():
+            return iter
 
     iter.forward_char()
-
     return iter
 
 def forward_word_end(iter, include_hyphen=False):
