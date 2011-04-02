@@ -6,6 +6,8 @@ import glib
 import pango
 import gtk
 
+from gtk.gdk import color_parse
+
 from snaked.util import BuilderAware, join_to_file_dir
 
 import pytest_launcher
@@ -25,6 +27,8 @@ class TestRunner(BuilderAware):
         self.view.set_wrap_mode(gtk.WRAP_WORD)
         self.buffer_place.add(self.view)
         self.view.show()
+
+        self.original_progress_color = self.progress.get_style().bg[gtk.STATE_SELECTED]
 
         self.editor_ref = None
         self.timer_id = None
@@ -70,6 +74,7 @@ class TestRunner(BuilderAware):
         self.prevent_scroll = False
         self.buffer.delete(*self.buffer.get_bounds())
         self.buffer.node = None
+        self.progress.modify_bg(gtk.STATE_SELECTED, self.original_progress_color)
         self.progress.set_text('Running tests')
         self.stop_run.show()
         self.trace_buttons.hide()
@@ -196,6 +201,8 @@ class TestRunner(BuilderAware):
         testname = self.tests.get_value(iter, 0)
         self.tests.set(iter, 0, u'\u2718 '.encode('utf8') + testname, 1, pango.WEIGHT_BOLD)
 
+        self.progress.modify_bg(gtk.STATE_SELECTED, color_parse('#7d2749'))
+
         if self.failed_tests_count == 1:
             self.tests_view.set_cursor(self.tests.get_path(iter))
             self.show()
@@ -219,6 +226,8 @@ class TestRunner(BuilderAware):
 
         if self.failed_tests_count:
             text.append('%d failed.' % self.failed_tests_count)
+        else:
+            self.progress.modify_bg(gtk.STATE_SELECTED, color_parse('#277d49'))
 
         self.progress.set_text(' '.join(text))
         self.progress_adj.set_value(self.tests_count)

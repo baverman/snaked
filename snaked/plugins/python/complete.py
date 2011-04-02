@@ -21,10 +21,11 @@ def get_env_and_token(executable, editor):
         env = envs[executable] = supplement.remote.Environment(executable)
         env.run()
 
+    root = editor.get_project_root(True)
     try:
-        token = projects[editor.project_root]
+        token = projects[root]
     except KeyError:
-        token = projects[editor.project_root] = env.get_project_token(editor.project_root)
+        token = projects[root] = env.get_project_token(root)
 
     return env, token
 
@@ -135,7 +136,7 @@ class RopeCompletionProvider(gobject.GObject, CompletionProvider):
         env, token = get_env_and_token(sys.executable, self.plugin().editor)
         try:
             source, offset = self.plugin().get_source_and_offset()
-            proposals = env.assist(token, source, offset, '<string>')
+            proposals = env.assist(token, source, offset, self.plugin().editor.uri)
 
         except Exception, e:
             import traceback
