@@ -155,7 +155,6 @@ class IterableIPShell:
                     if self.IP.SyntaxTB.last_syntax_error \
                         and self.IP.rc.autoedit_syntax:
                         self.IP.edit_syntax_error()
-                        self.interrupt_in_last_line = True
                     if self.IP.SyntaxTB.last_syntax_error \
                         or self.iter_more is None:
                         self.interrupt_in_last_line = True
