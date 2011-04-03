@@ -79,8 +79,10 @@ class TestRunner(BuilderAware):
         self.stop_run.show()
         self.trace_buttons.hide()
 
-        executable = (editor.snaked_conf['PYTHON_EXECUTABLE'] if 'PYTHON_EXECUTABLE'
-            in editor.snaked_conf else sys.executable)
+        executable = editor.snaked_conf['PYTHON_EXECUTABLE']
+        if executable == 'default':
+            executable = sys.executable
+
         proc, conn = pytest_launcher.run_test(project_root, executable, matches, files)
         self.test_proc = proc
         self.timer_id = glib.timeout_add(100, self.collect, conn)

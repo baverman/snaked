@@ -28,7 +28,8 @@ def init(manager):
     manager.add_shortcut('toggle-test-panel', '<alt>1', 'Window',
         'Toggle test panel', toggle_test_panel)
 
-    manager.add_global_option('PYTHON_EXECUTABLE', None, 'Path to python executable')
+    manager.add_global_option('PYTHON_EXECUTABLE', 'default',
+        'Path to python executable. Used by test runner and completion framework')
 
     manager.add_global_option('PYTHON_SPYPKG_HANDLER_MAX_CHARS', 25,
         'Maximum allowed python package title length')
