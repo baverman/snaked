@@ -82,10 +82,11 @@ class IPythonRunner:
         auto_indent = self.widget.auto_indent
         self.widget.auto_indent = False
         for line in code_lines:
-            self.widget.write(line)
-            self.widget._processLine()
-            if self.widget.interrupt_in_last_line:
-                break
+            if line.rstrip():
+                self.widget.write(line)
+                self.widget._processLine()
+                if self.widget.interrupt_in_last_line:
+                    break
         self.widget.auto_indent = auto_indent
 
     def run_lines_hidden(self, code_lines):
@@ -202,6 +203,7 @@ def init(manager):
                               False,
                               'Option controls matplotlib interactive mode in ipython console'
                               )
+    manager.add_global_option('IPYTHON_AUTOEXECUTE', '', 'Automatically run the specified scripts when the console is started.')
 
 
 def get_ipython_runner(editor):
@@ -217,6 +219,8 @@ def get_ipython_runner(editor):
     ipython_runner.append(IPythonRunner())
     if editor.snaked_conf['IPYTHON_MATPLOTLIB_INTERACTIVE_SUPPORT']:
         ipython_runner[0].enable_matplotlib_support()
+    if editor.snaked_conf['IPYTHON_AUTOEXECUTE']:
+        ipython_runner[0].run_lines_hidden(editor.snaked_conf['IPYTHON_AUTOEXECUTE'].split('\n'))
     editor.add_widget_to_stack(ipython_runner[0].panel,
                                on_ipython_popup)
     return ipython_runner[0]

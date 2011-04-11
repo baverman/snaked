@@ -56,7 +56,7 @@ def parse_name(line, lineno, what, where, message):
 
 active_process = [None]
 
-def get_problem_list(filename, pylint_cmd):
+def get_problem_list(filename, workingdir, pylint_cmd):
     import subprocess
     import shlex
 
@@ -65,8 +65,7 @@ def get_problem_list(filename, pylint_cmd):
     cmd = ['/usr/bin/env']
     cmd.extend(shlex.split(pylint_cmd))
     cmd.append(filename)
-
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    proc = subprocess.Popen(cmd, cwd=workingdir, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     active_process[0] = proc
     stdout, stderr = proc.communicate()
 
@@ -106,7 +105,7 @@ def add_job(editor):
 
     def job():
         try:
-            problems = get_problem_list(editor.uri, editor.snaked_conf['PYLINT_CMD'])
+            problems = get_problem_list(editor.uri, editor.project_root, editor.snaked_conf['PYLINT_CMD'])
         except Exception, e:
             idle(editor.message, str(e), 5000)
             return
