@@ -30,6 +30,8 @@ def init(manager):
 
     manager.add_global_option('PYTHON_EXECUTABLE', 'default',
         'Path to python executable. Used by test runner and completion framework')
+    manager.add_global_option('PYTHON_EXECUTABLE_ENV', {},
+        'Python interpreter environment. Used by test runner and completion framework')
 
     manager.add_global_option('PYTHON_SPYPKG_HANDLER_MAX_CHARS', 25,
         'Maximum allowed python package title length')

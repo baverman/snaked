@@ -13,12 +13,18 @@ from glib import markup_escape_text
 envs = {}
 projects = {}
 
-def get_env_and_token(executable, editor):
+def get_env_and_token(editor):
+    executable = editor.snaked_conf['PYTHON_EXECUTABLE']
+    if executable == 'default':
+        executable = sys.executable
+
+    env = editor.snaked_conf['PYTHON_EXECUTABLE_ENV']
+
     try:
         env = envs[executable]
     except KeyError:
         import supplement.remote
-        env = envs[executable] = supplement.remote.Environment(executable)
+        env = envs[executable] = supplement.remote.Environment(executable, env)
         env.run()
 
     root = editor.get_project_root(True)
@@ -133,7 +139,7 @@ class RopeCompletionProvider(gobject.GObject, CompletionProvider):
         info.get_widget().label.set_markup(proposal.get_info())
 
     def do_populate(self, context):
-        env, token = get_env_and_token(sys.executable, self.plugin().editor)
+        env, token = get_env_and_token(self.plugin().editor)
         try:
             source, offset = self.plugin().get_source_and_offset()
             proposals = env.assist(token, source, offset, self.plugin().editor.uri)
