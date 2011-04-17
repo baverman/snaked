@@ -83,7 +83,9 @@ class TestRunner(BuilderAware):
         if executable == 'default':
             executable = sys.executable
 
-        proc, conn = pytest_launcher.run_test(project_root, executable, matches, files)
+        env = editor.snaked_conf['PYTHON_EXECUTABLE_ENV']
+
+        proc, conn = pytest_launcher.run_test(project_root, executable, matches, files, env=env)
         self.test_proc = proc
         self.timer_id = glib.timeout_add(100, self.collect, conn)
 
