@@ -172,6 +172,13 @@ class EditorManager(object):
         style_scheme = self.style_manager.get_scheme(pref['style'])
         editor.buffer.set_style_scheme(style_scheme)
 
+        # Try to fix screen flickering
+        # No hope, should mail bug to upstream
+        #text_style = style_scheme.get_style('text')
+        #if text_style and editor.view.window:
+        #    color = editor.view.get_colormap().alloc_color(text_style.props.background)
+        #    editor.view.modify_bg(gtk.STATE_NORMAL, color)
+
         font = pango.FontDescription(pref['font'])
         editor.view.modify_font(font)
 

@@ -32,17 +32,14 @@ def init(manager):
         'Path to python executable. Used by test runner and completion framework')
     manager.add_global_option('PYTHON_EXECUTABLE_ENV', {},
         'Python interpreter environment. Used by test runner and completion framework')
+    manager.add_global_option('PYTHON_SUPP_CONFIG', {},
+        'Config for supplement')
 
     manager.add_global_option('PYTHON_SPYPKG_HANDLER_MAX_CHARS', 25,
         'Maximum allowed python package title length')
 
     manager.add_title_handler('pypkg', pypkg_handler)
     manager.add_title_handler('spypkg', spypkg_handler)
-
-    from snaked.core.prefs import register_dialog
-    register_dialog('Rope hints', edit_rope_hints, 'rope', 'hints')
-    register_dialog('Rope config', edit_rope_config, 'rope', 'config')
-
 
 def editor_created(editor):
     editor.connect('get-project-larva', on_editor_get_project_larva)
@@ -65,7 +62,7 @@ def quit():
         del outline_dialog
 
     import plugin
-    for v in plugin.project_managers.values():
+    for v in plugin.environments.values():
         v.close()
 
 def goto_definition(editor):
@@ -172,48 +169,6 @@ def open_outline(editor):
 
     outline_dialog.show(editor)
 
-def edit_rope_hints(editor):
-    import shutil
-    from os.path import join, exists, dirname
-    from snaked.util import make_missing_dirs
-
-    if not editor.project_root:
-        editor.message('Can not determine current project.\n'
-            'Are you editing read-only file?\n'
-            'Also check existence of .snaked_project directory', 8000)
-        return
-
-    ropehints = join(editor.project_root, '.ropeproject', 'ropehints.py')
-    if not exists(ropehints):
-        make_missing_dirs(ropehints)
-        shutil.copy(join(dirname(__file__), 'ropehints_tpl.py'), ropehints)
-
-    editor.open_file(ropehints)
-
-def edit_rope_config(editor):
-    from os.path import join, exists
-
-    if not editor.project_root:
-        editor.message('Can not determine current project.\n'
-            'Are you editing read-only file?\n'
-            'Also check existence of .snaked_project directory', 8000)
-        return
-
-    ropeconfig = join(editor.project_root, '.ropeproject', 'config.py')
-
-    if exists(ropeconfig):
-        editor.open_file(ropeconfig)
-    else:
-        if editor in handlers:
-            handlers[editor].project_manager
-
-        if exists(ropeconfig):
-            editor.open_file(ropeconfig)
-        else:
-            editor.message('There is no existing rope config.\n'
-                'Are you sure this is python project?\n'
-                'Try to open any python file', 8000)
-
 def get_pytest_runner(editor):
     """:rtype: snaked.plugins.python.pytest_runner.TestRunner()"""
     try:
@@ -261,6 +216,7 @@ def run_all_tests(editor):
 def run_test(editor):
     if pytest_available(editor):
         filename, func_name = handlers[editor].get_scope()
+        print 'SCOPE', filename, func_name
         if filename:
             editor.message('Collecting tests...')
             set_last_run_test(editor.project_root, func_name, [filename])

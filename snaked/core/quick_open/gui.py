@@ -229,9 +229,18 @@ class QuickOpenDialog(BuilderAware):
     def open_mime(self):
         fname, name, top = self.get_selected_file()
         if fname:
+            import gio
             self.hide()
             refresh_gui()
-            open_mime(fname)
+
+            f = gio.file_parse_name(fname)
+            ct = f.query_info(gio.FILE_ATTRIBUTE_STANDARD_CONTENT_TYPE).get_content_type()
+            ai = gio.app_info_get_default_for_type(ct, False)
+
+            if ai:
+                ai.launch([f])
+            else:
+                open_mime(fname)
 
     def focus_search(self):
         self.search_entry.grab_focus()
