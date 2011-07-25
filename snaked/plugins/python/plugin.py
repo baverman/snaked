@@ -154,38 +154,22 @@ class Plugin(object):
         return True
 
     def show_calltips(self):
-        project = self.project_manager.project
-        project.validate()
-
-        current_resource = self.get_rope_resource(project)
-
-        from rope.contrib import codeassist
-        from snaked.util.pairs_parser import get_brackets
-
         source, offset = self.get_source_and_offset()
-
-        # make foo.bar.baz( equivalent to foo.bar.baz
-        if source[offset-1] in '(.':
-            offset -= 1
-
-        brackets = get_brackets(source, offset)
-        if brackets:
-            br, spos, epos = brackets
-            if br == '(':
-                offset = spos - 1
-
         try:
-            doc = codeassist.get_doc(project, source, offset, resource=current_resource, maxfixes=3)
+            sig, docstring = self.env.get_docstring(self.project_path, source, offset, self.editor.uri)
         except Exception, e:
             import traceback
             traceback.print_exc()
             self.editor.message(str(e), 5000)
             return
 
-        if doc:
-            self.editor.message(doc.strip(), 20000)
+        if sig:
+            docstring = sig + '\n\n' + docstring if docstring is not None else ''
+
+        if docstring:
+            self.editor.message(docstring, 20000)
         else:
-            self.editor.message('Info not found')
+            self.editor.message('Info not found', 3000)
 
     def get_scope(self):
         source, _ = self.get_source_and_offset()
