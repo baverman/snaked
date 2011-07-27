@@ -117,8 +117,7 @@ class RopeCompletionProvider(gobject.GObject, CompletionProvider):
         root = self.plugin().project_path
         try:
             source, offset = self.plugin().get_source_and_offset()
-            proposals = env.assist(root, source, offset, self.plugin().editor.uri)
-
+            match, proposals = env.assist(root, source, offset, self.plugin().editor.uri)
         except Exception, e:
             import traceback
             traceback.print_exc()
