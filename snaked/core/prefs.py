@@ -86,7 +86,7 @@ class CompositePreferences(object):
 
 class KVSettings(object):
     def __init__(self, name):
-        self.db = anydbm.open(get_settings_path(name), 'c')
+        self.db = anydbm.open(get_settings_path(name), 'cu')
 
     def get_key(self, key):
         if isinstance(key, unicode):
