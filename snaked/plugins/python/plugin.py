@@ -164,7 +164,7 @@ class Plugin(object):
             return
 
         if sig:
-            docstring = sig + '\n\n' + docstring if docstring is not None else ''
+            docstring = sig + '\n\n' + ( docstring if docstring is not None else '' )
 
         if docstring:
             self.editor.message(docstring, 20000)
