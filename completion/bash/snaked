@@ -1,0 +1,18 @@
+_snaked()
+{
+    local prev cur
+    _get_comp_words_by_ref cur prev
+
+	case "$prev" in
+		-s)
+			COMPREPLY=( $( compgen -W "`find $XDG_CONFIG_HOME/snaked -name '*.session' | xargs --replace=^ basename ^ .session`" -- "$cur" ) )
+			return 0			
+			;;
+		*)
+		;;
+	esac
+
+    COMPREPLY=( $( compgen -f -- "$cur" ) )
+    return 0
+} &&
+complete -F _snaked snaked
