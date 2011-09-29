@@ -1,4 +1,13 @@
 from setuptools import setup, find_packages
+from setuptools.command import easy_install
+
+def install_script(self, dist, script_name, script_text, dev_path=None):
+    script_text = easy_install.get_script_header(script_text) + (
+        ''.join(script_text.splitlines(True)[1:]))
+
+    self.write_script(script_name, script_text, 'b')
+
+easy_install.easy_install.install_script = install_script
 
 setup(
     name     = 'snaked',
@@ -8,15 +17,12 @@ setup(
     description = 'Very light and minimalist editor inspired by Scribes',
     long_description = open('README.rst').read(),
     zip_safe   = False,
-    packages = find_packages(exclude=('tests', )),
+    packages = [r for r in find_packages() if not r.startswith('tests')],
+    data_files = [('snaked/completion/bash',['completion/bash/snaked'])],
     install_requires = ['chardet'],
     include_package_data = True,
     namespace_packages = ['snaked', 'snaked.plugins'],
-    entry_points = {
-        'gui_scripts': [
-            'snaked = snaked.core.run:run',
-        ]
-    },
+    scripts = ['bin/snaked'],
     url = 'http://github.com/baverman/snaked',
     classifiers = [
         "Programming Language :: Python",
