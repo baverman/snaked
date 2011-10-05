@@ -1,24 +1,11 @@
 import os
 import shutil
-from os.path import join, dirname, realpath, abspath, exists, expanduser
+from os.path import join, dirname, realpath, abspath, exists
 
-import gobject
 import gtk
 
 from snaked.signals.signals import Handler
 from snaked.signals import weak_connect
-
-def idle_callback(callable, args):
-    args, kwargs = args
-    callable(*args, **kwargs)
-    return False
-
-def idle(callable, *args, **kwargs):
-    options = {}
-    if 'priority' in kwargs:
-        options['priority'] = kwargs['priority']
-        del kwargs['priority']
-    return gobject.idle_add(idle_callback, callable, (args, kwargs), **options)
 
 def save_file(filename, data, encoding, keep_tmp=False):
     tmpfilename = realpath(filename) + '.bak'
@@ -51,22 +38,6 @@ def connect(sender, signal, obj, attr, idle=False, after=False):
     return Handler(weak_connect(
         sender, signal, obj, attr, idle=idle, after=after), sender)
 
-def join_to_file_dir(filename, *args):
-    return join(dirname(filename), *args)
-
-def join_to_settings_dir(*args):
-    config_dir = os.getenv('XDG_CONFIG_HOME', expanduser('~/.config'))
-    return join(config_dir, 'snaked', *args)
-
-def join_to_cache_dir(*args):
-    config_dir = os.getenv('XDG_CACHE_HOME', expanduser('~/.cache'))
-    return join(config_dir, 'snaked', *args)
-
-def make_missing_dirs(filename):
-    path = dirname(filename)
-    if not exists(path):
-        os.makedirs(path, mode=0755)
-
 def get_project_root(filename):
     path = dirname(abspath(filename))
     magic_pathes = ['.git', '.hg', '.bzr', '.ropeproject', '.snaked_project']
@@ -80,15 +51,6 @@ def get_project_root(filename):
             return None
 
         path = parent
-
-def open_mime(filename):
-    import subprocess
-    subprocess.Popen(['/usr/bin/env', 'xdg-open', filename]).poll()
-
-
-def refresh_gui():
-    while gtk.events_pending():
-        gtk.main_iteration_do(block=False)
 
 def single_ref(func):
     real_name = '__' + func.__name__
@@ -155,18 +117,3 @@ def mimic_to_sourceview_theme(textview, sourceview):
             textview.modify_base(gtk.STATE_SELECTED, gtk.gdk.color_parse(style.props.background))
         if style.props.foreground_set:
             textview.modify_text(gtk.STATE_SELECTED, gtk.gdk.color_parse(style.props.foreground))
-
-
-class BuilderAware(object):
-    def __init__(self, glade_file):
-        self.gtk_builder = gtk.Builder()
-        self.gtk_builder.add_from_file(glade_file)
-        self.gtk_builder.connect_signals(self)
-
-    def __getattr__(self, name):
-        obj = self.gtk_builder.get_object(name)
-        if not obj:
-            raise AttributeError('Builder have no %s object' % name)
-
-        setattr(self, name, obj)
-        return obj

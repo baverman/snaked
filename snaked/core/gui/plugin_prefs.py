@@ -3,7 +3,9 @@ from os.path import join, isdir, exists
 
 from glib import markup_escape_text
 
-from snaked.util import BuilderAware, join_to_file_dir, idle
+from uxie.utils import join_to_file_dir, idle
+from uxie.misc import BuilderAware
+
 from snaked.core.shortcuts import ShortcutActivator
 
 from snaked.core.plugins import get_plugin

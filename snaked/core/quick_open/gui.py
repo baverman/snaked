@@ -4,8 +4,10 @@ import weakref
 
 import gtk
 
-from snaked.util import (idle, join_to_file_dir, BuilderAware, open_mime, refresh_gui,
-    set_activate_the_one_item)
+from uxie.utils import idle, join_to_file_dir, refresh_gui
+from uxie.misc import BuilderAware
+
+from snaked.util import set_activate_the_one_item
 from snaked.core.shortcuts import ShortcutActivator
 
 import settings
@@ -240,7 +242,7 @@ class QuickOpenDialog(BuilderAware):
             if ai:
                 ai.launch([f])
             else:
-                open_mime(fname)
+                self.editor().message('Unknown content type for launch %s' % ct)
 
     def focus_search(self):
         self.search_entry.grab_focus()
@@ -258,6 +260,7 @@ class QuickOpenDialog(BuilderAware):
             gtk.STOCK_OPEN, gtk.RESPONSE_OK))
 
         dialog.set_default_response(gtk.RESPONSE_OK)
+        dialog.set_current_folder(self.get_current_root())
 
         response = dialog.run()
         if response == gtk.RESPONSE_OK:

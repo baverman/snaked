@@ -8,7 +8,7 @@ import weakref
 import gtk
 import glib
 
-from snaked.util import idle, refresh_gui
+from uxie.utils import idle, refresh_gui
 
 active_widgets = weakref.WeakKeyDictionary()
 search_selections = []

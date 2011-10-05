@@ -1,9 +1,10 @@
 import os.path, sys
 
 import gtk
+from uxie.utils import idle
 
+from snaked.util import lazy_property
 from snaked.signals import connect_external, connect_all
-from snaked.util import idle, lazy_property
 
 environments = {}
 configured_projects = {}

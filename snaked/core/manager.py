@@ -5,8 +5,10 @@ import gtk
 import gtksourceview2
 import pango
 
+from uxie.utils import idle, join_to_file_dir, join_to_settings_dir
+
 from ..signals import connect_all
-from ..util import (idle, lazy_property, get_project_root, join_to_file_dir, join_to_settings_dir)
+from ..util import lazy_property, get_project_root
 
 from . import prefs
 from snaked.core import config
@@ -367,12 +369,12 @@ class EditorManager(object):
 
     def show_global_preferences(self, editor):
         self.save_conf(editor)
-        e = editor.open_file(join_to_settings_dir('snaked.conf'), lang_id='python')
+        e = editor.open_file(join_to_settings_dir('snaked', 'snaked.conf'), lang_id='python')
         e.file_saved.connect(self, 'on_config_saved')
 
     def show_session_preferences(self, editor):
         self.save_conf(editor)
-        e = editor.open_file(join_to_settings_dir(self.session + '.session'), lang_id='python')
+        e = editor.open_file(join_to_settings_dir('snaked', self.session + '.session'), lang_id='python')
         e.file_saved.connect(self, 'on_config_saved')
 
     def on_config_saved(self, editor):

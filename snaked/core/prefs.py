@@ -3,7 +3,7 @@ import os.path
 import os
 import json
 
-from snaked.util import make_missing_dirs, join_to_settings_dir
+from uxie.utils import make_missing_dirs, join_to_settings_dir
 
 default_prefs = {
     'default': {
@@ -65,7 +65,7 @@ def save_json_settings(name, value):
         json.dump(value, f, sort_keys=True, indent=4)
 
 def get_settings_path(name):
-    filename = join_to_settings_dir(name)
+    filename = join_to_settings_dir('snaked', name)
     make_missing_dirs(filename)
     return filename
 

@@ -6,7 +6,9 @@ import weakref
 import gtk
 import gtksourceview2
 
-from ..util import save_file, idle, get_project_root, single_ref
+from uxie.utils import idle
+
+from ..util import save_file, get_project_root, single_ref
 from ..signals import SignalManager, Signal, connect_all, connect_external, weak_connect
 
 class Editor(SignalManager):

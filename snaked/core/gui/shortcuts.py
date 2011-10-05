@@ -3,7 +3,9 @@ import weakref
 from gtk import accelerator_name, accel_map_change_entry
 from pango import WEIGHT_BOLD, WEIGHT_NORMAL
 
-from snaked.util import BuilderAware, join_to_file_dir, idle
+from uxie.utils import join_to_file_dir, idle
+from uxie.misc import BuilderAware
+
 from snaked.core import shortcuts
 
 class ShortcutsDialog(BuilderAware):

@@ -100,7 +100,7 @@ def get_package_root(module_path):
     return module_path, '.'.join(reversed(packages))
 
 def on_editor_get_project_larva(editor):
-    from snaked.util import join_to_file_dir
+    from uxie.utils import join_to_file_dir
     import os.path
 
     if os.path.exists(join_to_file_dir(editor.uri, '__init__.py')):

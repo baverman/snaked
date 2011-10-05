@@ -11,7 +11,7 @@ easy_install.easy_install.install_script = install_script
 
 setup(
     name     = 'snaked',
-    version  = '0.4.7',
+    version  = '0.5dev',
     author   = 'Anton Bobrov',
     author_email = 'bobrov@vl.ru',
     description = 'Very light and minimalist editor inspired by Scribes',
@@ -19,9 +19,8 @@ setup(
     zip_safe   = False,
     packages = [r for r in find_packages() if not r.startswith('tests')],
     data_files = [('snaked/completion/bash',['completion/bash/snaked'])],
-    install_requires = ['chardet'],
+    install_requires = ['chardet', 'uxie', 'supplement'],
     include_package_data = True,
-    namespace_packages = ['snaked', 'snaked.plugins'],
     scripts = ['bin/snaked'],
     url = 'http://github.com/baverman/snaked',
     classifiers = [

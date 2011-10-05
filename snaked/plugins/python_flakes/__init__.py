@@ -43,7 +43,7 @@ def get_problem_list(filename):
 
 def add_job(editor):
     from threading import Thread
-    from snaked.util import idle
+    from uxie.utils import idle
 
     def job():
         try:

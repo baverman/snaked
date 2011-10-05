@@ -4,8 +4,8 @@ desc = 'Allows one to define own commands'
 
 import weakref
 import gtk
+from uxie.utils import idle, join_to_settings_dir
 
-from snaked.util import idle, join_to_settings_dir
 from snaked.core.prefs import register_dialog
 
 tools = []
@@ -52,7 +52,7 @@ def run_tool(editor):
 
     if not tools:
         try:
-            tools[:] = parse(open(join_to_settings_dir('external.tools')).read())
+            tools[:] = parse(open(join_to_settings_dir('snaked', 'external.tools')).read())
         except IOError:
             pass
         except ParseException, e:
@@ -204,7 +204,7 @@ def edit_external_tools(editor):
     from os.path import join, exists, dirname
     from snaked.util import make_missing_dirs
 
-    filename = join_to_settings_dir('external.tools')
+    filename = join_to_settings_dir('snaked', 'external.tools')
     if not exists(filename):
         make_missing_dirs(filename)
         shutil.copy(join(dirname(__file__), 'external.tools.template'), filename)

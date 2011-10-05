@@ -2,7 +2,9 @@ import weakref
 
 import pango, gtk
 
-from snaked.util import idle, join_to_file_dir, BuilderAware, refresh_gui
+from uxie.utils import idle, join_to_file_dir, refresh_gui
+from uxie.misc import BuilderAware
+
 from snaked.core.shortcuts import ShortcutActivator
 
 mnemonics = '1234567890abcdefghigklmnopqrstuvwxyz'

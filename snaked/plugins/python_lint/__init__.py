@@ -101,7 +101,7 @@ def stop_already_runned_jobs():
 
 def add_job(editor):
     from threading import Thread
-    from snaked.util import idle
+    from uxie.utils import idle
 
     def job():
         try:

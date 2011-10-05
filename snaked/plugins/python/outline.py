@@ -2,7 +2,10 @@ import weakref
 import ast
 import re
 
-from snaked.util import idle, join_to_file_dir, BuilderAware, refresh_gui, set_activate_the_one_item
+from uxie.utils import idle, join_to_file_dir, refresh_gui
+from uxie.misc import BuilderAware
+
+from snaked.util import set_activate_the_one_item
 from snaked.core.shortcuts import ShortcutActivator
 
 match_ws = re.compile('^[ \t]+')

@@ -1,6 +1,9 @@
 import weakref
 
-from snaked.util import BuilderAware, join_to_file_dir, idle, set_activate_the_one_item
+from uxie.utils import idle, join_to_file_dir
+from uxie.misc import BuilderAware
+
+from snaked.util import set_activate_the_one_item
 
 import snaked.core.prefs as prefs
 

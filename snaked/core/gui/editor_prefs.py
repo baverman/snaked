@@ -2,7 +2,9 @@ import weakref
 
 import gtksourceview2
 
-from snaked.util import BuilderAware, join_to_file_dir, idle
+from uxie.utils import join_to_file_dir, idle
+from uxie.misc import BuilderAware
+
 from snaked.core import shortcuts
 import snaked.core.prefs as prefs
 
