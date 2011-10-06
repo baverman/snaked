@@ -1,88 +1,55 @@
-import pytest
-
 from snaked.core.prefs import PySettings
 
-def test_prefs_must_return_default_values():
-    class Pref(PySettings):
-        key1 = 'key1'
-        key2 = 'key2'
+def make_settings(**kwargs):
+    return PySettings(dict((k, (v, '')) for k,v in kwargs.items()))
 
-    p = Pref()
+def test_prefs_must_return_default_values():
+    p = make_settings(key1='key1', key2='key2')
     assert p['key1'] == 'key1'
     assert p['key2'] == 'key2'
 
-def test_prefs_must_return_assigned_values():
-    class Pref(PySettings):
-        key1 = 'key1'
-        key2 = 'key2'
+def test_prefs_must_return_parent_values():
+    p = make_settings(key1='key1', key2='key2')
+    pp = PySettings(parent=p)
 
-    p = Pref()
-    p.add_source('d', {})
+    p['key1'] = 20
+
+    assert pp['key1'] == 20
+    assert pp['key2'] == 'key2'
+
+def test_prefs_must_return_assigned_values():
+    p = make_settings(key1='key1', key2='key2')
     p['key1'] = 'key11'
     p['key2'] = None
 
     assert p['key1'] == 'key11'
     assert p['key2'] == None
 
-def test_prefs_must_raise_exception_on_attributes_with_default_none_value():
-    class Pref(PySettings):
-        key1 = None
-
-    p = Pref()
-    with pytest.raises(KeyError):
-        p['key1']
-
-    with pytest.raises(KeyError):
-        p['key2']
-
-def test_prefs_must_provide_inclusion_check():
-    class Pref(PySettings):
-        key1 = 'key1'
-        key2 = None
-
-    p = Pref()
-    p.add_source('d', {})
-    p['key1'] = 'key11'
-    p['key3'] = 'key3'
-    p['key4'] = None
-
-    assert 'key1' in p
-    assert 'key2' not in p
-    assert 'key3' in p
-    assert 'key4' in p
-
 def test_prefs_must_provide_its_source():
-    class Pref(PySettings):
-        key1 = 'key1'
-        key1_doc = 'Example key'
-        key2 = None
-        key3 = True
-        key3_doc = 'Another key'
+    p = make_settings(a=True, b=10, c=False)
 
-        key5 = {}
-        key5_doc = 'AAA'
+    p['a'] = False
+    p['b'] = 10
 
-    p = Pref()
-    p.add_source('parent', {'key3': False})
+    result = p.get_config()
 
-    p.add_source('d', {})
-    p['key1'] = 'key11'
-    p['key4'] = '50'
-    p['key5'] = {1:2}
+    assert 'a = False' in result
+    assert '# b = 10' in result
+    assert '# c = False' in result
 
-    result = p.get_config('d', 'parent')
+def test_prefs_parent_config_override():
+    p1 = make_settings(a=True, b=10, c=False)
+    p2 = PySettings(parent=p1)
 
-    assert '# Example key' in result
-    assert "key1 = 'key11'" in result
-    assert 'key2' not in result
-    assert '# Another key' in result
-    assert '# key3 = False' in result
-    assert 'key4' not in result
+    p1['a'] = False
 
-    assert '# key5' not in result
-    assert 'key5' in result
+    p1['b'] = 1
+    p2['b'] = 10
 
-    data = {}
-    exec result in data
-    assert data['key1'] == p['key1']
-    assert data['key5'] == p['key5']
+    p2['c'] = False
+
+    result = p2.get_config()
+
+    assert 'a = False' in result
+    assert 'b = 10' in result
+    assert '# c = False' in result

@@ -6,15 +6,14 @@ import gtksourceview2
 import pango
 
 from uxie.utils import idle, join_to_file_dir, join_to_settings_dir
+from uxie.plugins import Manager as PluginManager
+from uxie.actions import Activator
 
 from ..signals import connect_all
 from ..util import lazy_property, get_project_root
 
 from . import prefs
-from snaked.core import config
 
-from .shortcuts import register_shortcut, load_shortcuts
-from .plugins import PluginManager
 from .editor import Editor
 from .context import add_setter as add_context_setter, Processor as ContextProcessor
 
@@ -22,35 +21,35 @@ import snaked.core.quick_open
 import snaked.core.titler
 import snaked.core.editor_list
 
+
+prefs.add_option('RESTORE_POSITION', True, 'Restore snaked window position')
+prefs.add_option('CONSOLE_FONT', 'Monospace 8', 'Font used in console panel')
+prefs.add_option('MIMIC_PANEL_COLORS_TO_EDITOR_THEME', True,
+                 'Try to apply editor color theme to various panels')
+prefs.add_option('WINDOW_BORDER_WIDTH', 0, 'Adjust window border width if you have bad wm')
+prefs.add_option('SHOW_TABS', True, 'State of tabs visibility')
+prefs.add_option('TAB_BAR_PLACEMENT', 'top',
+                 'Tab bar placement position. One of "top", "bottom", "left", "right"')
+
+prefs.add_internal_option('WINDOWS', list)
+prefs.add_internal_option('MODIFIED_FILES', list)
+
+
 class EditorManager(object):
     def __init__(self, session):
         self.editors = []
+        self.buffers = []
+
         self.session = session
         self.style_manager = gtksourceview2.style_scheme_manager_get_default()
         self.lang_manager = gtksourceview2.language_manager_get_default()
         self.modify_lang_search_path(self.lang_manager)
 
-        self.on_quit = []
+        self.activator = Activator()
 
-        self.plugin_manager = PluginManager()
-        prefs.register_dialog('Plugins', self.plugin_manager.show_plugins_prefs, 'plugin',
-            'extension')
+        self.plugin_manager = PluginManager(self.activator)
 
-        prefs.register_dialog('Key configuration', self.show_key_preferences, 'key', 'bind', 'shortcut')
-
-        prefs.register_dialog('Editor settings', self.show_editor_preferences,
-            'editor', 'font', 'style', 'margin', 'line', 'tab', 'whitespace')
-
-        prefs.register_dialog('Global preferences', self.show_global_preferences,
-            'snaked', 'global', 'preferences')
-
-        prefs.register_dialog('Session preferences', self.show_session_preferences,
-            'session', 'preferences')
-
-        prefs.register_dialog('File types', self.edit_contexts, 'file', 'type', 'association')
-
-        self.snaked_conf = config.SnakedConf()
-        self.load_conf()
+        self.init_conf()
 
         self.escape_stack = []
         self.escape_map = {}
@@ -58,45 +57,37 @@ class EditorManager(object):
         self.context_processors = {}
         self.lang_contexts = {}
         self.ctx_contexts = {}
-
-        load_shortcuts()
-        self.register_app_shortcuts()
+        self.on_quit = []
 
         # Init core plugins
-        self.plugin_manager.load_core_plugin(snaked.core.quick_open)
-        self.plugin_manager.load_core_plugin(snaked.core.titler)
-        self.plugin_manager.load_core_plugin(snaked.core.editor_list)
+        # TODO
+        #self.plugin_manager.load_core_plugin(snaked.core.quick_open)
+        #self.plugin_manager.load_core_plugin(snaked.core.titler)
+        #self.plugin_manager.load_core_plugin(snaked.core.editor_list)
 
         add_context_setter('lang', self.set_lang_context)
         add_context_setter('ctx', self.set_ctx_context)
 
-    def load_conf(self):
-        self.snaked_conf.clear()
+        self.plugin_manager.ready('manager', self)
 
-        self.snaked_conf.load('snaked.conf')
-        if self.session:
-            self.snaked_conf.load(self.session + '.session')
+    def init_conf(self):
+        self.default_config = prefs.PySettings(prefs.options)
+        self.default_config.load(prefs.get_settings_path('snaked.conf'))
+
+        self.session_config = prefs.PySettings(parent=self.default_config)
+        self.session_config.load(prefs.get_settings_path(self.session, 'config'))
+
+        self.internal_config = prefs.PySettings(prefs.internal_options)
+        self.internal_config.load(prefs.get_settings_path(self.session, 'internal'))
+
+        self.conf = prefs.CompositePreferences(self.internal_config, self.session_config)
 
     def save_conf(self, active_editor=None):
-        self.snaked_conf['OPENED_FILES'] = [e.uri for e in self.editors if e.uri]
-        self.snaked_conf['ACTIVE_FILE'] = active_editor.uri if active_editor else None
-        self.snaked_conf.save()
-
-    def register_app_shortcuts(self):
-        register_shortcut('quit', '<ctrl>q', 'Application', 'Quit')
-        register_shortcut('close-window', '<ctrl>w', 'Window', 'Close window')
-        register_shortcut('save', '<ctrl>s', 'File', 'Save file')
-        register_shortcut('save-all', '<ctrl><shift>s', 'File', 'Save all opened files')
-        register_shortcut('new-file', '<ctrl>n', 'File',
-            'Open dialog to choose new file directory and name')
-        register_shortcut('show-preferences', '<ctrl>p', 'Window', 'Open preferences dialog')
-
-        register_shortcut('place-spot', '<alt>t', 'Edit', 'Place spot at current cursor location')
-        register_shortcut('goto-last-spot', '<alt>q', 'Edit', 'Quick jump to last placed spot')
-        register_shortcut('goto-next-spot', '<ctrl><alt>Right', 'Edit',
-            'Quick jump to next spot in history')
-        register_shortcut('goto-prev-spot', '<ctrl><alt>Left', 'Edit',
-            'Quick jump to previous spot in history')
+        #self.snaked_conf['OPENED_FILES'] = [e.uri for e in self.editors if e.uri]
+        #self.snaked_conf['ACTIVE_FILE'] = active_editor.uri if active_editor else None
+        self.default_config.save()
+        self.internal_config.save()
+        self.session_config.save()
 
     def process_project_contexts(self, project_root, force=False):
         if project_root not in self.context_processors:
@@ -127,7 +118,7 @@ class EditorManager(object):
 
     @lazy_property
     def lang_prefs(self):
-        return prefs.load_json_settings('langs.conf', {})
+        return load_json_settings('langs.conf', {})
 
     def set_editor_prefs(self, editor, filename, lang_id=None):
         lang = None
@@ -249,14 +240,14 @@ class EditorManager(object):
         from snaked.core.gui import new_file
         new_file.show_create_file(editor)
 
-    def quit(self, editor):
+    def quit(self):
         for e in self.editors:
             e.on_close()
             self.plugin_manager.editor_closed(e)
 
-        self.save_conf(editor)
+        self.save_conf()
 
-        self.plugin_manager.quit()
+        #self.plugin_manager.quit()
 
         for q in self.on_quit:
             try:
@@ -418,6 +409,34 @@ class EditorManager(object):
         for e in self.editors:
             e.save()
 
+    def start(self, files_to_open):
+        opened_files = []
+        self.quit()
+        return
+
+        session_files = filter(os.path.exists, self.snaked_conf['OPENED_FILES'])
+        active_file = self.snaked_conf['ACTIVE_FILE']
+
+        #open the last file specified in args, if any
+        active_file = ( args and args[-1] ) or active_file
+
+        editor_to_focus = None
+        for f in session_files + args:
+            f = os.path.abspath(f)
+            if f not in opened_files and (not os.path.exists(f) or os.path.isfile(f)):
+                e = manager.open(f)
+                if f == active_file:
+                    editor_to_focus = e
+                opened_files.append(f)
+
+        if not manager.editors:
+            import snaked.core.quick_open
+            snaked.core.quick_open.quick_open(manager.get_fake_editor())
+
+        if editor_to_focus and active_file != opened_files[-1]:
+            manager.focus_editor(editor_to_focus)
+
+
 class EditorSpot(object):
     def __init__(self, manager, editor):
         self.manager = manager
@@ -449,28 +468,3 @@ class EditorSpot(object):
             self.manager.focus_editor(editor)
 
 
-class FakeEditor(object):
-    def __init__(self, manager):
-        self.project_root = None
-        self.manager = manager
-        self.request_transient_for = self
-        self.session = manager.session
-        self.snaked_conf = manager.snaked_conf
-
-    def emit(self, window):
-        self.manager.set_transient_for(self, window)
-
-    def open_file(self, filename, line=None):
-        result = self.manager.open(filename, line)
-        del self.manager.fake_editor
-        self.manager.fake_editor = None
-        return result
-
-    def on_dialog_escape(self, dialog):
-        self.manager.quit(None)
-
-    def message(self, message, timeout=None):
-        print message
-
-    def get_project_root(*args, **kwargs):
-        return None

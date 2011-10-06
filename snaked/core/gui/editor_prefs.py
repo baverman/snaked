@@ -4,8 +4,8 @@ import gtksourceview2
 
 from uxie.utils import join_to_file_dir, idle
 from uxie.misc import BuilderAware
+from uxie.actions import Activator
 
-from snaked.core import shortcuts
 import snaked.core.prefs as prefs
 
 on_dialog_created_hooks = []
@@ -15,8 +15,8 @@ on_pref_refresh_hooks = []
 class PreferencesDialog(BuilderAware):
     def __init__(self, prefs):
         BuilderAware.__init__(self, join_to_file_dir(__file__, 'editor_prefs.glade'))
-        self.activator = shortcuts.ShortcutActivator(self.window)
-        self.activator.bind('Escape', self.hide)
+        self.activator = Activator(self.window)
+        self.activator.bind_accel('window', 'close', 'Escape', '_Escape', self.hide)
 
         self.prefs = prefs
         self.original_prefs = prefs.copy()

@@ -1,7 +1,8 @@
 import anydbm
 import os.path
-import os
 import json
+from itertools import chain
+from inspect import cleandoc
 
 from uxie.utils import make_missing_dirs, join_to_settings_dir
 
@@ -41,11 +42,6 @@ default_prefs = {
     }
 }
 
-registered_dialogs = {}
-
-def register_dialog(name, callback, *keywords):
-    registered_dialogs[name] = keywords, callback
-
 def load_json_settings(name, default=None):
     filename = get_settings_path(name)
     try:
@@ -64,10 +60,19 @@ def save_json_settings(name, value):
     with open(filename, 'w') as f:
         json.dump(value, f, sort_keys=True, indent=4)
 
-def get_settings_path(name):
-    filename = join_to_settings_dir('snaked', name)
+def get_settings_path(*name):
+    filename = join_to_settings_dir('snaked', *name)
     make_missing_dirs(filename)
     return filename
+
+
+options = {}
+def add_option(name, default, desc=''):
+    options[name] = (default, desc)
+
+internal_options = {}
+def add_internal_option(name, default, desc=''):
+    internal_options[name] = (default, desc)
 
 
 class CompositePreferences(object):
@@ -80,6 +85,14 @@ class CompositePreferences(object):
                 return p[key]
             except KeyError:
                 pass
+
+        raise KeyError('There is no %s in preferences' % key)
+
+    def __setitem__(self, key, value):
+        for p in self.prefs:
+            if key in p:
+                p[key] = value
+                return
 
         raise KeyError('There is no %s in preferences' % key)
 
@@ -123,98 +136,163 @@ class ListSettings(object):
         open(self.path, 'w').write('\n'.join(data))
 
 
-class PySettings(object):
-    def __init__(self):
-        self.data = {}
-        self.sources = []
+class DefaultValue(object):
+    def __init__(self, name, default, additional=None):
+        self.default = default
 
-    def clear(self):
-        self.data.clear()
-        self.sources[:] = []
+        if additional is None:
+            self.additional = self.get_default()
+        else:
+            self.additional = additional
+
+        self.name = name
+
+    def __repr__(self):
+        return 'default[%s] + %s' % (self.name, repr(self.additional))
+
+
+class DefaultListValue(DefaultValue):
+    def get_default(self):
+        return []
+
+    def __add__(self, x):
+        return DefaultListValue(self.name, self.default + x, x, True)
+
+    def __iter__(self, x):
+        return iter(self.default)
+
+
+class DefaultDictValue(DefaultValue):
+    def get_default(self):
+        return {}
+
+    def __add__(self, x):
+        comp = self.default.copy()
+        return DefaultListValue(self.name, comp.update(x), x, True)
 
     def __getitem__(self, name):
-        for s in self.sources:
-            try:
-                return self.data[s][name]
-            except KeyError:
-                pass
+        return self.default[name]
 
-        value = getattr(self.__class__, name, None)
-        if value is None:
-            raise KeyError()
+    def __contains__(self, name):
+        return name in self.default
+
+    def __setitem__(self, name, value):
+        self.additional[name] = value
+        self.default[name] = value
+
+
+class DefaultValuesProvider(object):
+    def __init__(self, conf):
+        self.conf = conf
+
+    def __getitem__(self, name):
+        v = self.conf[name]
+        if isinstance(v, list):
+            return DefaultListValue(name, v)
+        if isinstance(v, dict):
+            return DefaultDictValue(name, v)
+        else:
+            return v
+
+
+class PySettings(object):
+    def __init__(self, options=None, parent=None):
+        assert options or parent
+        if parent:
+            self.parent = parent
+            self.options = parent.options
+        else:
+            self.options = options
+            self.parent = None
+
+        self.data = {}
+
+    def __getitem__(self, name):
+        try:
+            return self.data[name]
+        except KeyError:
+            pass
+
+        if self.parent:
+            v = self.parent[name]
+            if isinstance(v, list):
+                v = v[:]
+            elif isinstance(v, dict):
+                v = v.copy()
+        else:
+            v = self.get_default(name)
+
+        self.data[name] = v
+        return v
+
+    def __contains__(self, name):
+        return name in self.options
+
+    def get_default(self, name):
+        value = self.options[name][0]
+        if callable(value):
+            value = value()
 
         return value
 
     def __setitem__(self, name, value):
-        self.data[self.sources[0]][name] = value
+        self.data[name] = value
 
-    def __contains__(self, name):
-        return any(name in self.data[s] for s in self.sources) or \
-            ( getattr(self.__class__, name, None) is not None and not self.is_special(name) )
-
-    def is_special(self, name):
-        return name.startswith('_') or name.lower().endswith('_doc')
-
-    def is_default(self, source, name):
-        return name not in self.data[source] and \
-            getattr(self.__class__, name, None) is not None and not self.is_special(name)
-
-    def get_config(self, source, parent_source=None):
+    def get_config(self):
         result = ''
-        for name in sorted(self.__class__.__dict__):
-            if name not in self:
-                continue
-
-            doc = getattr(self.__class__, name + '_doc', None)
-            if not doc:
-                doc = getattr(self.__class__, name + '_DOC', None)
+        for name in sorted(set(chain(self.data, self.options))):
+            doc = cleandoc(self.options.get(name, (0, 'Unknown option'))[1])
             if doc:
-                result += '# ' + doc + '\n'
+                for l in doc.splitlines():
+                    result += '# ' + l + '\n'
 
-            write_value = True
-            is_default = False
-
-            if name in self.data[source]:
-                value = self.data[source][name]
-            elif parent_source and name in self.data[parent_source]:
-                value = self.data[parent_source][name]
+            if name not in self.options:
+                value = self.data[name]
+                is_default = False
+            elif name not in self.data:
                 is_default = True
+                if self.parent:
+                    value = self.parent[name]
+                else:
+                    value = self.get_default(name)
             else:
-                value = getattr(self.__class__, name, None)
-                is_default = True
-                if value is None:
-                    write_value = False
+                value = self.data[name]
+                if (self.parent and value == self.parent[name]) or (
+                        not self.parent and value == self.get_default(name)):
+                    is_default = True
+                else:
+                    is_default = False
 
-            if write_value:
-                value = '%s = %s' % (name, repr(value))
-                if is_default:
-                    value = '# ' + value
+            value = '%s = %s' % (name, repr(value))
+            if is_default:
+                value = '# ' + value
 
-                result += value + '\n\n'
+            result += value + '\n\n'
 
         return result
 
-    def add_source(self, source, data):
-        self.sources.insert(0, source)
-        self.data[source] = data
+    def load(self, filename):
+        self.filename = filename
+        self.data.clear()
 
-    def load(self, name):
-        filename = get_settings_path(name)
-        data = {}
+        if self.parent:
+            self.data['default'] = DefaultValuesProvider(self.parent)
+
         try:
-            execfile(filename, data)
+            execfile(self.filename, self.data)
         except IOError:
             pass
         except SyntaxError, e:
-            print 'Error on loading config: %s' % filename, e
+            print 'Error on loading config: %s' % self.filename, e
 
-        self.add_source(name, data)
+        try:
+            del self.data['__builtins__']
+        except KeyError:
+            pass
+
+        if self.parent:
+            del self.data['default']
 
     def save(self):
-        ps = None
-        for s in reversed(self.sources):
-            filename = get_settings_path(s)
-            with open(filename, 'w') as f:
-                f.write(self.get_config(s, ps))
-
-            ps = s
+        with open(self.filename, 'w') as f:
+            f.write(self.get_config())

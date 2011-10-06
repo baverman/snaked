@@ -3,7 +3,6 @@ import weakref
 
 import gtk
 
-from snaked.core.shortcuts import ContextShortcutActivator, register_shortcut
 import snaked.core.manager
 import snaked.core.editor
 
@@ -14,32 +13,56 @@ tab_bar_pos_mapping = {
     'right': gtk.POS_RIGHT
 }
 
-class TabbedEditorManager(snaked.core.manager.EditorManager):
-    def __init__(self, session):
-        super(TabbedEditorManager, self).__init__(session)
+def init(injector):
+    injector.add_context('editor', 'window', Window.get_editor_context)
+
+    with injector.on('window') as ctx:
+        ctx.bind_accel('close-editor', '<ctrl>w', '_Window/Close _tab', Window.close_editor)
+        ctx.bind('close-window', '_Window/_Close', Window.close)
+
+        ctx.bind_accel('save-all', '<ctrl><shift>s', '_File/Save _all', Window.save_all)
+        ctx.bind_accel('next-editor', '<ctrl>Page_Up', '_Window/_Next tab', Window.switch_to, 1)
+        ctx.bind_accel('prev-editor', '<ctrl>Page_Down', '_Window/_Prev tab', Window.switch_to, -1)
+        ctx.bind_accel('new-file', Window.new_file_action)
+        ctx.bind_accel('fullscreen', Window.fullscreen)
+        ctx.bind_accel('toggle-tabs-visibility', Window.toggle_tabs)
+
+        #ctx.bind_accel('place-spot', self.add_spot_with_feedback)
+        #ctx.bind_accel('goto-last-spot', self.goto_last_spot)
+        #ctx.bind_accel('goto-next-spot', self.goto_next_prev_spot, True)
+        #ctx.bind_accel('goto-prev-spot', self.goto_next_prev_spot, False)
+
+        ctx.bind_accel('move-tab-left', '<shift><ctrl>Page_Up',
+            '_Window/Move tab to _left', Window.move_tab, False)
+        ctx.bind_accel('move-tab-right', '<shift><ctrl>Page_Down',
+            '_Window/Move tab to _right', Window.move_tab, True)
+
+class Window(gtk.Window):
+    def __init__(self, manager):
+        gtk.Window.__init__(self, gtk.WINDOW_TOPLEVEL)
 
         self.last_switch_time = None
         self.panels = weakref.WeakKeyDictionary()
 
-        self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-        self.window.set_name('SnakedWindow')
-        self.window.set_role('Editor')
-        self.window.connect('delete-event', self.on_delete_event)
+        self.set_name('SnakedWindow')
+        self.set_role('Editor')
+        self.connect('delete-event', self.on_delete_event)
 
         # set border width handling, see self.on_state_event for more details
-        self.window.connect('window-state-event', self.on_state_event)
+        self.connect('window-state-event', self.on_state_event)
 
-        self.window.set_property('default-width', 800)
-        self.window.set_property('default-height', 500)
+        self.set_default_size(800, 500)
 
-        self.activator = ContextShortcutActivator(self.window, self.get_context)
+        manager.activator.attach(self)
 
         self.main_pane = gtk.VPaned()
         self.main_pane_position_set = False
-        self.window.add(self.main_pane)
+        self.add(self.main_pane)
+
+        conf = manager.snaked_conf
 
         self.note = gtk.Notebook()
-        self.note.set_show_tabs(self.snaked_conf['SHOW_TABS'])
+        self.note.set_show_tabs(conf['SHOW_TABS'])
         self.note.set_scrollable(True)
         self.note.set_property('tab-hborder', 10)
         self.note.set_property('homogeneous', False)
@@ -47,35 +70,20 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
         self.note.connect_after('switch-page', self.on_switch_page)
         self.note.connect('page_removed', self.on_page_removed)
         self.note.connect('page_reordered', self.on_page_reordered)
-        self.note.props.tab_pos = tab_bar_pos_mapping.get(
-        self.snaked_conf['TAB_BAR_PLACEMENT'], gtk.POS_TOP)
+        self.note.props.tab_pos = tab_bar_pos_mapping.get(conf['TAB_BAR_PLACEMENT'], gtk.POS_TOP)
         self.main_pane.add1(self.note)
 
-        register_shortcut('toggle-tabs-visibility', '<alt>F11', 'Window', 'Toggles tabs visibility')
-        register_shortcut('next-editor', '<alt>Right', 'Window', 'Switches to next editor')
-        register_shortcut('prev-editor', '<alt>Left', 'Window', 'Switches to previous editor')
-        register_shortcut('next-editor-alt', '<ctrl>Page_Down', 'Window', 'Switches to next editor')
-        register_shortcut('prev-editor-alt', '<ctrl>Page_Up', 'Window', 'Switches to previous editor')
-        register_shortcut('move-tab-left', '<shift><ctrl>Page_Up', 'Window', 'Move tab to the left')
-        register_shortcut('move-tab-right', '<shift><ctrl>Page_Down', 'Window', 'Move tab to the right')
-
-        register_shortcut('fullscreen', 'F11', 'Window', 'Toggles fullscreen mode')
-
-        register_shortcut('toggle-console', '<alt>grave', 'Window', 'Toggles console')
-        register_shortcut('send-to-console', '<alt>Return', 'Window',
-            'Send selection or buffer to console')
-
-        if self.snaked_conf['RESTORE_POSITION'] and 'LAST_POSITION' in self.snaked_conf:
-            pos, size = self.snaked_conf['LAST_POSITION']
+        if conf['RESTORE_POSITION'] and 'LAST_POSITION' in conf:
+            pos, size = conf['LAST_POSITION']
             self.window.move(*pos)
             self.window.resize(*size)
 
         self.window.show_all()
 
-        if self.snaked_conf['FULLSCREEN']:
+        if conf['FULLSCREEN']:
             self.window.fullscreen()
 
-    def get_context(self):
+    def get_editor_context(self):
         widget = self.note.get_nth_page(self.note.get_current_page())
         for e in self.editors:
             if e.widget is widget:
@@ -137,49 +145,14 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
         self.note.remove_page(idx)
         editor.editor_closed.emit()
 
-    def set_editor_shortcuts(self, editor):
-        self.plugin_manager.bind_shortcuts(self.activator, editor)
-
-        if hasattr(self, 'editor_shortcuts_binded'):
-            return
-
-        self.editor_shortcuts_binded = True
-
-        self.activator.bind_to_name('quit', self.quit)
-        self.activator.bind_to_name('close-window', self.close_editor)
-        self.activator.bind_to_name('save', self.save)
-        self.activator.bind_to_name('save-all', self.save_all)
-        self.activator.bind_to_name('next-editor', self.switch_to, 1)
-        self.activator.bind_to_name('prev-editor', self.switch_to, -1)
-        self.activator.bind_to_name('next-editor-alt', self.switch_to, 1)
-        self.activator.bind_to_name('prev-editor-alt', self.switch_to, -1)
-        self.activator.bind_to_name('new-file', self.new_file_action)
-        self.activator.bind_to_name('show-preferences', self.show_preferences)
-        self.activator.bind_to_name('fullscreen', self.fullscreen)
-        self.activator.bind_to_name('toggle-tabs-visibility', self.toggle_tabs)
-
-        self.activator.bind_to_name('place-spot', self.add_spot_with_feedback)
-        self.activator.bind_to_name('goto-last-spot', self.goto_last_spot)
-        self.activator.bind_to_name('goto-next-spot', self.goto_next_prev_spot, True)
-        self.activator.bind_to_name('goto-prev-spot', self.goto_next_prev_spot, False)
-
-        self.activator.bind_to_name('move-tab-left', self.move_tab, False)
-        self.activator.bind_to_name('move-tab-right', self.move_tab, True)
-
-        self.activator.bind_to_name('toggle-console', self.toggle_console)
-        self.activator.bind_to_name('send-to-console', self.send_to_console)
-
-        self.activator.bind('Escape', self.process_escape)
-
     def quit(self, editor):
-        self.snaked_conf['LAST_POSITION'] = self.window.get_position(), self.window.get_size()
+        self.conf['LAST_POSITION'] = self.window.get_position(), self.window.get_size()
 
         if self.main_pane_position_set:
             _, _, _, wh, _ = self.window.window.get_geometry()
-            self.snaked_conf['PANEL_HEIGHT'] = wh - self.main_pane.get_position()
+            self.conf['PANEL_HEIGHT'] = wh - self.main_pane.get_position()
 
         self.window.hide()
-        super(TabbedEditorManager, self).quit(editor)
 
     def save(self, editor):
         editor.save()
@@ -211,15 +184,15 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
         self.note.set_current_page(idx)
 
     def fullscreen(self, editor):
-        self.snaked_conf['FULLSCREEN'] = not self.snaked_conf['FULLSCREEN']
-        if self.snaked_conf['FULLSCREEN']:
+        self.conf['FULLSCREEN'] = not self.conf['FULLSCREEN']
+        if self.conf['FULLSCREEN']:
             self.window.fullscreen()
         else:
             self.window.unfullscreen()
 
     def toggle_tabs(self, editor):
         self.note.set_show_tabs(not self.note.get_show_tabs())
-        self.snaked_conf['SHOW_TABS'] = self.note.get_show_tabs()
+        self.conf['SHOW_TABS'] = self.note.get_show_tabs()
 
     @snaked.core.editor.Editor.stack_add_request
     def on_stack_add_request(self, editor, widget, on_popup):
@@ -235,7 +208,7 @@ class TabbedEditorManager(snaked.core.manager.EditorManager):
             if not self.main_pane_position_set:
                 self.main_pane_position_set = True
                 _, _, _, wh, _ = self.window.window.get_geometry()
-                self.main_pane.set_position(wh - self.snaked_conf['PANEL_HEIGHT'])
+                self.main_pane.set_position(wh - self.conf['PANEL_HEIGHT'])
 
             self.main_pane.add2(widget)
             widget.show()
