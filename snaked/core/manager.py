@@ -20,25 +20,27 @@ from .context import add_setter as add_context_setter, Processor as ContextProce
 import snaked.core.quick_open
 import snaked.core.titler
 import snaked.core.editor_list
+import snaked.core.window
 
-
-prefs.add_option('RESTORE_POSITION', True, 'Restore snaked window position')
+prefs.add_option('RESTORE_POSITION', True, 'Restore snaked windows position')
 prefs.add_option('CONSOLE_FONT', 'Monospace 8', 'Font used in console panel')
 prefs.add_option('MIMIC_PANEL_COLORS_TO_EDITOR_THEME', True,
                  'Try to apply editor color theme to various panels')
 prefs.add_option('WINDOW_BORDER_WIDTH', 0, 'Adjust window border width if you have bad wm')
-prefs.add_option('SHOW_TABS', True, 'State of tabs visibility')
-prefs.add_option('TAB_BAR_PLACEMENT', 'top',
-                 'Tab bar placement position. One of "top", "bottom", "left", "right"')
+prefs.add_option('SHOW_TABS', None,
+                 'State of tabs visibility. Set it to None to use window specific settings')
+prefs.add_option('TAB_BAR_PLACEMENT', None,
+                 '''Tab bar placement position. One of "top", "bottom", "left", "right"
+                    Set it to None to use window specific settings''')
 
 prefs.add_internal_option('WINDOWS', list)
-prefs.add_internal_option('MODIFIED_FILES', list)
+prefs.add_internal_option('MODIFIED_FILES', dict)
 
 
 class EditorManager(object):
     def __init__(self, session):
-        self.editors = []
         self.buffers = []
+        self.windows = []
 
         self.session = session
         self.style_manager = gtksourceview2.style_scheme_manager_get_default()
@@ -70,6 +72,9 @@ class EditorManager(object):
 
         self.plugin_manager.ready('manager', self)
 
+        self.plugin_manager.add_plugin(snaked.core.window)
+
+
     def init_conf(self):
         self.default_config = prefs.PySettings(prefs.options)
         self.default_config.load(prefs.get_settings_path('snaked.conf'))
@@ -99,26 +104,23 @@ class EditorManager(object):
                 self.context_processors[project_root].process()
 
     def open(self, filename, line=None, contexts=None):
-        editor = Editor(self.snaked_conf)
-        self.editors.append(editor)
+        editor = Editor(self.conf)
+        self.buffers.append(editor.buffer)
         editor.session = self.session
 
-        connect_all(self, editor)
+        #connect_all(self, editor)
 
         idle(self.set_editor_prefs, editor, filename, contexts)
-        idle(self.set_editor_shortcuts, editor)
-        idle(self.plugin_manager.editor_created, editor)
-
-        self.manage_editor(editor)
+        #idle(self.plugin_manager.editor_created, editor)
 
         idle(editor.load_file, filename, line)
-        idle(self.plugin_manager.editor_opened, editor)
+        #idle(self.plugin_manager.editor_opened, editor)
 
         return editor
 
     @lazy_property
     def lang_prefs(self):
-        return load_json_settings('langs.conf', {})
+        return prefs.load_json_settings('langs.conf', {})
 
     def set_editor_prefs(self, editor, filename, lang_id=None):
         lang = None
@@ -241,9 +243,9 @@ class EditorManager(object):
         new_file.show_create_file(editor)
 
     def quit(self):
-        for e in self.editors:
-            e.on_close()
-            self.plugin_manager.editor_closed(e)
+        for w in self.windows:
+            for e in w.editors:
+                e.on_close()
 
         self.save_conf()
 
@@ -375,7 +377,7 @@ class EditorManager(object):
     def edit_contexts(self, editor):
         import shutil
         from os.path import join, exists, dirname
-        from snaked.util import make_missing_dirs
+        from uxie.utils import make_missing_dirs
 
         contexts = join(editor.project_root, '.snaked_project', 'contexts')
         if not exists(contexts):
@@ -411,30 +413,42 @@ class EditorManager(object):
 
     def start(self, files_to_open):
         opened_files = []
-        self.quit()
-        return
 
-        session_files = filter(os.path.exists, self.snaked_conf['OPENED_FILES'])
-        active_file = self.snaked_conf['ACTIVE_FILE']
+        if not self.conf['WINDOWS']:
+            self.conf['WINDOWS'].append({'name':'main'})
 
-        #open the last file specified in args, if any
-        active_file = ( args and args[-1] ) or active_file
+        for window_conf in self.conf['WINDOWS']:
+            w = snaked.core.window.Window(self, window_conf)
+            self.windows.append(w)
 
-        editor_to_focus = None
-        for f in session_files + args:
+        window = self.windows[0]
+        for f in files_to_open:
             f = os.path.abspath(f)
-            if f not in opened_files and (not os.path.exists(f) or os.path.isfile(f)):
-                e = manager.open(f)
-                if f == active_file:
-                    editor_to_focus = e
-                opened_files.append(f)
+            if f not in opened_files:
+                e = self.open(f)
+                window.manage_editor(e)
 
-        if not manager.editors:
-            import snaked.core.quick_open
-            snaked.core.quick_open.quick_open(manager.get_fake_editor())
-
-        if editor_to_focus and active_file != opened_files[-1]:
-            manager.focus_editor(editor_to_focus)
+        #session_files = filter(os.path.exists, self.snaked_conf['OPENED_FILES'])
+        #active_file = self.snaked_conf['ACTIVE_FILE']
+        #
+        ##open the last file specified in args, if any
+        #active_file = ( args and args[-1] ) or active_file
+        #
+        #editor_to_focus = None
+        #for f in session_files + args:
+        #    f = os.path.abspath(f)
+        #    if f not in opened_files and (not os.path.exists(f) or os.path.isfile(f)):
+        #        e = manager.open(f)
+        #        if f == active_file:
+        #            editor_to_focus = e
+        #        opened_files.append(f)
+        #
+        #if not manager.editors:
+        #    import snaked.core.quick_open
+        #    snaked.core.quick_open.quick_open(manager.get_fake_editor())
+        #
+        #if editor_to_focus and active_file != opened_files[-1]:
+        #    manager.focus_editor(editor_to_focus)
 
 
 class EditorSpot(object):
@@ -466,5 +480,3 @@ class EditorSpot(object):
 
         if editor is not back_to:
             self.manager.focus_editor(editor)
-
-

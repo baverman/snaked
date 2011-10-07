@@ -8,8 +8,11 @@ import gtksourceview2
 
 from uxie.utils import idle
 
+from .prefs import add_option
 from ..util import save_file, get_project_root, single_ref
 from ..signals import SignalManager, Signal, connect_all, connect_external, weak_connect
+
+add_option('DISABLE_LEFT_CLICK', False, 'Disable left mouse button handling in editor view')
 
 class Editor(SignalManager):
     add_spot_request = Signal()
@@ -118,7 +121,7 @@ class Editor(SignalManager):
 
             self.buffer.end_not_undoable_action()
 
-            if 'MODIFIED_FILES' in self.snaked_conf and self.uri in self.snaked_conf['MODIFIED_FILES']:
+            if self.uri in self.snaked_conf['MODIFIED_FILES']:
                 tmpfilename = self.snaked_conf['MODIFIED_FILES'][self.uri]
                 if os.path.exists(tmpfilename):
                     self.buffer.begin_user_action()

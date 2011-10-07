@@ -96,6 +96,9 @@ class CompositePreferences(object):
 
         raise KeyError('There is no %s in preferences' % key)
 
+    def __contains__(self, key):
+        raise NotImplementedError()
+
 
 class KVSettings(object):
     def __init__(self, name):

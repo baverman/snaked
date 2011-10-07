@@ -3,9 +3,6 @@ import weakref
 
 import gtk
 
-import snaked.core.manager
-import snaked.core.editor
-
 tab_bar_pos_mapping = {
     'top': gtk.POS_TOP,
     'bottom': gtk.POS_BOTTOM,
@@ -17,30 +14,31 @@ def init(injector):
     injector.add_context('editor', 'window', Window.get_editor_context)
 
     with injector.on('window') as ctx:
-        ctx.bind_accel('close-editor', '<ctrl>w', '_Window/Close _tab', Window.close_editor)
+        ctx.bind_accel('close-editor', '_Window/Close _tab', '<ctrl>w', Window.close_editor)
         ctx.bind('close-window', '_Window/_Close', Window.close)
 
-        ctx.bind_accel('save-all', '<ctrl><shift>s', '_File/Save _all', Window.save_all)
-        ctx.bind_accel('next-editor', '<ctrl>Page_Up', '_Window/_Next tab', Window.switch_to, 1)
-        ctx.bind_accel('prev-editor', '<ctrl>Page_Down', '_Window/_Prev tab', Window.switch_to, -1)
-        ctx.bind_accel('new-file', Window.new_file_action)
-        ctx.bind_accel('fullscreen', Window.fullscreen)
-        ctx.bind_accel('toggle-tabs-visibility', Window.toggle_tabs)
+        #ctx.bind_accel('save-all', '_File/Save _all', '<ctrl><shift>s', Window.save_all)
+        ctx.bind_accel('next-editor', '_Window/_Next tab', '<ctrl>Page_Up', Window.switch_to, 1)
+        ctx.bind_accel('prev-editor', '_Window/_Prev tab', '<ctrl>Page_Down', Window.switch_to, -1)
+        #ctx.bind_accel('new-file', Window.new_file_action)
+        ctx.bind_accel('fullscreen', '_Window/Toggle _fullscreen', 'F11', Window.fullscreen)
+        ctx.bind_accel('toggle-tabs-visibility', '_Window/Toggle ta_bs', '<Alt>F11', Window.toggle_tabs)
 
         #ctx.bind_accel('place-spot', self.add_spot_with_feedback)
         #ctx.bind_accel('goto-last-spot', self.goto_last_spot)
         #ctx.bind_accel('goto-next-spot', self.goto_next_prev_spot, True)
         #ctx.bind_accel('goto-prev-spot', self.goto_next_prev_spot, False)
 
-        ctx.bind_accel('move-tab-left', '<shift><ctrl>Page_Up',
-            '_Window/Move tab to _left', Window.move_tab, False)
-        ctx.bind_accel('move-tab-right', '<shift><ctrl>Page_Down',
-            '_Window/Move tab to _right', Window.move_tab, True)
+        ctx.bind_accel('move-tab-left', '_Window/Move tab to _left',
+            '<shift><ctrl>Page_Up', Window.move_tab, False)
+        ctx.bind_accel('move-tab-right', '_Window/Move tab to _right',
+            '<shift><ctrl>Page_Down', Window.move_tab, True)
 
 class Window(gtk.Window):
-    def __init__(self, manager):
+    def __init__(self, manager, window_conf):
         gtk.Window.__init__(self, gtk.WINDOW_TOPLEVEL)
 
+        self.editors = []
         self.last_switch_time = None
         self.panels = weakref.WeakKeyDictionary()
 
@@ -59,10 +57,13 @@ class Window(gtk.Window):
         self.main_pane_position_set = False
         self.add(self.main_pane)
 
-        conf = manager.snaked_conf
+        conf = manager.conf
+        self.window_conf = window_conf
+        self.manager = manager
 
         self.note = gtk.Notebook()
-        self.note.set_show_tabs(conf['SHOW_TABS'])
+        self.note.set_show_tabs(
+            conf['SHOW_TABS'] if conf['SHOW_TABS'] is not None else window_conf.get('show-tabs', True))
         self.note.set_scrollable(True)
         self.note.set_property('tab-hborder', 10)
         self.note.set_property('homogeneous', False)
@@ -73,25 +74,26 @@ class Window(gtk.Window):
         self.note.props.tab_pos = tab_bar_pos_mapping.get(conf['TAB_BAR_PLACEMENT'], gtk.POS_TOP)
         self.main_pane.add1(self.note)
 
-        if conf['RESTORE_POSITION'] and 'LAST_POSITION' in conf:
-            pos, size = conf['LAST_POSITION']
-            self.window.move(*pos)
-            self.window.resize(*size)
+        if conf['RESTORE_POSITION'] and 'last-position' in window_conf:
+            pos, size = window_conf['last-position']
+            self.move(*pos)
+            self.resize(*size)
 
-        self.window.show_all()
+        self.show_all()
 
-        if conf['FULLSCREEN']:
-            self.window.fullscreen()
+        if window_conf.get('fullscreen', False):
+            self.fullscreen()
 
     def get_editor_context(self):
         widget = self.note.get_nth_page(self.note.get_current_page())
         for e in self.editors:
             if e.widget is widget:
-                return (e,)
+                return e
 
-        return (None,)
+        return None
 
     def manage_editor(self, editor):
+        self.editors.append(editor)
         label = gtk.Label('Unknown')
         self.note.append_page(editor.widget, label)
         self.note.set_tab_reorderable(editor.widget, True)
@@ -107,7 +109,7 @@ class Window(gtk.Window):
         if idx < 0:
             return
 
-        editor = self.get_context()[0]
+        editor = self.get_editor_context()
         if editor:
             title = editor.get_window_title.emit()
 
@@ -115,7 +117,7 @@ class Window(gtk.Window):
             title = self.note.get_tab_label_text(self.note.get_nth_page(idx))
 
         if title is not None:
-            self.window.set_title(title)
+            self.set_title(title)
 
     def set_editor_title(self, editor, title):
         self.note.set_tab_label_text(editor.widget, title)
@@ -123,7 +125,7 @@ class Window(gtk.Window):
             self.update_top_level_title()
 
     def on_delete_event(self, *args):
-        self.quit(self.get_context()[0])
+        self.quit()
 
     def on_state_event(self, widget, event):
         """Sets the window border depending on state
@@ -136,29 +138,31 @@ class Window(gtk.Window):
         """
         state = event.new_window_state
         if state & gtk.gdk.WINDOW_STATE_MAXIMIZED or state & gtk.gdk.WINDOW_STATE_FULLSCREEN:
-            self.window.set_border_width(0)
+            self.set_border_width(0)
         else:
-            self.window.set_border_width(self.snaked_conf['WINDOW_BORDER_WIDTH'])
+            self.set_border_width(self.manager.conf['WINDOW_BORDER_WIDTH'])
 
-    def close_editor(self, editor):
-        idx = self.note.page_num(editor.widget)
-        self.note.remove_page(idx)
-        editor.editor_closed.emit()
+    def close_editor(self):
+        editor = self.get_editor_context()
+        if editor:
+            idx = self.note.page_num(editor.widget)
+            self.note.remove_page(idx)
+            editor.editor_closed.emit()
 
-    def quit(self, editor):
-        self.conf['LAST_POSITION'] = self.window.get_position(), self.window.get_size()
+    def close(self):
+        pass
+
+    def quit(self):
+        self.window_conf['last-position'] = self.get_position(), self.get_size()
 
         if self.main_pane_position_set:
-            _, _, _, wh, _ = self.window.window.get_geometry()
-            self.conf['PANEL_HEIGHT'] = wh - self.main_pane.get_position()
+            _, _, _, wh, _ = self.window.get_geometry()
+            self.window_conf['panel-height'] = wh - self.main_pane.get_position()
 
-        self.window.hide()
+        self.hide()
 
     def save(self, editor):
         editor.save()
-
-    def set_transient_for(self, editor, window):
-        window.set_transient_for(self.window)
 
     def on_switch_page(self, *args):
         self.update_top_level_title()
@@ -166,7 +170,7 @@ class Window(gtk.Window):
     def on_page_removed(self, note, child, idx):
         for e in self.editors:
             if e.widget is child:
-                spot = self.get_last_spot(None, e)
+                spot = self.manager.get_last_spot(None, e)
                 if spot:
                     note.set_current_page(note.page_num(spot.editor().widget))
                     return
@@ -176,29 +180,29 @@ class Window(gtk.Window):
 
     def switch_to(self, editor, dir):
         if self.last_switch_time is None or time.time() - self.last_switch_time > 5:
-            self.add_spot(editor)
+            self.manager.add_spot(editor)
 
         self.last_switch_time = time.time()
 
         idx = ( self.note.get_current_page() + dir ) % self.note.get_n_pages()
         self.note.set_current_page(idx)
 
-    def fullscreen(self, editor):
-        self.conf['FULLSCREEN'] = not self.conf['FULLSCREEN']
-        if self.conf['FULLSCREEN']:
-            self.window.fullscreen()
+    def fullscreen(self):
+        self.window_conf['fullscreen'] = not self.conf.get('fullscreen', False)
+        if self.window_conf['fullscreen']:
+            self.fullscreen()
         else:
-            self.window.unfullscreen()
+            self.unfullscreen()
 
-    def toggle_tabs(self, editor):
+    def toggle_tabs(self):
         self.note.set_show_tabs(not self.note.get_show_tabs())
-        self.conf['SHOW_TABS'] = self.note.get_show_tabs()
+        self.window_conf['show-tabs'] = self.note.get_show_tabs()
 
-    @snaked.core.editor.Editor.stack_add_request
+    #@snaked.core.editor.Editor.stack_add_request
     def on_stack_add_request(self, editor, widget, on_popup):
         self.panels[widget] = on_popup
 
-    @snaked.core.editor.Editor.stack_popup_request
+    #@snaked.core.editor.Editor.stack_popup_request
     def on_stack_popup_request(self, editor, widget):
         if widget in self.panels:
             for w in self.panels:
@@ -207,8 +211,8 @@ class Window(gtk.Window):
 
             if not self.main_pane_position_set:
                 self.main_pane_position_set = True
-                _, _, _, wh, _ = self.window.window.get_geometry()
-                self.main_pane.set_position(wh - self.conf['PANEL_HEIGHT'])
+                _, _, _, wh, _ = self.window.get_geometry()
+                self.main_pane.set_position(wh - self.window_conf.get('panel-height', 200))
 
             self.main_pane.add2(widget)
             widget.show()
@@ -244,5 +248,5 @@ class Window(gtk.Window):
         self.note.reorder_child(editor.widget, pos)
 
     def activate_main_window(self):
-        self.window.present()
-        self.window.present_with_time(gtk.get_current_event_time())
+        self.present()
+        #self.present_with_time(gtk.get_current_event_time())
