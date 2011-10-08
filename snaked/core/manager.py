@@ -242,10 +242,14 @@ class EditorManager(object):
         from snaked.core.gui import new_file
         new_file.show_create_file(editor)
 
+    def window_closed(self, window):
+        self.windows.remove(window)
+        if not self.windows:
+            self.quit()
+
     def quit(self):
         for w in self.windows:
-            for e in w.editors:
-                e.on_close()
+            w.close()
 
         self.save_conf()
 

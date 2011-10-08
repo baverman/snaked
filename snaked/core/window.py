@@ -18,8 +18,6 @@ def init(injector):
         ctx.bind('close-window', '_Window/_Close', Window.close)
 
         #ctx.bind_accel('save-all', '_File/Save _all', '<ctrl><shift>s', Window.save_all)
-        ctx.bind_accel('next-editor', '_Window/_Next tab', '<ctrl>Page_Up', Window.switch_to, 1)
-        ctx.bind_accel('prev-editor', '_Window/_Prev tab', '<ctrl>Page_Down', Window.switch_to, -1)
         #ctx.bind_accel('new-file', Window.new_file_action)
         ctx.bind_accel('fullscreen', '_Window/Toggle _fullscreen', 'F11', Window.fullscreen)
         ctx.bind_accel('toggle-tabs-visibility', '_Window/Toggle ta_bs', '<Alt>F11', Window.toggle_tabs)
@@ -29,10 +27,14 @@ def init(injector):
         #ctx.bind_accel('goto-next-spot', self.goto_next_prev_spot, True)
         #ctx.bind_accel('goto-prev-spot', self.goto_next_prev_spot, False)
 
+    with injector.on('window', 'editor') as ctx:
+        ctx.bind_accel('next-editor', '_Window/_Next tab', '<ctrl>Page_Down', Window.switch_to, 1, 1)
+        ctx.bind_accel('prev-editor', '_Window/_Prev tab', '<ctrl>Page_Up', Window.switch_to, 1, -1)
         ctx.bind_accel('move-tab-left', '_Window/Move tab to _left',
-            '<shift><ctrl>Page_Up', Window.move_tab, False)
+            '<shift><ctrl>Page_Up', Window.move_tab, 1, False)
         ctx.bind_accel('move-tab-right', '_Window/Move tab to _right',
-            '<shift><ctrl>Page_Down', Window.move_tab, True)
+            '<shift><ctrl>Page_Down', Window.move_tab, 1, True)
+
 
 class Window(gtk.Window):
     def __init__(self, manager, window_conf):
@@ -125,7 +127,7 @@ class Window(gtk.Window):
             self.update_top_level_title()
 
     def on_delete_event(self, *args):
-        self.quit()
+        self.close()
 
     def on_state_event(self, widget, event):
         """Sets the window border depending on state
@@ -150,9 +152,11 @@ class Window(gtk.Window):
             editor.editor_closed.emit()
 
     def close(self):
-        pass
+        files = self.window_conf['files'][:] = []
+        for e in self.editors:
+            files.append(dict(uri=e.uri))
+            e.on_close()
 
-    def quit(self):
         self.window_conf['last-position'] = self.get_position(), self.get_size()
 
         if self.main_pane_position_set:
@@ -160,6 +164,7 @@ class Window(gtk.Window):
             self.window_conf['panel-height'] = wh - self.main_pane.get_position()
 
         self.hide()
+        self.manager.window_closed(self)
 
     def save(self, editor):
         editor.save()
