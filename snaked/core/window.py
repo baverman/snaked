@@ -14,7 +14,6 @@ def init(injector):
     injector.add_context('editor', 'window', Window.get_editor_context)
 
     with injector.on('window') as ctx:
-        ctx.bind_accel('close-editor', '_Window/Close _tab', '<ctrl>w', Window.close_editor)
         ctx.bind('close-window', '_Window/_Close', Window.close)
 
         #ctx.bind_accel('save-all', '_File/Save _all', '<ctrl><shift>s', Window.save_all)
@@ -28,12 +27,15 @@ def init(injector):
         #ctx.bind_accel('goto-prev-spot', self.goto_next_prev_spot, False)
 
     with injector.on('window', 'editor') as ctx:
-        ctx.bind_accel('next-editor', '_Window/_Next tab', '<ctrl>Page_Down', Window.switch_to, 1, 1)
-        ctx.bind_accel('prev-editor', '_Window/_Prev tab', '<ctrl>Page_Up', Window.switch_to, 1, -1)
-        ctx.bind_accel('move-tab-left', '_Window/Move tab to _left',
+        ctx.bind_accel('close-editor', '_Tab/_Close', '<ctrl>w', Window.close_editor)
+        ctx.bind_accel('next-editor', '_Tab/_Next', '<ctrl>Page_Down', Window.switch_to, 1, 1)
+        ctx.bind_accel('prev-editor', '_Tab/_Prev', '<ctrl>Page_Up', Window.switch_to, 1, -1)
+        ctx.bind_accel('move-tab-left', '_Tab/Move to _left',
             '<shift><ctrl>Page_Up', Window.move_tab, 1, False)
-        ctx.bind_accel('move-tab-right', '_Window/Move tab to _right',
+        ctx.bind_accel('move-tab-right', '_Tab/Move to _right',
             '<shift><ctrl>Page_Down', Window.move_tab, 1, True)
+
+        ctx.bind('detach-editor', '_Tab/_Detach', Window.retach_editor)
 
 
 class Window(gtk.Window):
@@ -151,14 +153,15 @@ class Window(gtk.Window):
     def detach_editor(self, editor):
         idx = self.note.page_num(editor.widget)
         self.note.remove_page(idx)
+        self.editors.remove(editor)
 
-    def close_editor(self):
-        editor = self.get_editor_context()
-        if editor:
-            self.detach_editor(editor)
-            editor.editor_closed.emit()
+    def close_editor(self, editor):
+        self.detach_editor(editor)
 
-    def close(self):
+        if not self.editors:
+            self.close()
+
+    def close(self, notify_manager=True):
         files = self.window_conf.setdefault('files', [])
         files[:] = []
         for e in self.editors:
@@ -177,8 +180,8 @@ class Window(gtk.Window):
             _, _, _, wh, _ = self.window.get_geometry()
             self.window_conf['panel-height'] = wh - self.main_pane.get_position()
 
-        self.hide()
-        self.manager.window_closed(self)
+        if notify_manager:
+            self.manager.window_closed(self)
 
     def save(self, editor):
         editor.save()
@@ -268,3 +271,7 @@ class Window(gtk.Window):
     def activate_main_window(self):
         self.present()
         #self.present_with_time(gtk.get_current_event_time())
+
+    def retach_editor(self, editor):
+        self.detach_editor(editor)
+        self.manager.get_free_window().attach_editor(editor)

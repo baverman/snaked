@@ -9,7 +9,6 @@ from uxie.utils import idle, join_to_file_dir, join_to_settings_dir
 from uxie.plugins import Manager as PluginManager
 from uxie.actions import Activator
 
-from ..signals import connect_all
 from ..util import lazy_property, get_project_root
 
 from . import prefs
@@ -194,7 +193,6 @@ class EditorManager(object):
 
         editor.prefs = pref
 
-    @Editor.editor_closed(idle=True)
     def on_editor_closed(self, editor):
         editor.on_close()
         self.plugin_manager.editor_closed(editor)
@@ -203,15 +201,6 @@ class EditorManager(object):
         if not self.editors:
             snaked.core.quick_open.quick_open(self.get_fake_editor())
 
-    @Editor.change_title
-    def on_editor_change_title(self, editor, title):
-        self.set_editor_title(editor, title)
-
-    @Editor.request_close
-    def on_editor_close_request(self, editor):
-        self.close_editor(editor)
-
-    @Editor.request_to_open_file
     def on_request_to_open_file(self, editor, filename, line, lang_id):
         self.add_spot(editor)
         filename = os.path.normpath(filename)
@@ -229,10 +218,6 @@ class EditorManager(object):
 
         return e
 
-    @Editor.request_transient_for
-    def on_request_transient_for(self, editor, window):
-        self.set_transient_for(editor, window)
-
     @Editor.settings_changed(idle=True)
     def on_editor_settings_changed(self, editor):
         self.set_editor_prefs(editor, editor.uri, editor.lang)
@@ -245,13 +230,14 @@ class EditorManager(object):
         new_file.show_create_file(editor)
 
     def window_closed(self, window):
-        self.windows.remove(window)
-        if not self.windows:
+        self.windows[self.windows.index(window)] = False
+        window.destroy()
+        if not any(self.windows):
             self.quit()
 
     def quit(self):
         for w in self.windows:
-            w.close()
+            if w: w.close(False)
 
         self.save_conf()
 
@@ -267,7 +253,6 @@ class EditorManager(object):
         if gtk.main_level() > 0:
             gtk.main_quit()
 
-    @Editor.push_escape_callback
     def on_push_escape_callback(self, editor, callback, args):
         key = (callback,) + tuple(map(weakref.ref, args))
         if key in self.escape_map:
@@ -315,7 +300,6 @@ class EditorManager(object):
         self.add_spot(editor)
         editor.message('Spot added')
 
-    @Editor.add_spot_request
     def add_spot(self, editor):
         self.add_spot_to_history(EditorSpot(self, editor))
 
@@ -417,12 +401,26 @@ class EditorManager(object):
         for e in self.editors:
             e.save()
 
+    def get_free_window(self):
+        for idx, (w, wc) in enumerate(zip(self.windows, self.conf['WINDOWS'])):
+            if not w:
+                w = snaked.core.window.Window(self, wc)
+                self.windows[idx] = w
+                return w
+
+        wc = {'name':'window%d' % len(self.windows)}
+        self.conf['WINDOWS'].append(wc)
+        w = snaked.core.window.Window(self, wc)
+        self.windows.append(w)
+        return w
+
     def start(self, files_to_open):
         opened_files = set()
 
         if not self.conf['WINDOWS']:
             self.conf['WINDOWS'].append({'name':'main'})
 
+        main_window = None
         for window_conf in self.conf['WINDOWS']:
             files = [r['uri'] for r in window_conf.get('files', [])
                 if os.path.exists(r['uri']) and os.path.isfile(r['uri'])]
@@ -430,18 +428,17 @@ class EditorManager(object):
             if files:
                 w = snaked.core.window.Window(self, window_conf)
                 self.windows.append(w)
+                main_window = main_window or w
 
                 for f in files:
                     if f not in opened_files:
                         e = self.open(f)
                         w.attach_editor(e)
                         opened_files.add(f)
+            else:
+                self.windows.append(False)
 
-        if not opened_files:
-            window = snaked.core.window.Window(self, self.conf['WINDOWS'][0])
-            self.windows.append(window)
-
-        window = self.windows[0]
+        window = main_window or self.get_free_window()
         for f in files_to_open:
             f = os.path.abspath(f)
             if f not in opened_files:

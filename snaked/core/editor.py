@@ -15,8 +15,6 @@ from ..signals import SignalManager, Signal, connect_all, connect_external, weak
 add_option('DISABLE_LEFT_CLICK', False, 'Disable left mouse button handling in editor view')
 
 class Editor(SignalManager):
-    add_spot_request = Signal()
-
     before_close = Signal()
     before_file_save = Signal(return_type=bool) # Handlers can return True to prevent file saving
 
@@ -32,15 +30,8 @@ class Editor(SignalManager):
     get_window_title = Signal(return_type=str)
 
     plugins_changed = Signal()
-    push_escape_callback = Signal(object, object)
-
-    request_close = Signal()
-    request_to_open_file = Signal(str, object, object, return_type=object)
-    request_transient_for = Signal(object)
 
     settings_changed = Signal()
-    stack_add_request = Signal(object, object)
-    stack_popup_request = Signal(object)
 
     def __init__(self, snaked_conf):
         self.uri = None
@@ -302,9 +293,6 @@ class Editor(SignalManager):
         self.view.destroy()
 
         if self.buffer.get_modified():
-            if 'MODIFIED_FILES' not in self.snaked_conf:
-                self.snaked_conf['MODIFIED_FILES'] = {}
-
             self.snaked_conf['MODIFIED_FILES'][self.uri] = save_file(self.uri, self.utext,
                 self.encoding, True)
         else:
