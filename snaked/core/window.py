@@ -98,7 +98,7 @@ class Window(gtk.Window):
 
         return None
 
-    def manage_editor(self, editor):
+    def attach_editor(self, editor):
         self.editors.append(editor)
         label = gtk.Label('Unknown')
         self.note.append_page(editor.widget, label)
@@ -148,15 +148,19 @@ class Window(gtk.Window):
         else:
             self.set_border_width(self.manager.conf['WINDOW_BORDER_WIDTH'])
 
+    def detach_editor(self, editor):
+        idx = self.note.page_num(editor.widget)
+        self.note.remove_page(idx)
+
     def close_editor(self):
         editor = self.get_editor_context()
         if editor:
-            idx = self.note.page_num(editor.widget)
-            self.note.remove_page(idx)
+            self.detach_editor(editor)
             editor.editor_closed.emit()
 
     def close(self):
-        files = self.window_conf['files'][:] = []
+        files = self.window_conf.setdefault('files', [])
+        files[:] = []
         for e in self.editors:
             files.append(dict(uri=e.uri))
             e.on_close()

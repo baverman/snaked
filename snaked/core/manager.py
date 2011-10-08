@@ -418,21 +418,36 @@ class EditorManager(object):
             e.save()
 
     def start(self, files_to_open):
-        opened_files = []
+        opened_files = set()
 
         if not self.conf['WINDOWS']:
             self.conf['WINDOWS'].append({'name':'main'})
 
         for window_conf in self.conf['WINDOWS']:
-            w = snaked.core.window.Window(self, window_conf)
-            self.windows.append(w)
+            files = [r['uri'] for r in window_conf.get('files', [])
+                if os.path.exists(r['uri']) and os.path.isfile(r['uri'])]
+
+            if files:
+                w = snaked.core.window.Window(self, window_conf)
+                self.windows.append(w)
+
+                for f in files:
+                    if f not in opened_files:
+                        e = self.open(f)
+                        w.attach_editor(e)
+                        opened_files.add(f)
+
+        if not opened_files:
+            window = snaked.core.window.Window(self, self.conf['WINDOWS'][0])
+            self.windows.append(window)
 
         window = self.windows[0]
         for f in files_to_open:
             f = os.path.abspath(f)
             if f not in opened_files:
                 e = self.open(f)
-                window.manage_editor(e)
+                window.attach_editor(e)
+                opened_files.add(f)
 
         #session_files = filter(os.path.exists, self.snaked_conf['OPENED_FILES'])
         #active_file = self.snaked_conf['ACTIVE_FILE']
