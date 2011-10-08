@@ -19,7 +19,7 @@ def init(injector):
 
         #ctx.bind_accel('save-all', '_File/Save _all', '<ctrl><shift>s', Window.save_all)
         #ctx.bind_accel('new-file', Window.new_file_action)
-        ctx.bind_accel('fullscreen', '_Window/Toggle _fullscreen', 'F11', Window.fullscreen)
+        ctx.bind_accel('fullscreen', '_Window/Toggle _fullscreen', 'F11', Window.toggle_fullscreen)
         ctx.bind_accel('toggle-tabs-visibility', '_Window/Toggle ta_bs', '<Alt>F11', Window.toggle_tabs)
 
         #ctx.bind_accel('place-spot', self.add_spot_with_feedback)
@@ -77,14 +77,18 @@ class Window(gtk.Window):
         self.main_pane.add1(self.note)
 
         if conf['RESTORE_POSITION'] and 'last-position' in window_conf:
-            pos, size = window_conf['last-position']
-            self.move(*pos)
-            self.resize(*size)
+            try:
+                pos, size = window_conf['last-position']
+            except ValueError:
+                if window_conf['last-position'] == 'fullscreen':
+                    self.fullscreen()
+                elif window_conf['last-position'] == 'maximized':
+                    self.maximize()
+            else:
+                self.move(*pos)
+                self.resize(*size)
 
         self.show_all()
-
-        if window_conf.get('fullscreen', False):
-            self.fullscreen()
 
     def get_editor_context(self):
         widget = self.note.get_nth_page(self.note.get_current_page())
@@ -157,7 +161,13 @@ class Window(gtk.Window):
             files.append(dict(uri=e.uri))
             e.on_close()
 
-        self.window_conf['last-position'] = self.get_position(), self.get_size()
+        state = self.window.get_state()
+        if state & gtk.gdk.WINDOW_STATE_FULLSCREEN:
+            self.window_conf['last-position'] = 'fullscreen'
+        elif state & gtk.gdk.WINDOW_STATE_MAXIMIZED:
+            self.window_conf['last-position'] = 'maximized'
+        else:
+            self.window_conf['last-position'] = self.get_position(), self.get_size()
 
         if self.main_pane_position_set:
             _, _, _, wh, _ = self.window.get_geometry()
@@ -192,12 +202,11 @@ class Window(gtk.Window):
         idx = ( self.note.get_current_page() + dir ) % self.note.get_n_pages()
         self.note.set_current_page(idx)
 
-    def fullscreen(self):
-        self.window_conf['fullscreen'] = not self.conf.get('fullscreen', False)
-        if self.window_conf['fullscreen']:
-            self.fullscreen()
-        else:
+    def toggle_fullscreen(self):
+        if self.window.get_state() & gtk.gdk.WINDOW_STATE_FULLSCREEN:
             self.unfullscreen()
+        else:
+            self.fullscreen()
 
     def toggle_tabs(self):
         self.note.set_show_tabs(not self.note.get_show_tabs())
