@@ -48,6 +48,8 @@ class EditorManager(object):
         self.modify_lang_search_path(self.lang_manager)
 
         self.activator = Activator()
+        self.activator.add_context('manager', (), lambda: self)
+        self.activator.bind_accel('manager', 'quit', '$_Quit', '<ctrl>q', EditorManager.quit)
 
         self.plugin_manager = PluginManager(self.activator)
 
