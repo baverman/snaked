@@ -18,9 +18,6 @@ class Editor(SignalManager):
     before_close = Signal()
     before_file_save = Signal(return_type=bool) # Handlers can return True to prevent file saving
 
-    change_title = Signal(str)
-    editor_closed = Signal()
-
     file_loaded = Signal()
     file_saved = Signal()
 
@@ -74,7 +71,7 @@ class Editor(SignalManager):
         else:
             title = 'Unknown'
 
-        self.change_title.emit(title)
+        self.view.get_toplevel().set_editor_title(self, title)
 
     @property
     def uri(self):
@@ -274,7 +271,7 @@ class Editor(SignalManager):
         self.push_escape_callback.emit(callback, args)
 
     def add_spot(self):
-        self.add_spot_request.emit()
+        self.view.get_toplevel().manager.add_spot(self)
 
     @connect_external('view', 'move-cursor')
     def on_cursor_moved(self, view, step_size, count, extend_selection):

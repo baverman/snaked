@@ -3,7 +3,6 @@ import weakref
 
 import gtk
 import gtksourceview2
-import pango
 
 from uxie.utils import idle, join_to_file_dir, join_to_settings_dir
 from uxie.plugins import Manager as PluginManager
@@ -66,7 +65,7 @@ class EditorManager(object):
         # TODO
         #self.plugin_manager.load_core_plugin(snaked.core.quick_open)
         #self.plugin_manager.load_core_plugin(snaked.core.titler)
-        #self.plugin_manager.load_core_plugin(snaked.core.editor_list)
+        self.plugin_manager.add_plugin(snaked.core.titler)
 
         add_context_setter('lang', self.set_lang_context)
         add_context_setter('ctx', self.set_ctx_context)
@@ -130,6 +129,7 @@ class EditorManager(object):
             idle(editor.load_file, filename, line)
             #idle(self.plugin_manager.editor_opened, editor)
 
+        self.plugin_manager.ready('editor', editor)
         return editor
 
     @lazy_property

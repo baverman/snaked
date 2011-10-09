@@ -282,5 +282,4 @@ class Window(gtk.Window):
         self.manager.get_free_window().attach_editor(editor)
 
     def duplicate_editor(self, editor):
-        from .editor import Editor
-        self.manager.get_free_window().attach_editor(Editor(self.manager.conf, editor.buffer))
+        self.manager.get_free_window().attach_editor(self.manager.open(editor.uri))

@@ -6,17 +6,19 @@ fsm_cache = {}
 title_contexts = {}
 wtitle_contexts = {}
 
-def init(manager):
-    """:type manager:snaked.core.plugins.ShortcutsHolder"""
-    manager.add_context('title', on_set_title_context)
-    manager.add_context('wtitle', on_set_wtitle_context)
+def init(injector):
+    from .prefs import add_option
+    from .context import add_setter
 
-    manager.add_global_option('TAB_TITLE_FORMAT', '%modified{%pypkg|%name2}{%writeable|[ro]}',
+    add_option('TAB_TITLE_FORMAT', '%modified{%pypkg|%name2}{%writeable|[ro]}',
         'Default format string for tab titles')
 
-    manager.add_global_option('WINDOW_TITLE_FORMAT',
+    add_option('WINDOW_TITLE_FORMAT',
         '%modified{%project|NOP}:{%path|%fullpath}{%writeable|[ro]}',
         'Default format string for window title')
+
+    add_setter('title', on_set_title_context)
+    add_setter('wtitle', on_set_wtitle_context)
 
     add_title_handler('name', name_handler)
     add_title_handler('name2', name2_handler)
@@ -25,6 +27,8 @@ def init(manager):
     add_title_handler('fullpath', fullpath_handler)
     add_title_handler('writeable', writable_handler)
     add_title_handler('modified', modified_handler)
+
+    injector.on_ready('editor', editor_created)
 
 def editor_created(editor):
     editor.connect('get-title', on_editor_get_title)
