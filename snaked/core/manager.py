@@ -9,7 +9,7 @@ from uxie.utils import idle, join_to_file_dir, join_to_settings_dir
 from uxie.plugins import Manager as PluginManager
 from uxie.actions import Activator
 
-from ..util import lazy_property, get_project_root
+from ..util import lazy_property, get_project_root, save_file
 
 from . import prefs
 
@@ -104,18 +104,31 @@ class EditorManager(object):
             if force:
                 self.context_processors[project_root].process()
 
+    def get_buffer_for_uri(self, filename):
+        for buf in self.buffers:
+            if buf.uri == filename:
+                return buf
+
+        return None
+
     def open(self, filename, line=None, contexts=None):
-        editor = Editor(self.conf)
-        self.buffers.append(editor.buffer)
-        editor.session = self.session
+        buf = self.get_buffer_for_uri(filename)
+        if buf:
+            editor = Editor(self.conf, buf)
+        else:
+            editor = Editor(self.conf)
+            self.buffers.append(editor.buffer)
+            editor.buffer.session = self.session
+            editor.buffer.uri = filename
 
-        #connect_all(self, editor)
+            #connect_all(self, editor)
 
-        idle(self.set_editor_prefs, editor, filename, contexts)
-        #idle(self.plugin_manager.editor_created, editor)
+            idle(self.set_buffer_prefs, editor.buffer, filename, contexts)
+            idle(editor.update_view_preferences)
+            #idle(self.plugin_manager.editor_created, editor)
 
-        idle(editor.load_file, filename, line)
-        #idle(self.plugin_manager.editor_opened, editor)
+            idle(editor.load_file, filename, line)
+            #idle(self.plugin_manager.editor_opened, editor)
 
         return editor
 
@@ -123,10 +136,10 @@ class EditorManager(object):
     def lang_prefs(self):
         return prefs.load_json_settings('langs.conf', {})
 
-    def set_editor_prefs(self, editor, filename, lang_id=None):
+    def set_buffer_prefs(self, buf, filename, lang_id=None):
         lang = None
-        editor.lang = 'default'
-        editor.contexts = [editor.lang]
+        buf.lang = 'default'
+        buf.contexts = [buf.lang]
 
         root = get_project_root(filename)
         if root:
@@ -141,65 +154,32 @@ class EditorManager(object):
         if lang_id:
             lang = self.lang_manager.get_language(lang_id)
             if lang:
-                editor.lang = lang.get_id()
+                buf.lang = lang.get_id()
 
         if not lang:
             lang = self.lang_manager.guess_language(filename, None)
             if lang:
-                editor.lang = lang.get_id()
+                buf.lang = lang.get_id()
 
-        editor.contexts = [editor.lang]
+        buf.contexts = [buf.lang]
 
         if lang:
-            editor.buffer.set_language(lang)
+            buf.set_language(lang)
 
         if self.session:
-            editor.contexts.append('session:' + self.session)
+            buf.contexts.append('session:' + self.session)
 
         if root in self.ctx_contexts:
             for ctx, matcher in self.ctx_contexts[root].items():
                 if matcher.search(filename):
-                    editor.contexts.append(ctx)
+                    buf.contexts.append(ctx)
 
-        pref = prefs.CompositePreferences(self.lang_prefs.get(editor.lang, {}),
-            self.lang_prefs.get('default', {}), prefs.default_prefs.get(editor.lang, {}),
+        buf.pref = prefs.CompositePreferences(self.lang_prefs.get(buf.lang, {}),
+            self.lang_prefs.get('default', {}), prefs.default_prefs.get(buf.lang, {}),
             prefs.default_prefs['default'])
 
-        style_scheme = self.style_manager.get_scheme(pref['style'])
-        editor.buffer.set_style_scheme(style_scheme)
-
-        # Try to fix screen flickering
-        # No hope, should mail bug to upstream
-        #text_style = style_scheme.get_style('text')
-        #if text_style and editor.view.window:
-        #    color = editor.view.get_colormap().alloc_color(text_style.props.background)
-        #    editor.view.modify_bg(gtk.STATE_NORMAL, color)
-
-        font = pango.FontDescription(pref['font'])
-        editor.view.modify_font(font)
-
-        editor.view.set_auto_indent(pref['auto-indent'])
-        editor.view.set_indent_on_tab(pref['indent-on-tab'])
-        editor.view.set_insert_spaces_instead_of_tabs(not pref['use-tabs'])
-        editor.view.set_smart_home_end(pref['smart-home-end'])
-        editor.view.set_highlight_current_line(pref['highlight-current-line'])
-        editor.view.set_show_line_numbers(pref['show-line-numbers'])
-        editor.view.set_tab_width(pref['tab-width'])
-        editor.view.set_draw_spaces(pref['show-whitespace'])
-        editor.view.set_right_margin_position(pref['right-margin'])
-        editor.view.set_show_right_margin(pref['show-right-margin'])
-        editor.view.set_wrap_mode(gtk.WRAP_WORD if pref['wrap-text'] else gtk.WRAP_NONE)
-        editor.view.set_pixels_above_lines(pref['line-spacing'])
-
-        editor.prefs = pref
-
-    def on_editor_closed(self, editor):
-        editor.on_close()
-        self.plugin_manager.editor_closed(editor)
-        self.editors.remove(editor)
-
-        if not self.editors:
-            snaked.core.quick_open.quick_open(self.get_fake_editor())
+        style_scheme = self.style_manager.get_scheme(buf.pref['style'])
+        buf.set_style_scheme(style_scheme)
 
     def on_request_to_open_file(self, editor, filename, line, lang_id):
         self.add_spot(editor)
@@ -234,6 +214,31 @@ class EditorManager(object):
         window.destroy()
         if not any(self.windows):
             self.quit()
+
+    def get_editors(self):
+        for w in self.windows:
+            if w:
+                for e in w.editors:
+                    yield e
+
+    def editor_closed(self, editor):
+        del editor.view
+        buf = editor.buffer
+        del editor.buffer
+
+        for e in self.get_editors():
+            if e.buffer is buf:
+                return
+
+        self.buffers.remove(buf)
+        if buf.get_modified():
+            text = unicode(buf.get_text(*buf.get_bounds()), 'utf-8')
+            self.conf['MODIFIED_FILES'][buf.uri] = save_file(buf.uri, text, buf.encoding, True)
+        else:
+            try:
+                del self.conf['MODIFIED_FILES'][buf.uri]
+            except KeyError:
+                pass
 
     def quit(self):
         for w in self.windows:
@@ -431,10 +436,9 @@ class EditorManager(object):
                 main_window = main_window or w
 
                 for f in files:
-                    if f not in opened_files:
-                        e = self.open(f)
-                        w.attach_editor(e)
-                        opened_files.add(f)
+                    e = self.open(f)
+                    w.attach_editor(e)
+                    opened_files.add(f)
             else:
                 self.windows.append(False)
 

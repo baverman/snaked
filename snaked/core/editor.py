@@ -3,7 +3,7 @@ import time
 
 import weakref
 
-import gtk
+import gtk, pango
 import gtksourceview2
 
 from uxie.utils import idle
@@ -33,10 +33,7 @@ class Editor(SignalManager):
 
     settings_changed = Signal()
 
-    def __init__(self, snaked_conf):
-        self.uri = None
-        self.session = None
-        self.saveable = True
+    def __init__(self, snaked_conf, buf=None):
         self.lang = None
         self.contexts = []
         self.prefs = {}
@@ -46,7 +43,7 @@ class Editor(SignalManager):
         sw = gtk.ScrolledWindow()
         sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
 
-        self.buffer = gtksourceview2.Buffer()
+        self.buffer = buf or gtksourceview2.Buffer()
 
         self.view = gtksourceview2.View()
         self.view.set_buffer(self.buffer)
@@ -65,6 +62,9 @@ class Editor(SignalManager):
 
         self.snaked_conf = snaked_conf
 
+        if buf:
+            idle(self.update_view_preferences)
+
     def update_title(self):
         if self.uri:
             title = self.get_title.emit()
@@ -76,9 +76,22 @@ class Editor(SignalManager):
 
         self.change_title.emit(title)
 
+    @property
+    def uri(self):
+        return self.buffer.uri
+
+    @property
+    def encoding(self):
+        return self.buffer.encoding
+
+    @property
+    def session(self):
+        return self.buffer.session
+
     def load_file(self, filename, line=None):
-        self.uri = os.path.abspath(filename)
-        self.encoding = 'utf-8'
+        self.buffer.uri = os.path.abspath(filename)
+        self.buffer.encoding = 'utf-8'
+        self.buffer.saveable = True
 
         if os.path.exists(self.uri):
             self.view.window.freeze_updates()
@@ -95,16 +108,17 @@ class Editor(SignalManager):
                     result = chardet.detect(text)
                     if result['encoding']:
                         utext = text.decode(result['encoding'])
-                        self.encoding = result['encoding']
-                        idle(self.message, 'Automatically selected ' + self.encoding + 'encoding', 5000)
+                        self.buffer.encoding = result['encoding']
+                        idle(self.message,
+                            'Automatically selected ' + self.buffer.encoding + 'encoding', 5000)
                     else:
-                        self.saveable = False
+                        self.buffer.saveable = False
                         utext = 'Is this a text file?'
                 except ImportError:
-                    self.saveable = False
+                    self.buffer.saveable = False
                     utext = str(e)
                 except UnicodeDecodeError, ee:
-                    self.saveable = False
+                    self.buffer.saveable = False
                     utext = str(ee)
 
             self.buffer.set_text(utext)
@@ -116,7 +130,7 @@ class Editor(SignalManager):
                 tmpfilename = self.snaked_conf['MODIFIED_FILES'][self.uri]
                 if os.path.exists(tmpfilename):
                     self.buffer.begin_user_action()
-                    utext = open(tmpfilename).read().decode(self.encoding)
+                    utext = open(tmpfilename).read().decode(self.buffer.encoding)
                     self.buffer.set_text(utext)
                     self.buffer.end_user_action()
 
@@ -292,11 +306,28 @@ class Editor(SignalManager):
     def on_close(self):
         self.view.destroy()
 
-        if self.buffer.get_modified():
-            self.snaked_conf['MODIFIED_FILES'][self.uri] = save_file(self.uri, self.utext,
-                self.encoding, True)
-        else:
-            try:
-                del self.snaked_conf['MODIFIED_FILES'][self.uri]
-            except KeyError:
-                pass
+    def update_view_preferences(self):
+        # Try to fix screen flickering
+        # No hope, should mail bug to upstream
+        #text_style = style_scheme.get_style('text')
+        #if text_style and editor.view.window:
+        #    color = editor.view.get_colormap().alloc_color(text_style.props.background)
+        #    editor.view.modify_bg(gtk.STATE_NORMAL, color)
+
+        pref = self.buffer.pref
+
+        font = pango.FontDescription(pref['font'])
+        self.view.modify_font(font)
+
+        self.view.set_auto_indent(pref['auto-indent'])
+        self.view.set_indent_on_tab(pref['indent-on-tab'])
+        self.view.set_insert_spaces_instead_of_tabs(not pref['use-tabs'])
+        self.view.set_smart_home_end(pref['smart-home-end'])
+        self.view.set_highlight_current_line(pref['highlight-current-line'])
+        self.view.set_show_line_numbers(pref['show-line-numbers'])
+        self.view.set_tab_width(pref['tab-width'])
+        self.view.set_draw_spaces(pref['show-whitespace'])
+        self.view.set_right_margin_position(pref['right-margin'])
+        self.view.set_show_right_margin(pref['show-right-margin'])
+        self.view.set_wrap_mode(gtk.WRAP_WORD if pref['wrap-text'] else gtk.WRAP_NONE)
+        self.view.set_pixels_above_lines(pref['line-spacing'])

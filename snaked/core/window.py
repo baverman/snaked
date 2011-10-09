@@ -36,6 +36,7 @@ def init(injector):
             '<shift><ctrl>Page_Down', Window.move_tab, 1, True)
 
         ctx.bind('detach-editor', '_Tab/_Detach', Window.retach_editor)
+        ctx.bind('duplicate-editor', '_Tab/D_uplicate', Window.duplicate_editor)
 
 
 class Window(gtk.Window):
@@ -157,6 +158,8 @@ class Window(gtk.Window):
 
     def close_editor(self, editor):
         self.detach_editor(editor)
+        editor.on_close()
+        self.manager.editor_closed(editor)
 
         if not self.editors:
             self.close()
@@ -164,9 +167,11 @@ class Window(gtk.Window):
     def close(self, notify_manager=True):
         files = self.window_conf.setdefault('files', [])
         files[:] = []
-        for e in self.editors:
+        for e in self.editors[:]:
             files.append(dict(uri=e.uri))
             e.on_close()
+            self.editors.remove(e)
+            self.manager.editor_closed(e)
 
         state = self.window.get_state()
         if state & gtk.gdk.WINDOW_STATE_FULLSCREEN:
@@ -275,3 +280,7 @@ class Window(gtk.Window):
     def retach_editor(self, editor):
         self.detach_editor(editor)
         self.manager.get_free_window().attach_editor(editor)
+
+    def duplicate_editor(self, editor):
+        from .editor import Editor
+        self.manager.get_free_window().attach_editor(Editor(self.manager.conf, editor.buffer))
