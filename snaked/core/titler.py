@@ -44,14 +44,14 @@ def get_format_from_contexts(editor, contexts):
 def on_editor_get_title(editor):
     format = get_format_from_contexts(editor, title_contexts)
     if not format:
-        format = editor.snaked_conf['TAB_TITLE_FORMAT']
+        format = editor.conf['TAB_TITLE_FORMAT']
 
     return get_title(editor, format)
 
 def on_editor_get_window_title(editor):
     format = get_format_from_contexts(editor, wtitle_contexts)
     if not format:
-        format = editor.snaked_conf['WINDOW_TITLE_FORMAT']
+        format = editor.conf['WINDOW_TITLE_FORMAT']
 
     return get_title(editor, format)
 

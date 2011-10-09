@@ -30,10 +30,9 @@ class Editor(SignalManager):
 
     settings_changed = Signal()
 
-    def __init__(self, snaked_conf, buf=None):
+    def __init__(self, conf, buf=None):
         self.lang = None
         self.contexts = []
-        self.prefs = {}
 
         self.last_cursor_move = None
 
@@ -54,10 +53,10 @@ class Editor(SignalManager):
 
         connect_all(self, buffer=self.buffer, view=self.view)
 
-        if snaked_conf['DISABLE_LEFT_CLICK']:
+        if conf['DISABLE_LEFT_CLICK']:
             weak_connect(self.view, 'button-press-event', self, 'on_button_press_event')
 
-        self.snaked_conf = snaked_conf
+        self.conf = conf
 
         if buf:
             idle(self.update_view_preferences)
@@ -123,8 +122,8 @@ class Editor(SignalManager):
 
             self.buffer.end_not_undoable_action()
 
-            if self.uri in self.snaked_conf['MODIFIED_FILES']:
-                tmpfilename = self.snaked_conf['MODIFIED_FILES'][self.uri]
+            if self.uri in self.conf['MODIFIED_FILES']:
+                tmpfilename = self.conf['MODIFIED_FILES'][self.uri]
                 if os.path.exists(tmpfilename):
                     self.buffer.begin_user_action()
                     utext = open(tmpfilename).read().decode(self.buffer.encoding)
@@ -150,7 +149,7 @@ class Editor(SignalManager):
         self.update_title()
 
     def save(self):
-        if not self.saveable:
+        if not self.buffer.saveable:
             self.message("This file was opened with error and can't be saved")
             return
 
@@ -158,7 +157,7 @@ class Editor(SignalManager):
             if self.before_file_save.emit():
                 return
 
-            if self.prefs['remove-trailing-space']:
+            if self.buffer.config['remove-trailing-space']:
                 from snaked.core.processors import remove_trailing_spaces
                 remove_trailing_spaces(self.buffer)
 
@@ -311,7 +310,7 @@ class Editor(SignalManager):
         #    color = editor.view.get_colormap().alloc_color(text_style.props.background)
         #    editor.view.modify_bg(gtk.STATE_NORMAL, color)
 
-        pref = self.buffer.pref
+        pref = self.buffer.config
 
         font = pango.FontDescription(pref['font'])
         self.view.modify_font(font)

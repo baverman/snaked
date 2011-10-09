@@ -13,6 +13,20 @@ tab_bar_pos_mapping = {
 def init(injector):
     injector.add_context('editor', 'window', Window.get_editor_context)
 
+    with injector.on('window', 'editor') as ctx:
+        ctx.bind_accel('save', '_File/_Save', '<ctrl>s', Window.save_editor)
+
+        ctx.bind_accel('close-editor', '_Tab/_Close', '<ctrl>w', Window.close_editor)
+        ctx.bind_accel('next-editor', '_Tab/_Next', '<ctrl>Page_Down', Window.switch_to, 1, 1)
+        ctx.bind_accel('prev-editor', '_Tab/_Prev', '<ctrl>Page_Up', Window.switch_to, 1, -1)
+        ctx.bind_accel('move-tab-left', '_Tab/Move to _left',
+            '<shift><ctrl>Page_Up', Window.move_tab, 1, False)
+        ctx.bind_accel('move-tab-right', '_Tab/Move to _right',
+            '<shift><ctrl>Page_Down', Window.move_tab, 1, True)
+
+        ctx.bind('detach-editor', '_Tab/_Detach', Window.retach_editor)
+        ctx.bind('duplicate-editor', '_Tab/D_uplicate', Window.duplicate_editor)
+
     with injector.on('window') as ctx:
         ctx.bind('close-window', '_Window/_Close', Window.close)
 
@@ -25,18 +39,6 @@ def init(injector):
         #ctx.bind_accel('goto-last-spot', self.goto_last_spot)
         #ctx.bind_accel('goto-next-spot', self.goto_next_prev_spot, True)
         #ctx.bind_accel('goto-prev-spot', self.goto_next_prev_spot, False)
-
-    with injector.on('window', 'editor') as ctx:
-        ctx.bind_accel('close-editor', '_Tab/_Close', '<ctrl>w', Window.close_editor)
-        ctx.bind_accel('next-editor', '_Tab/_Next', '<ctrl>Page_Down', Window.switch_to, 1, 1)
-        ctx.bind_accel('prev-editor', '_Tab/_Prev', '<ctrl>Page_Up', Window.switch_to, 1, -1)
-        ctx.bind_accel('move-tab-left', '_Tab/Move to _left',
-            '<shift><ctrl>Page_Up', Window.move_tab, 1, False)
-        ctx.bind_accel('move-tab-right', '_Tab/Move to _right',
-            '<shift><ctrl>Page_Down', Window.move_tab, 1, True)
-
-        ctx.bind('detach-editor', '_Tab/_Detach', Window.retach_editor)
-        ctx.bind('duplicate-editor', '_Tab/D_uplicate', Window.duplicate_editor)
 
 
 class Window(gtk.Window):
@@ -283,3 +285,6 @@ class Window(gtk.Window):
 
     def duplicate_editor(self, editor):
         self.manager.get_free_window().attach_editor(self.manager.open(editor.uri))
+
+    def save_editor(self, editor):
+        editor.save()

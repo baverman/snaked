@@ -174,11 +174,11 @@ class EditorManager(object):
                 if matcher.search(filename):
                     buf.contexts.append(ctx)
 
-        buf.pref = prefs.CompositePreferences(self.lang_prefs.get(buf.lang, {}),
+        buf.config = prefs.CompositePreferences(self.lang_prefs.get(buf.lang, {}),
             self.lang_prefs.get('default', {}), prefs.default_prefs.get(buf.lang, {}),
             prefs.default_prefs['default'])
 
-        style_scheme = self.style_manager.get_scheme(buf.pref['style'])
+        style_scheme = self.style_manager.get_scheme(buf.config['style'])
         buf.set_style_scheme(style_scheme)
 
     def on_request_to_open_file(self, editor, filename, line, lang_id):
