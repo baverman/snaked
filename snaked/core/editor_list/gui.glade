@@ -2,16 +2,6 @@
 <interface>
   <requires lib="gtk+" version="2.16"/>
   <!-- interface-naming-policy project-wide -->
-  <object class="GtkTreeStore" id="editors">
-    <columns>
-      <!-- column-name title -->
-      <column type="gchararray"/>
-      <!-- column-name boldness -->
-      <column type="gint"/>
-      <!-- column-name mnemonic -->
-      <column type="gchararray"/>
-    </columns>
-  </object>
   <object class="GtkWindow" id="window">
     <property name="title" translatable="yes">Editor list</property>
     <property name="modal">True</property>
@@ -34,7 +24,6 @@
           <object class="GtkTreeView" id="editors_view">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="model">editors</property>
             <property name="headers_visible">False</property>
             <property name="headers_clickable">False</property>
             <property name="search_column">0</property>

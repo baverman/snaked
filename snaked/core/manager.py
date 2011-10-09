@@ -64,7 +64,7 @@ class EditorManager(object):
         # Init core plugins
         # TODO
         #self.plugin_manager.load_core_plugin(snaked.core.quick_open)
-        #self.plugin_manager.load_core_plugin(snaked.core.titler)
+        self.plugin_manager.add_plugin(snaked.core.editor_list)
         self.plugin_manager.add_plugin(snaked.core.titler)
 
         add_context_setter('lang', self.set_lang_context)

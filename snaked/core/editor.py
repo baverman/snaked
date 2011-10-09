@@ -60,6 +60,7 @@ class Editor(SignalManager):
 
         if buf:
             idle(self.update_view_preferences)
+            idle(self.update_title)
 
     def update_title(self):
         if self.uri:
@@ -70,7 +71,7 @@ class Editor(SignalManager):
         else:
             title = 'Unknown'
 
-        self.view.get_toplevel().set_editor_title(self, title)
+        self.window.set_editor_title(self, title)
 
     @property
     def uri(self):
@@ -270,7 +271,7 @@ class Editor(SignalManager):
         self.push_escape_callback.emit(callback, args)
 
     def add_spot(self):
-        self.view.get_toplevel().manager.add_spot(self)
+        self.window.manager.add_spot(self)
 
     @connect_external('view', 'move-cursor')
     def on_cursor_moved(self, view, step_size, count, extend_selection):
@@ -327,3 +328,15 @@ class Editor(SignalManager):
         self.view.set_show_right_margin(pref['show-right-margin'])
         self.view.set_wrap_mode(gtk.WRAP_WORD if pref['wrap-text'] else gtk.WRAP_NONE)
         self.view.set_pixels_above_lines(pref['line-spacing'])
+
+    @property
+    def window(self):
+        return self.view.get_toplevel()
+
+    def close(self):
+        self.window.close_editor(self)
+
+    def focus(self):
+        w = self.window
+        w.focus_editor(self)
+        w.present()
