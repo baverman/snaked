@@ -7,7 +7,7 @@ matcher = re.compile(r'[\w-]{3,}')
 
 def process(filename, data):
     result = {}
-    
+
     for w in matcher.findall(data):
         try:
             result[w] += 1
@@ -16,7 +16,7 @@ def process(filename, data):
 
     for w, c in result.iteritems():
         words.setdefault(w, {})[filename] = c
-    
+
     for w in [w for w, files in words.iteritems() if w not in result and filename in files]:
         del words[w][filename]
 
@@ -27,4 +27,3 @@ def add_job(filename, data):
     thread = Thread(target=process, args=(filename, data))
     current_jobs[filename] = thread
     thread.start()
-    
