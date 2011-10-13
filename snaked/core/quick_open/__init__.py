@@ -1,45 +1,50 @@
 dialog = [None]
 
-def init(manager):
-    manager.add_shortcut('quick-open', '<ctrl><alt>r', 'File', "Show quick open dialog", quick_open)
-    manager.add_shortcut('slow-open', '<ctrl>F12', 'File', "Show standard open dialog", slow_open)
+def init(injector):
+    from .. import prefs, context
 
-    manager.add_global_option('QUICK_OPEN_HIDDEN_FILES',
-        ['.pyc','.pyo','.svn','.git','.hg','.ropeproject','.snaked_project'],
+    injector.bind_accel(('window', 'editor'), 'slow-open', '_File/_Open', '<ctrl>F12', slow_open)
+    injector.bind_accel('window', 'quick-open', '_File/Quic_k open', '<ctrl><alt>r', quick_open)
+
+    injector.on_ready('editor-with-new-buffer', editor_opened)
+
+    prefs.add_option('QUICK_OPEN_HIDDEN_FILES',
+        lambda:['.pyc','.pyo','.svn','.git','.hg','.ropeproject','.snaked_project', '__pycache__'],
         "Defines files to hide in quick open's browser mode")
 
-    manager.add_global_option('QUICK_OPEN_SHOW_HIDDEN', False,
+    prefs.add_option('QUICK_OPEN_SHOW_HIDDEN', False,
         "Option to show hidden files. <ctrl>H in quick open dialog")
 
-    manager.add_global_option('QUICK_OPEN_RECENT_PROJECTS', [],
+    prefs.add_internal_option('QUICK_OPEN_RECENT_PROJECTS', list,
         "Recent projects be shown in quick open dialog")
 
-    manager.add_context('quick_open', set_context)
+    context.add_setter('quick_open', set_context)
+
 
 def editor_opened(editor):
-    import settings
+    from . import settings
     root = editor.project_root
+
     if root and root not in settings.recent_projects:
         settings.recent_projects.append(root)
-
     if not root:
         root = editor.get_project_root(larva=True)
         if root and root not in settings.larva_projects:
             settings.larva_projects.append(root)
 
-def quick_open(editor):
+def quick_open(window):
     if not dialog[0]:
-        from gui import QuickOpenDialog
+        from .gui import QuickOpenDialog
         dialog[0] = QuickOpenDialog()
 
-    dialog[0].show(editor)
+    dialog[0].show(window)
 
-def slow_open(editor):
+def slow_open(window, editor):
     import gtk
     import os.path
 
     dialog = gtk.FileChooserDialog("Open file...",
-        None,
+        window,
         gtk.FILE_CHOOSER_ACTION_OPEN,
         (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
         gtk.STOCK_OPEN, gtk.RESPONSE_OK))
@@ -49,7 +54,7 @@ def slow_open(editor):
 
     response = dialog.run()
     if response == gtk.RESPONSE_OK:
-        editor.open_file(dialog.get_filename())
+        window.manager.open_or_activate(dialog.get_filename(), window)
 
     dialog.destroy()
 
@@ -57,5 +62,5 @@ def quit():
     dialog[0] = None
 
 def set_context(project_root, contexts):
-    import settings
+    from . import settings
     settings.ignore_contexts[project_root] = contexts

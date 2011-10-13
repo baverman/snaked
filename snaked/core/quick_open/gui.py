@@ -6,9 +6,9 @@ import gtk
 
 from uxie.utils import idle, join_to_file_dir, refresh_gui
 from uxie.misc import BuilderAware
+from uxie.actions import Activator
 
 from snaked.util import set_activate_the_one_item
-from snaked.core.shortcuts import ShortcutActivator
 
 import settings
 import searcher
@@ -18,31 +18,46 @@ class QuickOpenDialog(BuilderAware):
 
     def __init__(self):
         super(QuickOpenDialog, self).__init__(join_to_file_dir(__file__, 'gui.glade'))
-        self.shortcuts = ShortcutActivator(self.window)
-        self.shortcuts.bind('Escape', self.escape)
-        self.shortcuts.bind('<alt>Up', self.project_up)
-        self.shortcuts.bind('<alt>Down', self.project_down)
-        self.shortcuts.bind('<ctrl>Return', self.open_mime)
-        self.shortcuts.bind('<alt>s', self.focus_search)
-        self.shortcuts.bind('<ctrl>o', self.free_open)
-        self.shortcuts.bind('<ctrl>p', self.popup_projects)
-        self.shortcuts.bind('<ctrl>Delete', self.delete_project)
-        self.shortcuts.bind('<ctrl>h', self.toggle_hidden)
-        self.shortcuts.bind('BackSpace', self.browse_top)
+        self.shortcuts = Activator(self.window)
+        self.shortcuts.bind('any', 'escape', '$_Close', self.escape)
+        self.shortcuts.bind('any', 'activate-search-entry',
+            'Activate search entry', self.focus_search)
+
+        self.shortcuts.bind_accel('any', 'open-mime', 'Run _external editor',
+            '<ctrl>Return', self.open_mime)
+        self.shortcuts.bind_accel('any', 'open-dialog', '_Open...', '<ctrl>o', self.free_open)
+        self.shortcuts.bind_accel('any', 'toggle-hidden', 'Toggle _hidden',
+            '<ctrl>h', self.toggle_hidden)
+
+        self.shortcuts.bind_accel('any', 'prev-project', '_Previous project', '<alt>Up', self.project_up)
+        self.shortcuts.bind_accel('any', 'next-project', '_Next project', '<alt>Down', self.project_down)
+        self.shortcuts.bind_accel('any', 'project-list', 'Show project _list',
+            '<ctrl>p', self.popup_projects)
+        self.shortcuts.bind_accel('any', 'delete-project', '_Delete project',
+            '<ctrl>Delete', self.delete_project)
+        self.shortcuts.bind_accel('any', 'goto-parent', 'Goto p_arent', 'BackSpace', self.browse_top)
 
         set_activate_the_one_item(self.search_entry, self.filelist_tree)
 
     def get_stored_recent_projects(self):
-        return self.editor().snaked_conf['QUICK_OPEN_RECENT_PROJECTS']
+        return self.pwindow().manager.conf['QUICK_OPEN_RECENT_PROJECTS']
 
     def store_recent_projects(self, projects):
-        self.editor().snaked_conf['QUICK_OPEN_RECENT_PROJECTS'] = list(projects)
+        self.pwindow().manager.conf['QUICK_OPEN_RECENT_PROJECTS'][:] = list(projects)
 
-    def show(self, editor):
-        self.editor = weakref.ref(editor)
+    def get_editor_project_root(self):
+        editor = self.pwindow().get_editor_context()
+        return editor.project_root if editor else None
+
+    def show(self, window, on_dialog_escape=None):
+        self.on_dialog_escape = on_dialog_escape
+        self.pwindow = weakref.ref(window)
         self.update_recent_projects()
-        self.update_projects(editor.get_project_root(larva=True))
-        editor.request_transient_for.emit(self.window)
+
+        editor = window.get_editor_context()
+        if editor:
+            self.update_projects(editor.get_project_root(larva=True))
+        self.window.set_transient_for(window)
 
         self.search_entry.grab_focus()
 
@@ -164,7 +179,7 @@ class QuickOpenDialog(BuilderAware):
         dirs = []
         files = []
 
-        conf = self.editor().snaked_conf
+        conf = self.pwindow().manager.conf
         hidden_masks = None
         if not conf['QUICK_OPEN_SHOW_HIDDEN']:
             hidden_masks = conf['QUICK_OPEN_HIDDEN_FILES']
@@ -226,7 +241,7 @@ class QuickOpenDialog(BuilderAware):
             else:
                 self.hide()
                 refresh_gui()
-                self.editor().open_file(fname)
+                self.pwindow().open_or_activate(fname)
 
     def open_mime(self):
         fname, name, top = self.get_selected_file()
@@ -242,14 +257,15 @@ class QuickOpenDialog(BuilderAware):
             if ai:
                 ai.launch([f])
             else:
-                self.editor().message('Unknown content type for launch %s' % ct)
+                self.pwindow().emessage('Unknown content type for launch %s' % ct, 'error')
 
     def focus_search(self):
         self.search_entry.grab_focus()
 
     def escape(self):
-        if hasattr(self.editor(), 'on_dialog_escape'):
-            idle(self.editor().on_dialog_escape, self)
+        if self.on_dialog_escape:
+            idle(self.on_dialog_escape, self)
+
         self.hide()
 
     def free_open(self):
@@ -264,7 +280,7 @@ class QuickOpenDialog(BuilderAware):
 
         response = dialog.run()
         if response == gtk.RESPONSE_OK:
-            idle(self.editor().open_file, dialog.get_filename())
+            idle(self.pwindow().open_or_activate, dialog.get_filename())
             idle(self.hide)
 
         dialog.destroy()
@@ -275,43 +291,44 @@ class QuickOpenDialog(BuilderAware):
     def delete_project(self):
         if len(self.projectlist):
             current_root = self.get_current_root()
-            if current_root == self.editor().project_root:
-                self.editor().message('You can not remove current project')
+            if current_root == self.get_editor_project_root():
+                self.pwindow().emessage('You can not remove current project', 'warn')
                 return
+
             settings.recent_projects.remove(current_root)
             self.store_recent_projects(settings.recent_projects)
 
             idx = self.projects_cbox.get_active()
             self.projectlist.remove(self.projects_cbox.get_active_iter())
             self.projects_cbox.set_active(idx % len(self.projectlist))
-            self.editor().message('Project removed')
+            self.pwindow().emessage('Project removed', 'done')
 
     def browse_top(self):
         if not self.filelist_tree.is_focus():
             return False
 
         if self.search_entry.get_text():
-            self.editor().message('You are not in browse mode')
+            self.pwindow().emessage('You are not in browse mode', 'warn')
             return
 
         fname, name, top = self.get_selected_file()
         if fname:
             if not top:
-                self.editor().message('No way!')
+                self.pwindow().emessage('No way!', 'warn')
             else:
                 place = os.path.basename(os.path.dirname(top)) + '/'
                 idle(self.fill_with_dirs, os.path.dirname(os.path.dirname(top)), place)
 
     def toggle_hidden(self):
         if self.search_entry.get_text():
-            self.editor().message('You are not in browse mode')
+            self.pwindow().emessage('You are not in browse mode', 'warn')
             return
 
-        conf = self.editor().snaked_conf
+        conf = self.pwindow().manager.conf
         conf['QUICK_OPEN_SHOW_HIDDEN'] = not conf['QUICK_OPEN_SHOW_HIDDEN']
 
-        self.editor().message('Show hidden files' if conf['QUICK_OPEN_SHOW_HIDDEN'] else
-            'Do not show hidden files' )
+        self.pwindow().emessage('Show hidden files' if conf['QUICK_OPEN_SHOW_HIDDEN']
+            else 'Do not show hidden files', 'info')
 
         fname, name, top = self.get_selected_file()
         if fname:

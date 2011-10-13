@@ -20,8 +20,8 @@ class EditorListDialog(BuilderAware):
     def __init__(self):
         super(EditorListDialog, self).__init__(join_to_file_dir(__file__, 'gui.glade'))
         self.activator = Activator(self.window)
-        self.activator.bind_accel('any', 'escape', None, 'Escape', self.hide)
-        self.activator.bind_accel('any', 'delete', None, 'Delete', self.close_editor)
+        self.activator.bind('any', 'escape', None, self.hide)
+        self.activator.bind('any', 'delete', None, self.close_editor)
 
         self.block_cursor = False
 

@@ -6,7 +6,7 @@ import gtksourceview2
 
 from uxie.utils import idle, join_to_file_dir, join_to_settings_dir
 from uxie.plugins import Manager as PluginManager
-from uxie.actions import Activator
+from uxie.actions import Activator, map_generic
 
 from ..util import lazy_property, get_project_root, save_file
 
@@ -34,6 +34,10 @@ prefs.add_option('TAB_BAR_PLACEMENT', None,
 prefs.add_internal_option('WINDOWS', list)
 prefs.add_internal_option('MODIFIED_FILES', dict)
 
+map_generic('root-menu', 'F1')
+map_generic('activate-search-entry', '<ctrl>s')
+map_generic('escape', 'Escape')
+map_generic('delete', 'Delete')
 
 class EditorManager(object):
     def __init__(self, session):
@@ -47,7 +51,7 @@ class EditorManager(object):
 
         self.activator = Activator()
         self.activator.add_context('manager', (), lambda: self)
-        self.activator.bind_accel('manager', 'quit', '$_Quit', '<ctrl>q', EditorManager.quit)
+        self.activator.bind_accel('manager', 'quit', '_File/$_Quit', '<ctrl>q', EditorManager.quit)
 
         self.plugin_manager = PluginManager(self.activator)
 
@@ -62,8 +66,7 @@ class EditorManager(object):
         self.on_quit = []
 
         # Init core plugins
-        # TODO
-        #self.plugin_manager.load_core_plugin(snaked.core.quick_open)
+        self.plugin_manager.add_plugin(snaked.core.quick_open)
         self.plugin_manager.add_plugin(snaked.core.editor_list)
         self.plugin_manager.add_plugin(snaked.core.titler)
 
@@ -73,7 +76,6 @@ class EditorManager(object):
         self.plugin_manager.ready('manager', self)
 
         self.plugin_manager.add_plugin(snaked.core.window)
-
 
     def init_conf(self):
         self.default_config = prefs.PySettings(prefs.options)
@@ -129,8 +131,27 @@ class EditorManager(object):
             idle(editor.load_file, filename, line)
             #idle(self.plugin_manager.editor_opened, editor)
 
+            self.plugin_manager.ready('editor-with-new-buffer', editor)
+
         self.plugin_manager.ready('editor', editor)
         return editor
+
+    def open_or_activate(self, uri, window):
+        buf = self.get_buffer_for_uri(uri)
+        if buf:
+            for e in window.editors:
+                if e.buffer is buf:
+                    e.focus()
+                    return e
+
+            for e in self.get_editors():
+                if e.buffer is buf:
+                    e.focus()
+                    return e
+        else:
+            e = self.open(uri)
+            window.attach_editor(e)
+            return e
 
     @lazy_property
     def lang_prefs(self):
