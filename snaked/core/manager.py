@@ -19,6 +19,7 @@ import snaked.core.quick_open
 import snaked.core.titler
 import snaked.core.editor_list
 import snaked.core.window
+import snaked.core.plugins
 
 prefs.add_option('RESTORE_POSITION', True, 'Restore snaked windows position')
 prefs.add_option('CONSOLE_FONT', 'Monospace 8', 'Font used in console panel')
@@ -76,6 +77,8 @@ class EditorManager(object):
         self.plugin_manager.ready('manager', self)
 
         self.plugin_manager.add_plugin(snaked.core.window)
+
+        snaked.core.plugins.init_plugins(self.plugin_manager)
 
     def init_conf(self):
         self.default_config = prefs.PySettings(prefs.options)
