@@ -7,11 +7,13 @@ import re
 
 langs = ['python', 'sh', 'ruby', 'perl']
 
-def init(manager):
-    manager.add_shortcut('comment-code', '<ctrl>slash', 'Edit',
-        'Comments/uncomments current line or selection', comment)
+def init(injector):
+    injector.add_context('hash-comment-aware', 'editor-active',
+        lambda e: e if e.buffer.lang in langs else None)
 
-#Action
+    injector.bind_accel('hash-comment-aware', 'comment-code', '_Edit/(Un)_comment',
+        '<ctrl>slash', comment, 1)
+
 def comment(editor):
     r = get_bounds(editor)
     traversor = make_line_traversor(editor.buffer, r)
