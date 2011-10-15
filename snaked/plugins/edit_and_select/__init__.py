@@ -7,25 +7,29 @@ import gtk
 
 last_smart_selections = weakref.WeakKeyDictionary()
 
-def init(manager):
-    manager.add_shortcut('delete-line', '<ctrl>d', 'Edit', 'Deletes current line', delete_line)
-    manager.add_shortcut('smart-select', '<alt>w', 'Selection', 'Smart anything selection', smart_select)
-    manager.add_shortcut('smart-unselect', '<shift><alt>w',
-        'Selection', 'Back smart selection', smart_unselect)
-    manager.add_shortcut('show_offset', '<ctrl><alt>o', 'Edit',
-        'Show cursor offset and column', show_offset)
-    manager.add_shortcut('wrap-text', '<alt>f', 'Edit', 'Wrap text on right margin width', wrap_text)
+def init(injector):
+    injector.bind_accel('editor-active', 'delete-line', '_Edit/_Delete line', '<ctrl>d', delete_line)
 
-    manager.add_shortcut('move-selection-left', '<alt>Left', 'Edit',
-        'Move selection to one char left', move_word_left)
-    manager.add_shortcut('move-selection-right', '<alt>Right', 'Edit',
-        'Move selection to one char right', move_word_right)
+    injector.bind_accel('editor-active', 'smart-select', '_Edit/Smart _select', '<alt>w', smart_select)
+    injector.bind_accel('editor-with-selection', 'smart-unselect', '_Edit/Smart _unselect',
+        '<shift><alt>w', smart_unselect)
 
-    manager.add_global_option('DOUBLE_BRACKET_MATCHER', True, "Enable custom bracket matcher")
-    manager.add_global_option('COPY_DELETED_LINE', True, "Put deleted line into clipboard")
+    injector.bind_accel('editor-active', 'show_offset', '_Tools/Show offset and column',
+        '<ctrl><alt>o', show_offset)
+
+    injector.bind_accel('editor-with-selection', 'wrap-text', '_Edit/_Wrap block', '<alt>f', wrap_text)
+
+    injector.bind_accel('editor-with-selection', 'move-selection-left',
+        '_Edit/Move selection _left', '<alt>Left', move_word_left)
+    injector.bind_accel('editor-with-selection', 'move-selection-right',
+        '_Edit/Move selection _right', '<alt>Right', move_word_right)
+
+    from snaked.core.prefs import add_option
+    add_option('DOUBLE_BRACKET_MATCHER', True, "Enable custom bracket matcher")
+    add_option('COPY_DELETED_LINE', True, "Put deleted line into clipboard")
 
 def editor_created(editor):
-    if editor.snaked_conf['DOUBLE_BRACKET_MATCHER']:
+    if editor.conf['DOUBLE_BRACKET_MATCHER']:
         from bracket_matcher import attach
         attach(editor)
 
@@ -33,7 +37,7 @@ def delete_line(editor):
     from util import get_line_bounds, line_is_empty
 
     bounds = get_line_bounds(editor.cursor)
-    if not line_is_empty(editor.cursor) and editor.snaked_conf['COPY_DELETED_LINE']:
+    if not line_is_empty(editor.cursor) and editor.conf['COPY_DELETED_LINE']:
         clipboard = editor.view.get_clipboard(gtk.gdk.SELECTION_CLIPBOARD)
         editor.buffer.select_range(*bounds)
         editor.buffer.copy_clipboard(clipboard)
@@ -64,8 +68,7 @@ def smart_select(editor):
     editor.buffer.select_range(end, start)
 
 def smart_unselect(editor):
-    if not editor.buffer.get_has_selection() or editor not in last_smart_selections \
-            or not last_smart_selections[editor]:
+    if editor not in last_smart_selections or not last_smart_selections[editor]:
         editor.message('Unselect what?')
         return
 
@@ -84,10 +87,6 @@ def show_offset(editor):
 
 def wrap_text(editor):
     buf = editor.buffer
-    if not buf.get_has_selection():
-        editor.message('Select text block to wrap')
-        return
-
     import textwrap, re
     from util import get_whitespace
 
@@ -123,17 +122,6 @@ def move_word(buf, fromiter, tomark):
     buf.insert(buf.get_iter_at_mark(tomark), text)
     buf.end_user_action()
 
-def has_selection(func):
-    def inner(editor):
-        if not editor.buffer.get_has_selection():
-            editor.message('Select something to move')
-            return
-
-        return func(editor)
-
-    return inner
-
-@has_selection
 def move_word_left(editor):
     buf = editor.buffer
     start, end = map(gtk.TextIter.copy, buf.get_selection_bounds())
@@ -150,7 +138,6 @@ def move_word_left(editor):
     end.backward_char()
     buf.select_range(start, end)
 
-@has_selection
 def move_word_right(editor):
     buf = editor.buffer
     start, end = map(gtk.TextIter.copy, buf.get_selection_bounds())
