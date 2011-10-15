@@ -109,8 +109,8 @@ class CompositePreferences(object):
 
 
 class KVSettings(object):
-    def __init__(self, name):
-        self.db = anydbm.open(get_settings_path(name), 'cu')
+    def __init__(self, *name):
+        self.db = anydbm.open(get_settings_path(*name), 'cu')
 
     def get_key(self, key):
         if isinstance(key, unicode):
@@ -127,8 +127,8 @@ class KVSettings(object):
     def __setitem__(self, key, value):
         self.db[self.get_key(key)] = value
 
-    def __del__(self):
-        self.db.close()
+    def save(self):
+        self.db.sync()
 
 class ListSettings(object):
     def __init__(self, name):
