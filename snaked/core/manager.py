@@ -125,16 +125,16 @@ class EditorManager(object):
             editor.buffer.session = self.session
             editor.buffer.uri = filename
 
-            #connect_all(self, editor)
-
             idle(self.set_buffer_prefs, editor.buffer, filename, contexts)
+            idle(self.plugin_manager.ready, 'buffer-created', editor.buffer)
+            idle(self.plugin_manager.ready, 'editor-with-new-buffer-created', editor)
+
             idle(editor.update_view_preferences)
-            #idle(self.plugin_manager.editor_created, editor)
 
             idle(editor.load_file, filename, line)
-            #idle(self.plugin_manager.editor_opened, editor)
+            idle(self.plugin_manager.ready, 'buffer-loaded', editor.buffer)
 
-            self.plugin_manager.ready('editor-with-new-buffer', editor)
+            idle(self.plugin_manager.ready, 'editor-with-new-buffer', editor)
 
         self.plugin_manager.ready('editor', editor)
         return editor
@@ -246,13 +246,19 @@ class EditorManager(object):
                     yield e
 
     def editor_closed(self, editor):
-        del editor.view
         buf = editor.buffer
+        is_last_buffer = not any(e.buffer is buf for e in self.get_editors() if e is not editor)
+
+        if is_last_buffer:
+            self.plugin_manager.done('last-buffer-editor', editor)
+
+        del editor.view
         del editor.buffer
 
-        for e in self.get_editors():
-            if e.buffer is buf:
-                return
+        if not is_last_buffer:
+            return
+
+        self.plugin_manager.done('buffer', buf)
 
         self.buffers.remove(buf)
         if buf.get_modified():
