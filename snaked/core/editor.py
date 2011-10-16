@@ -9,7 +9,7 @@ import gtksourceview2
 from uxie.utils import idle
 
 from .prefs import add_option
-from ..util import save_file, get_project_root, single_ref
+from ..util import save_file, get_project_root
 from ..signals import SignalManager, Signal, connect_all, connect_external, weak_connect
 
 add_option('DISABLE_LEFT_CLICK', False, 'Disable left mouse button handling in editor view')
@@ -107,7 +107,7 @@ class Editor(SignalManager):
                         utext = text.decode(result['encoding'])
                         self.buffer.encoding = result['encoding']
                         idle(self.message,
-                            'Automatically selected ' + self.buffer.encoding + 'encoding', 5000)
+                            'Automatically selected ' + self.buffer.encoding + 'encoding', 'info', 5000)
                     else:
                         self.buffer.saveable = False
                         utext = 'Is this a text file?'
@@ -151,7 +151,7 @@ class Editor(SignalManager):
 
     def save(self):
         if not self.buffer.saveable:
-            self.message("This file was opened with error and can't be saved")
+            self.message("This file was opened with error and can't be saved", 'warn')
             return
 
         if self.uri:
@@ -165,11 +165,11 @@ class Editor(SignalManager):
             try:
                 save_file(self.uri, self.utext, self.encoding)
                 if not self.buffer.get_modified():
-                    self.message("%s saved" % self.uri)
+                    self.message("%s saved" % self.uri, 'done')
                 self.buffer.set_modified(False)
                 self.file_saved.emit()
             except Exception, e:
-                self.message(str(e), 5000)
+                self.message(str(e), 'error', 5000)
 
     @property
     def project_root(self):
@@ -257,18 +257,12 @@ class Editor(SignalManager):
     def scroll_to_cursor(self):
         self.view.scroll_to_mark(self.buffer.get_insert(), 0.001, use_align=True, xalign=1.0)
 
-    @single_ref
-    def feedback_popup(self):
-        from .feedback import FeedbackPopup
-        return FeedbackPopup()
-
-    def message(self, message, timeout=1500, markup=False):
-        popup = self.feedback_popup
-        popup.show(self, message, timeout, markup)
-        self.push_escape(popup.hide, popup.escape)
+    def message(self, message, category=None, timeout=None):
+        self.window.message(message, category, timeout, parent=self.view)
 
     def push_escape(self, callback, *args):
-        self.push_escape_callback.emit(callback, args)
+        pass
+        #self.push_escape_callback.emit(callback, args)
 
     def add_spot(self):
         self.window.manager.add_spot(self)

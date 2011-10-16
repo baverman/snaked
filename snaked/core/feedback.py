@@ -53,7 +53,7 @@ class FeedbackPopup(object):
     def show(self, editor, text, timeout=1500, markup=False):
         if not self.handlers_connected:
             self.handlers_connected = True
-            toplevel = editor.view.get_toplevel()
+            toplevel = editor.window
             toplevel.connect('focus-out-event', self.focus_out_event)
             toplevel.connect('focus-in-event', self.focus_in_event)
 
@@ -73,7 +73,7 @@ class FeedbackPopup(object):
         x, y = win.get_origin()
         mw, mh = self.window.get_size()
 
-        editor.request_transient_for.emit(self.window)
+        self.window.set_transient_for(editor.window)
         self.window.move(x + w - mw, y + h - mh)
         self.window.show()
 

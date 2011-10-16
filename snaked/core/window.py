@@ -3,6 +3,9 @@ import weakref
 
 import gtk
 
+from uxie.floating import Manager as FloatingManager, TextFeedback
+
+
 tab_bar_pos_mapping = {
     'top': gtk.POS_TOP,
     'bottom': gtk.POS_BOTTOM,
@@ -67,6 +70,8 @@ class Window(gtk.Window):
         conf = manager.conf
         self.window_conf = window_conf
         self.manager = manager
+
+        self.floating_manager = FloatingManager()
 
         self.note = gtk.Notebook()
         self.note.set_show_tabs(
@@ -288,3 +293,19 @@ class Window(gtk.Window):
 
     def save_editor(self, editor):
         editor.save()
+
+    def open_or_activate(self, uri):
+        return self.manager.open_or_activate(uri, self)
+
+    def message(self, message, category=None, timeout=None, parent=None):
+        fb = TextFeedback(message, category)
+        timeout = timeout or fb.timeout
+        return self.floating_manager.add(parent or self, fb, 5, timeout)
+
+    def emessage(self, message, category=None, timeout=None):
+        fb = TextFeedback(message, category)
+        timeout = timeout or fb.timeout
+
+        e = self.get_editor_context()
+        parent = e.view if e else self
+        return self.floating_manager.add(parent, fb, 5, timeout)
