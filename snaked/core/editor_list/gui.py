@@ -71,7 +71,7 @@ class EditorListDialog(BuilderAware):
                 m = ''
                 ml = ''
 
-            self.model.append((title, weight, m, (uri, weakref.ref(editor)), ml))
+            self.model.append((title, weight, m, (uri, weakref.ref(editor) if editor else None), ml))
 
         for i, (t, e) in enumerate(sorted(titles, key=lambda r: r[0])):
             editor_uris.add(e.uri)
@@ -111,7 +111,8 @@ class EditorListDialog(BuilderAware):
             idle(editor().focus)
             idle(self.hide)
         elif uri:
-            print 'request open'
+            idle(self.pwindow().open_or_activate, uri)
+            idle(self.hide)
 
     def on_editors_view_row_activated(self, view, path, *args):
         self.activate_editor(path)
