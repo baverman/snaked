@@ -40,6 +40,9 @@ map_generic('activate-search-entry', '<ctrl>s')
 map_generic('escape', 'Escape')
 map_generic('delete', 'Delete')
 
+map_generic('prev', '<ctrl>Up', 1)
+map_generic('next', '<ctrl>Down', 1)
+
 class EditorManager(object):
     def __init__(self, session):
         self.buffers = []

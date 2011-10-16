@@ -9,6 +9,7 @@ import gtk
 import glib
 
 from uxie.utils import idle, refresh_gui
+from uxie.escape import Escapable
 
 active_widgets = weakref.WeakKeyDictionary()
 search_selections = []
@@ -18,28 +19,47 @@ class SearchSelection(object):
     def __init__(self, search):
         self.search = search
 
-def init(manager):
-    manager.add_shortcut('search', '<ctrl>f', 'Edit', 'Search or mark', search)
-    manager.add_shortcut('find-next', '<ctrl>j', 'Edit', 'Find next', find_next)
-    manager.add_shortcut('find-prev', '<ctrl>k', 'Edit', 'Find prev', find_prev)
-    manager.add_shortcut('mark-selection', '<ctrl>h', 'Edit',
-        'Mark selection occurrences', mark_selection)
+def init(injector):
+    injector.add_context('textview-active', 'window',
+        lambda w: w.get_focus() if isinstance(w.get_focus(), gtk.TextView) else None)
+    injector.add_context('search', 'textview-active',
+        lambda t: t if t in active_widgets or search_selections else None)
 
-    manager.add_global_option('SEARCH_IGNORE_CASE', False, 'Ignore case while searching')
-    manager.add_global_option('SEARCH_REGEX', False, 'Use regular expression for searhing')
+    injector.bind_accel('textview-active', 'search',  '_Edit/_Search', '<ctrl>f', search)
+    injector.bind_accel('textview-active', 'mark-selection', '_Edit/_Mark', '<ctrl>h', mark_selection)
 
-def search(editor):
-    if editor in active_widgets:
-        widget = active_widgets[editor]
+    injector.bind('search', 'next', '_Edit/Find _next', find_next)
+    injector.bind('search', 'prev', '_Edit/Find _prev', find_prev)
+
+    from snaked.core.prefs import add_internal_option
+    add_internal_option('SEARCH_IGNORE_CASE', False, 'Ignore case while searching')
+    add_internal_option('SEARCH_REGEX', False, 'Use regular expression for searhing')
+
+def get_box(view):
+    vbox = view
+    while vbox:
+        vbox = vbox.get_parent()
+        if isinstance(vbox, gtk.VBox):
+            return vbox
+
+def search(view):
+    if view in active_widgets:
+        widget = active_widgets[view]
     else:
-        widget = create_widget(editor)
-        active_widgets[editor] = widget
-        editor.widget.pack_start(widget, False)
-        editor.push_escape(hide, widget)
+        vbox = get_box(view)
+        if not vbox:
+            view.get_toplevel().message("Can't show search panel", 'warn', parent=view)
+            return
+
+        widget = create_widget(view)
+        active_widgets[view] = widget
+        vbox.pack_start(widget, False)
+        view.get_toplevel().push_escape(Escapable(hide, widget, view))
         widget.show_all()
 
-    if editor.buffer.get_has_selection():
-        start, end = editor.buffer.get_selection_bounds()
+    buf = view.get_buffer()
+    if buf.get_has_selection():
+        start, end = buf.get_selection_bounds()
         if start.get_line() == end.get_line():
             refresh_gui()
 
@@ -47,7 +67,7 @@ def search(editor):
             if widget.regex.get_active():
                 search = re.escape(search)
 
-            editor.buffer.place_cursor(start)
+            buf.place_cursor(start)
             widget.entry.set_text(search)
         else:
             widget.entry.grab_focus()
@@ -63,11 +83,11 @@ def backward_search(matcher, text, endpos):
 
     return match
 
-def do_find(editor, dir, start_from=None):
-    if editor in active_widgets:
-        search = active_widgets[editor].entry.get_text()
-        ignore_case = active_widgets[editor].ignore_case.get_active()
-        regex = active_widgets[editor].regex.get_active()
+def do_find(view, dir, start_from=None):
+    if view in active_widgets:
+        search = active_widgets[view].entry.get_text()
+        ignore_case = active_widgets[view].ignore_case.get_active()
+        regex = active_widgets[view].regex.get_active()
     elif search_selections:
         search = search_selections[0].search
         ignore_case = False
@@ -75,46 +95,48 @@ def do_find(editor, dir, start_from=None):
     else:
         return
 
-    matcher = get_matcher(editor, search, ignore_case, regex)
+    matcher = get_matcher(view, search, ignore_case, regex)
     if not matcher:
         return
 
+    buf = view.get_buffer()
     iter = start_from
     if not iter:
-        if editor.buffer.get_has_selection() and dir == 1:
-            iter = editor.buffer.get_iter_at_mark(editor.buffer.get_selection_bound())
+        if buf.get_has_selection() and dir == 1:
+            iter = buf.get_iter_at_mark(buf.get_selection_bound())
         else:
-            iter = editor.cursor
+            iter = buf.get_iter_at_mark(buf.get_insert())
 
+    utext = buf.get_text(*buf.get_bounds())
     match = None
     if dir == 0:
-        match = matcher.search(editor.utext, iter.get_offset())
+        match = matcher.search(utext, iter.get_offset())
     else:
-        match = backward_search(matcher, editor.utext, iter.get_offset())
+        match = backward_search(matcher, utext, iter.get_offset())
 
     if match:
-        bounds = map(editor.buffer.get_iter_at_offset, match.span())
-        editor.buffer.select_range(bounds[1], bounds[0])
-        editor.view.scroll_mark_onscreen(editor.buffer.get_insert())
+        bounds = map(buf.get_iter_at_offset, match.span())
+        buf.select_range(bounds[1], bounds[0])
+        view.scroll_mark_onscreen(buf.get_insert())
         if start_from:
-            editor.message('Wrap search', 800)
+            view.get_toplevel().message('Wrap search', 'info', parent=view)
 
         return True
     elif not start_from:
-        return do_find(editor, dir, editor.buffer.get_bounds()[dir])
+        return do_find(view, dir, buf.get_bounds()[dir])
     else:
-        editor.message('Text not found')
+        view.get_toplevel().message('Text not found', 'info', parent=view)
 
     return False
 
-def find_prev(editor):
-    do_find(editor, 1)
+def find_prev(view):
+    do_find(view, 1)
 
-def find_next(editor, grab_focus=False):
-    if do_find(editor, 0) and grab_focus:
-        editor.view.grab_focus()
+def find_next(view, grab_focus=False):
+    if do_find(view, 0) and grab_focus:
+        view.grab_focus()
 
-def create_widget(editor):
+def create_widget(view):
     widget = gtk.HBox(False, 10)
     widget.set_border_width(3)
 
@@ -127,8 +149,8 @@ def create_widget(editor):
     widget.pack_start(entry, False)
     widget.entry = entry
     label.set_mnemonic_widget(entry)
-    entry.connect('activate', on_search_activate, editor, widget)
-    entry.connect_after('changed', on_search_changed, editor, widget)
+    entry.connect('activate', on_search_activate, view, widget)
+    entry.connect_after('changed', on_search_changed, view, widget)
 
     label = gtk.Label()
     label.set_text('_Replace:')
@@ -139,16 +161,16 @@ def create_widget(editor):
     widget.pack_start(entry, False)
     widget.replace_entry = entry
     label.set_mnemonic_widget(entry)
-    entry.connect('activate', on_search_activate, editor, widget)
+    entry.connect('activate', on_search_activate, view, widget)
 
 
     cb = gtk.CheckButton('Ignore _case')
-    cb.set_active(editor.snaked_conf['SEARCH_IGNORE_CASE'])
+    cb.set_active(view.get_toplevel().manager.conf['SEARCH_IGNORE_CASE'])
     widget.pack_start(cb, False)
     widget.ignore_case = cb
 
     cb = gtk.CheckButton('Rege_x')
-    cb.set_active(editor.snaked_conf['SEARCH_REGEX'])
+    cb.set_active(view.get_toplevel().manager.conf['SEARCH_REGEX'])
     widget.pack_start(cb, False)
     widget.regex = cb
 
@@ -158,7 +180,7 @@ def create_widget(editor):
     button = gtk.Button()
     button.add(label)
     widget.pack_start(button, False)
-    button.connect('clicked', on_replace_activate, editor, widget)
+    button.connect('clicked', on_replace_activate, view, widget)
 
     label = gtk.Label('Replace _all')
     label.set_use_underline(True)
@@ -166,20 +188,21 @@ def create_widget(editor):
     button = gtk.Button()
     button.add(label)
     widget.pack_start(button, False)
-    button.connect('clicked', on_replace_all_activate, editor, widget)
+    button.connect('clicked', on_replace_all_activate, view, widget)
     widget.replace_all = button
 
-    editor.view.connect_after('move-cursor', on_editor_view_move_cursor, widget)
+    view.connect_after('move-cursor', on_editor_view_move_cursor, widget)
     widget.replace_in_selection = False
 
     return widget
 
-def get_tag(editor):
-    table = editor.buffer.get_tag_table()
+def get_tag(view):
+    buf = view.get_buffer()
+    table = buf.get_tag_table()
     tag = table.lookup('search')
     if not tag:
-        tag = editor.buffer.create_tag('search')
-        style = editor.buffer.get_style_scheme().get_style('search-match')
+        tag = buf.create_tag('search')
+        style = buf.get_style_scheme().get_style('search-match')
         if style:
             if style.props.background_set:
                 tag.props.background = style.props.background
@@ -187,7 +210,7 @@ def get_tag(editor):
             if style.props.foreground_set:
                 tag.props.foreground = style.props.foreground
         else:
-            style = editor.buffer.get_style_scheme().get_style('text')
+            style = buf.get_style_scheme().get_style('text')
             if style.props.background_set:
                 tag.props.foreground = style.props.background
 
@@ -196,12 +219,13 @@ def get_tag(editor):
 
     return tag
 
-def delete_all_marks(editor):
-    start, end = editor.buffer.get_bounds()
-    if editor.buffer.get_tag_table().lookup('search'):
-        editor.buffer.remove_tag_by_name('search', start, end)
+def delete_all_marks(view):
+    buf = view.get_buffer()
+    start, end = buf.get_bounds()
+    if buf.get_tag_table().lookup('search'):
+        buf.remove_tag_by_name('search', start, end)
 
-def get_matcher(editor, search, ignore_case, regex, show_feedback=True):
+def get_matcher(view, search, ignore_case, regex, show_feedback=True):
     flags = re.UNICODE
     if ignore_case:
         flags |= re.IGNORECASE
@@ -211,186 +235,197 @@ def get_matcher(editor, search, ignore_case, regex, show_feedback=True):
             return re.compile(unicode(search), flags)
         except Exception, e:
             if show_feedback:
-                editor.message('Bad regex: ' + str(e), 3000)
-                if editor in active_widgets:
-                    idle(active_widgets[editor].entry.grab_focus)
+                view.get_toplevel().message('Bad regex: ' + str(e), 'error', 3000, parent=view)
+                if view in active_widgets:
+                    idle(active_widgets[view].entry.grab_focus)
 
             return None
     else:
         return re.compile(re.escape(unicode(search)), flags)
 
-def add_mark_task(editor, search, ignore_case, regex, show_feedback=True):
+def add_mark_task(view, search, ignore_case, regex, show_feedback=True):
     if not mark_task_is_in_queue[0]:
         mark_task_is_in_queue[0] = True
-        idle(mark_occurences, editor, search, ignore_case, regex,
+        idle(mark_occurences, view, search, ignore_case, regex,
             show_feedback, priority=glib.PRIORITY_LOW)
 
-def mark_occurences(editor, search, ignore_case, regex, show_feedback=True):
+def mark_occurences(view, search, ignore_case, regex, show_feedback=True):
     mark_task_is_in_queue[0] = False
-    matcher = get_matcher(editor, search, ignore_case, regex, show_feedback)
+    matcher = get_matcher(view, search, ignore_case, regex, show_feedback)
     if not matcher:
         return False
 
     count = 0
-    for m in matcher.finditer(editor.utext):
-        editor.buffer.apply_tag(get_tag(editor),
-            *map(editor.buffer.get_iter_at_offset, m.span()))
+    buf = view.get_buffer()
+    utext = buf.get_text(*buf.get_bounds())
+    for m in matcher.finditer(utext):
+        buf.apply_tag(get_tag(view),
+            *map(buf.get_iter_at_offset, m.span()))
 
         count += 1
 
     if count == 1:
         if show_feedback:
-            idle(editor.message, 'One occurrence is marked')
+            idle(view.get_toplevel().message, 'One occurrence is marked', 'done', parent=view)
     elif count > 1:
         if show_feedback:
-            idle(editor.message, '%d occurrences are marked' % count)
+            idle(view.get_toplevel().message, '%d occurrences are marked' % count, 'done', parent=view)
     else:
         if show_feedback:
-            idle(editor.message, 'Text not found')
+            idle(view.get_toplevel().message, 'Text not found', 'warn', parent=view)
         return False
 
     return True
 
-def on_search_activate(sender, editor, widget):
-    delete_all_marks(editor)
-    editor.add_spot()
-    if mark_occurences(editor, widget.entry.get_text(),
+def on_search_activate(sender, view, widget):
+    delete_all_marks(view)
+    #editor.add_spot() TODO
+    if mark_occurences(view, widget.entry.get_text(),
             widget.ignore_case.get_active(), widget.regex.get_active()):
-        find_next(editor, True)
+        find_next(view, True)
 
-def on_search_changed(sender, editor, widget):
+def on_search_changed(sender, view, widget):
     search = widget.entry.get_text()
-    idle(delete_all_marks, editor)
+    idle(delete_all_marks, view)
 
     if search and ( len(search) != 1 or ( not search.isdigit() and not search.isalpha()
             and not search.isspace() ) ):
-        idle(add_mark_task, editor, search,
+        idle(add_mark_task, view, search,
                 widget.ignore_case.get_active(), widget.regex.get_active(), False)
 
-def hide(editor, widget):
-    delete_all_marks(editor)
+def hide(widget, view):
+    delete_all_marks(view)
 
     try:
-        del active_widgets[editor]
+        del active_widgets[view]
     except KeyError:
         pass
 
     if widget and widget.get_parent():
-        editor.widget.remove(widget)
+        get_box(view).remove(widget)
         widget.destroy()
 
-        editor.snaked_conf['SEARCH_IGNORE_CASE'] = widget.ignore_case.get_active()
-        editor.snaked_conf['SEARCH_REGEX'] = widget.regex.get_active()
+        conf = view.get_toplevel().manager.conf
+        conf['SEARCH_IGNORE_CASE'] = widget.ignore_case.get_active()
+        conf['SEARCH_REGEX'] = widget.regex.get_active()
 
-    editor.view.grab_focus()
+    view.grab_focus()
 
-def mark_selection(editor):
-    if not editor.buffer.get_has_selection():
-        editor.message('Select something')
+def mark_selection(view):
+    buf = view.get_buffer()
+    if not buf.get_has_selection():
+        view.get_toplevel().message('Select something', 'warn', parent=view)
         return
 
     if search_selections:
         search_selections[:] = []
 
-    delete_all_marks(editor)
+    delete_all_marks(view)
 
-    occur = SearchSelection(editor.buffer.get_text(*editor.buffer.get_selection_bounds()))
+    occur = SearchSelection(buf.get_text(*buf.get_selection_bounds()))
     search_selections.append(occur)
 
-    def remove_all(editor, occur):
+    def remove_all(view, occur):
         search_selections[:] = []
-        delete_all_marks(editor)
+        delete_all_marks(view)
 
-    mark_occurences(editor, occur.search, False, False)
-    editor.push_escape(remove_all, occur)
+    mark_occurences(view, occur.search, False, False)
+    view.get_toplevel().push_escape(Escapable(remove_all, view, occur))
 
-def on_replace_activate(button, editor, widget):
-    if editor not in active_widgets:
+def on_replace_activate(button, view, widget):
+    if view not in active_widgets:
         return
 
-    search = active_widgets[editor].entry.get_text()
-    ignore_case = active_widgets[editor].ignore_case.get_active()
-    regex = active_widgets[editor].regex.get_active()
-    replace = unicode(active_widgets[editor].replace_entry.get_text())
+    search = active_widgets[view].entry.get_text()
+    ignore_case = active_widgets[view].ignore_case.get_active()
+    regex = active_widgets[view].regex.get_active()
+    replace = unicode(active_widgets[view].replace_entry.get_text())
 
-    matcher = get_matcher(editor, search, ignore_case, regex)
+    matcher = get_matcher(view, search, ignore_case, regex)
     if not matcher:
         return
 
-    if editor.buffer.get_has_selection():
-        iter = editor.buffer.get_selection_bounds()[0]
+    buf = view.get_buffer()
+    utext = buf.get_text(*buf.get_bounds())
+
+    if buf.get_has_selection():
+        iter = buf.get_selection_bounds()[0]
     else:
-        iter = editor.cursor
+        iter = buf.get_iter_at_mark(buf.get_insert())
 
-    match = matcher.search(editor.utext, iter.get_offset())
+    match = matcher.search(utext, iter.get_offset())
     if not match:
-        editor.message('Replace what?')
+        view.get_toplevel().message('Replace what?', 'warn', parent=view)
         return
 
-    start, end = map(editor.buffer.get_iter_at_offset, match.span())
-    editor.buffer.begin_user_action()
-    editor.buffer.place_cursor(start)
-    editor.buffer.delete(start, end)
-    editor.buffer.insert_at_cursor(match.expand(replace).encode('utf-8'))
-    editor.buffer.end_user_action()
+    start, end = map(buf.get_iter_at_offset, match.span())
+    buf.begin_user_action()
+    buf.place_cursor(start)
+    buf.delete(start, end)
+    buf.insert_at_cursor(match.expand(replace).encode('utf-8'))
+    buf.end_user_action()
 
-    editor.view.scroll_mark_onscreen(editor.buffer.get_insert())
+    view.scroll_mark_onscreen(buf.get_insert())
 
-def on_replace_all_activate(button, editor, widget):
-    if editor not in active_widgets:
+def on_replace_all_activate(button, view, widget):
+    if view not in active_widgets:
         return
 
-    search = active_widgets[editor].entry.get_text()
-    ignore_case = active_widgets[editor].ignore_case.get_active()
-    regex = active_widgets[editor].regex.get_active()
-    replace = unicode(active_widgets[editor].replace_entry.get_text())
+    search = active_widgets[view].entry.get_text()
+    ignore_case = active_widgets[view].ignore_case.get_active()
+    regex = active_widgets[view].regex.get_active()
+    replace = unicode(active_widgets[view].replace_entry.get_text())
 
-    matcher = get_matcher(editor, search, ignore_case, regex)
+    matcher = get_matcher(view, search, ignore_case, regex)
     if not matcher:
         return
 
-    line, offset = editor.cursor.get_line(), editor.cursor.get_line_offset()
+    buf = view.get_buffer()
+    utext = buf.get_text(*buf.get_bounds())
+    cursor = buf.get_iter_at_mark(buf.get_insert())
 
-    if active_widgets[editor].replace_in_selection:
-        start, end = editor.buffer.get_selection_bounds()
+    line, offset = cursor.get_line(), cursor.get_line_offset()
+
+    if active_widgets[view].replace_in_selection:
+        start, end = buf.get_selection_bounds()
         start.order(end)
     else:
-        start, end = editor.buffer.get_bounds()
+        start, end = buf.get_bounds()
 
-    end_mark = editor.buffer.create_mark(None, end)
+    end_mark = buf.create_mark(None, end)
 
-    editor.buffer.begin_user_action()
-    editor.buffer.place_cursor(start)
+    buf.begin_user_action()
+    buf.place_cursor(start)
     count = 0
     while True:
-        match = matcher.search(editor.utext, editor.cursor.get_offset())
+        match = matcher.search(utext, cursor.get_offset())
         if not match:
             break
 
-        start, end = map(editor.buffer.get_iter_at_offset, match.span())
-        if end.compare(editor.buffer.get_iter_at_mark(end_mark)) > 0:
+        start, end = map(buf.get_iter_at_offset, match.span())
+        if end.compare(buf.get_iter_at_mark(end_mark)) > 0:
             break
 
-        editor.buffer.place_cursor(start)
-        editor.buffer.delete(start, end)
-        editor.buffer.insert_at_cursor(match.expand(replace).encode('utf-8'))
+        buf.place_cursor(start)
+        buf.delete(start, end)
+        buf.insert_at_cursor(match.expand(replace).encode('utf-8'))
         count += 1
 
-    editor.buffer.end_user_action()
+    buf.end_user_action()
 
     if not count:
-        editor.message('Nothing to replace')
+        view.get_toplevel().message('Nothing to replace', 'info', parent=view)
     elif count == 1:
-        editor.message('One occurrence was replaced')
+        view.get_toplevel().message('One occurrence was replaced', 'done', parent=view)
     else:
-        editor.message('%d occurrences were replaced' % count)
+        view.get_toplevel().message('%d occurrences were replaced' % count, 'done', parent=view)
 
-    cursor = editor.cursor
+    cursor = buf.get_iter_at_mark(buf.get_insert())
     cursor.set_line(line)
     cursor.set_line_offset(offset)
-    editor.buffer.place_cursor(cursor)
-    editor.view.scroll_mark_onscreen(editor.buffer.get_insert())
-    editor.view.grab_focus()
+    buf.place_cursor(cursor)
+    view.scroll_mark_onscreen(buf.get_insert())
+    view.grab_focus()
 
 def on_editor_view_move_cursor(view, step, count, selection, widget):
     if selection:
