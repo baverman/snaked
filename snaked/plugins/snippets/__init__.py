@@ -22,9 +22,10 @@ completion_providers = {}
 
 stop_managers = weakref.WeakKeyDictionary()
 
-def init(manager):
-    from snaked.core.prefs import register_dialog
-    register_dialog('Snippets', show_snippet_preferences, 'snippet')
+def init(injector):
+    injector.on_ready('editor-with-new-buffer', editor_opened)
+    #from snaked.core.prefs import register_dialog
+    #register_dialog('Snippets', show_snippet_preferences, 'snippet')
 
 def show_snippet_preferences(editor):
     if 'not_initialized' in existing_snippet_contexts:
