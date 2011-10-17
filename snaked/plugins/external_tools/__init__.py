@@ -2,84 +2,44 @@ author = 'Anton Bobrov<bobrov@vl.ru>'
 name = 'External tools'
 desc = 'Allows one to define own commands'
 
-import weakref
 import gtk
-from uxie.utils import idle, join_to_settings_dir
-
-from snaked.core.prefs import register_dialog
+from uxie.utils import join_to_settings_dir
 
 tools = []
 
-def init(manager):
-    manager.add_shortcut('external-tools', '<alt>x', 'Tools', 'Run tool', run_tool)
-    register_dialog('External tools', edit_external_tools, 'run', 'external', 'tool', 'command')
+def init(injector):
+    injector.bind_menu('editor', 'external-tools', '_Run', generate_menu, resolve_menu_entry)
+    injector.map_menu('Run', '<Alt>X')
 
-def get_run_menu(tools, editor):
-    menu = gtk.Menu()
-    menu.set_reserve_toggle_size(False)
-
-    has_selection = editor.buffer.get_has_selection()
-
-    any_items = False
-    for tool in tools:
-        if tool.input == 'from-selection' and not has_selection:
-            continue
-
-        if tool.context and not all(ctx in editor.contexts for ctx in tool.context):
-            continue
-
-        any_items = True
-        item = gtk.MenuItem(None, True)
-        label = gtk.Label()
-        label.set_alignment(0, 0.5)
-        label.set_markup_with_mnemonic(tool.name)
-        if len(tool.name) < 10:
-            label.set_width_chars(10)
-
-        item.add(label)
-        menu.append(item)
-        item.connect('activate', on_item_activate, weakref.ref(editor), tool)
-
-    if any_items:
-        menu.show_all()
-        return menu
-    else:
-        menu.destroy()
-        return None
-
-def run_tool(editor):
+def get_tools(editor):
     from parser import parse, ParseException
-
     if not tools:
         try:
             tools[:] = parse(open(join_to_settings_dir('snaked', 'external.tools')).read())
         except IOError:
             pass
         except ParseException, e:
-            editor.message(str(e), 5000)
-            return
+            editor.message(str(e), 'error', 5000)
 
-    if not tools:
-        editor.message('There is no any tool to run')
-        return
+    return tools
 
-    def get_coords(menu):
-        win = editor.view.get_window(gtk.TEXT_WINDOW_TEXT)
-        x, y, w, h, _ = win.get_geometry()
-        x, y = win.get_origin()
-        mw, mh = menu.size_request()
-        return x + w - mw, y + h - mh, False
+def generate_menu(editor):
+    has_selection = editor.buffer.get_has_selection()
+    for tool in get_tools(editor):
+        if tool.input == 'from-selection' and not has_selection:
+            continue
 
-    menu = get_run_menu(tools, editor)
-    if not menu:
-        editor.message('There is no any tool to run')
-        return
+        if tool.context and not all(ctx in editor.contexts for ctx in tool.context):
+            continue
 
-    menu.popup(None, None, get_coords, 0, gtk.get_current_event_time())
+        yield tool.name, tool.title, (run, (editor, tool))
 
-def on_item_activate(item, editor, tool):
-    idle(run, editor(), tool)
-    idle(item.get_parent().destroy)
+def resolve_menu_entry(editor, entry_id):
+    for name, title, cbargs in generate_menu(editor):
+        if entry_id == title:
+            return cbargs + (name,)
+
+    return None, None
 
 def get_stdin(editor, id):
     if id == 'none' or id is None:
@@ -95,7 +55,7 @@ def get_stdin(editor, id):
             return editor.text
     else:
         print 'Unknown input action', id
-        editor.message('Unknown input action ' + id)
+        editor.message('Unknown input action ' + id, 'warn')
 
 def replace(editor, bounds, text):
     line = editor.cursor.get_line()
@@ -115,13 +75,13 @@ def insert(editor, iter, text):
 
 def process_stdout(editor, stdout, stderr, id):
     if id != 'to-feedback' and stderr:
-        editor.message(stderr, 5000)
+        editor.message(stderr, 'error', 5000)
 
     if id == 'to-feedback':
         msg = stdout + stderr
         if not msg:
             msg = 'Empty command output'
-        editor.message(msg, 5000)
+        editor.message(msg, 'done', 5000)
     elif id == 'replace-selection':
         replace(editor, editor.buffer.get_selection_bounds(), stdout)
     elif id == 'replace-buffer':
@@ -141,16 +101,16 @@ def process_stdout(editor, stdout, stderr, id):
         print stdout
         clipboard = editor.view.get_clipboard(gtk.gdk.SELECTION_CLIPBOARD)
         clipboard.set_text(stdout)
-        editor.message('Command output was placed on clipboard')
+        editor.message('Command output was placed on clipboard', 'done')
     else:
-        editor.message('Unknown stdout action ' + id)
+        editor.message('Unknown stdout action ' + id, 'warn')
 
 def run(editor, tool):
     import os.path
     from subprocess import Popen, PIPE
     import tempfile
 
-    editor.message('Running ' + tool.title)
+    editor.message('Running ' + tool.title, 'info')
 
     fd, filename = tempfile.mkstemp()
     os.write(fd, tool.script)
@@ -214,4 +174,4 @@ def edit_external_tools(editor):
 
 def on_external_tools_save(editor):
     tools[:] = []
-    editor.message('External tools updated')
+    editor.message('External tools updated', 'info')
