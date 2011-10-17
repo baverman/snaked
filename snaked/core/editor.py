@@ -31,9 +31,6 @@ class Editor(SignalManager):
     settings_changed = Signal()
 
     def __init__(self, conf, buf=None):
-        self.lang = None
-        self.contexts = []
-
         self.last_cursor_move = None
 
         sw = gtk.ScrolledWindow()
@@ -196,10 +193,6 @@ class Editor(SignalManager):
 
         return root
 
-    def open_file(self, filename, line=None, lang_id=None):
-        """:rtype: Editor"""
-        return self.request_to_open_file.emit(filename, line, lang_id)
-
     @property
     def cursor(self):
         """Return buffer's cursor iter
@@ -334,3 +327,11 @@ class Editor(SignalManager):
         w = self.window
         w.focus_editor(self)
         w.present()
+
+    @property
+    def lang(self):
+        return self.buffer.lang
+
+    @property
+    def contexts(self):
+        return self.buffer.contexts
