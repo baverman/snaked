@@ -74,6 +74,14 @@ internal_options = {}
 def add_internal_option(name, default, desc=''):
     internal_options[name] = (default, desc)
 
+def add_editor_preferences(on_dialog_created, on_pref_refresh, default_values):
+    import snaked.core.gui.editor_prefs
+
+    for k, v in default_values.iteritems():
+        default_prefs.setdefault(k, {}).update(v)
+
+    snaked.core.gui.editor_prefs.on_dialog_created_hooks.append(on_dialog_created)
+    snaked.core.gui.editor_prefs.on_pref_refresh_hooks.append(on_pref_refresh)
 
 class CompositePreferences(object):
     def __init__(self, *prefs):
