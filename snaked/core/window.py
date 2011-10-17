@@ -4,7 +4,7 @@ import weakref
 import gtk
 
 from uxie.floating import Manager as FloatingManager, TextFeedback
-
+from uxie.escape import Manager as EscapeManager
 
 tab_bar_pos_mapping = {
     'top': gtk.POS_TOP,
@@ -31,6 +31,7 @@ def init(injector):
         ctx.bind('duplicate-editor', '_Tab/D_uplicate', Window.duplicate_editor)
 
     with injector.on('window') as ctx:
+        ctx.bind('escape', None, Window.process_escape)
         ctx.bind('close-window', '_Window/_Close', Window.close)
 
         #ctx.bind_accel('save-all', '_File/Save _all', '<ctrl><shift>s', Window.save_all)
@@ -72,6 +73,7 @@ class Window(gtk.Window):
         self.manager = manager
 
         self.floating_manager = FloatingManager()
+        self.escape_manager = EscapeManager()
 
         self.note = gtk.Notebook()
         self.note.set_show_tabs(
@@ -300,6 +302,7 @@ class Window(gtk.Window):
     def message(self, message, category=None, timeout=None, parent=None):
         fb = TextFeedback(message, category)
         timeout = timeout or fb.timeout
+        self.push_escape(fb)
         return self.floating_manager.add(parent or self, fb, 5, timeout)
 
     def emessage(self, message, category=None, timeout=None):
@@ -309,3 +312,9 @@ class Window(gtk.Window):
         e = self.get_editor_context()
         parent = e.view if e else self
         return self.floating_manager.add(parent, fb, 5, timeout)
+
+    def push_escape(self, obj):
+        return self.escape_manager.push(obj)
+
+    def process_escape(self):
+        self.escape_manager.process()

@@ -258,25 +258,6 @@ class EditorManager(object):
         if gtk.main_level() > 0:
             gtk.main_quit()
 
-    def on_push_escape_callback(self, editor, callback, args):
-        key = (callback,) + tuple(map(weakref.ref, args))
-        if key in self.escape_map:
-            return
-
-        self.escape_map[key] = True
-        self.escape_stack.append((key, callback, map(weakref.ref, args)))
-
-    def process_escape(self, editor):
-        while self.escape_stack:
-            key, cb, args = self.escape_stack.pop()
-            del self.escape_map[key]
-            realargs = [a() for a in args]
-            if not any(a is None for a in realargs):
-                cb(editor, *realargs)
-                return False
-
-        return False
-
     def show_key_preferences(self, editor):
         from snaked.core.gui.shortcuts import ShortcutsDialog
         dialog = ShortcutsDialog()
@@ -291,15 +272,6 @@ class EditorManager(object):
         from snaked.core.gui.editor_prefs import PreferencesDialog
         dialog = PreferencesDialog(self.lang_prefs)
         dialog.show(editor)
-
-    @Editor.plugins_changed
-    def on_plugins_changed(self, editor):
-        for e in self.editors:
-            self.set_editor_shortcuts(e)
-
-    def get_fake_editor(self):
-        self.fake_editor = FakeEditor(self)
-        return self.fake_editor
 
     def add_spot_with_feedback(self, editor):
         self.add_spot(editor)
@@ -450,21 +422,6 @@ class EditorManager(object):
                 window.attach_editor(e)
                 opened_files.add(f)
 
-        #session_files = filter(os.path.exists, self.snaked_conf['OPENED_FILES'])
-        #active_file = self.snaked_conf['ACTIVE_FILE']
-        #
-        ##open the last file specified in args, if any
-        #active_file = ( args and args[-1] ) or active_file
-        #
-        #editor_to_focus = None
-        #for f in session_files + args:
-        #    f = os.path.abspath(f)
-        #    if f not in opened_files and (not os.path.exists(f) or os.path.isfile(f)):
-        #        e = manager.open(f)
-        #        if f == active_file:
-        #            editor_to_focus = e
-        #        opened_files.append(f)
-        #
         #if not manager.editors:
         #    import snaked.core.quick_open
         #    snaked.core.quick_open.quick_open(manager.get_fake_editor())
