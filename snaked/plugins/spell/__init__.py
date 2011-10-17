@@ -8,10 +8,14 @@ import gtk
 
 attached_spells = weakref.WeakKeyDictionary()
 
-def init(manager):
-    manager.add_shortcut('toggle-spell-check', 'F7', 'Edit', 'Toggle spell check', toggle_spell)
+def init(injector):
+    injector.bind_accel('editor', 'toggle-spell-check', '_Edit/Toggle spel_l check', 'F7',
+        toggle_spell, 1)
 
-    manager.add_editor_preferences(
+    injector.on_ready('editor-with-buffer', editor_opened)
+
+    from snaked.core.prefs import add_editor_preferences
+    add_editor_preferences(
         on_preferences_dialog_created,
         on_preferences_dialog_refresh, {
         'default':{
@@ -19,8 +23,9 @@ def init(manager):
         }
     })
 
+
 def editor_opened(editor):
-    if editor.prefs['spell-check']:
+    if editor.buffer.config['spell-check']:
         toggle_spell(editor)
 
 def on_preferences_dialog_created(dialog):
