@@ -16,7 +16,10 @@ def init(injector):
         "Option to show hidden files. <ctrl>H in quick open dialog")
 
     prefs.add_internal_option('QUICK_OPEN_RECENT_PROJECTS', list,
-        "Recent projects be shown in quick open dialog")
+        "Recent projects will be shown in quick open dialog")
+
+    prefs.add_internal_option('QUICK_OPEN_CURRENT_PROJECTS', list,
+        "Projects will be selected in quick open dialog")
 
     context.add_setter('quick_open', set_context)
 

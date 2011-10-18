@@ -67,8 +67,9 @@ def search(root, top, match, already_matched, bad_match, tick):
         if isdir(fullpath):
             if dir_is_good(name, path):
                 dirs_to_visit.append(path)
-        elif (name, top) not in already_matched and match(name, path) and file_is_good(name, path):
-            yield name, top
+        elif (name, top, fullpath, root) not in already_matched \
+                and match(name, path) and file_is_good(name, path):
+            yield name, top, fullpath, root
 
     for path in dirs_to_visit:
         for p in search(root, path, match, already_matched, bad_match, tick):
