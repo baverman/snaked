@@ -28,7 +28,7 @@ def init(injector):
     add_title_handler('writeable', writable_handler)
     add_title_handler('modified', modified_handler)
 
-    injector.on_ready('editor', editor_created)
+    injector.on_ready('editor-with-new-buffer-created', editor_created)
 
 def editor_created(editor):
     editor.connect('get-title', on_editor_get_title)
