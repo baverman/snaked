@@ -19,6 +19,13 @@ class Collector(object):
 
         return result
 
+    def extract_output(self, report):
+        result = str(report.longrepr)
+        for s, d in report.sections:
+            result += '\n\n===================== ' + s + '=======================\n' + d
+
+        return result
+
     def pytest_runtest_logreport(self, report):
         """:type report: _pytest.runner.TestReport()"""
 
@@ -26,10 +33,10 @@ class Collector(object):
             self.conn.send(('PASS', report.nodeid))
         elif report.failed:
             if report.when != "call":
-                self.conn.send(('ERROR', report.nodeid, str(report.longrepr),
+                self.conn.send(('ERROR', report.nodeid, self.extract_output(report),
                     self.extract_trace(report.longrepr)))
             else:
-                self.conn.send(('FAIL', report.nodeid, str(report.longrepr),
+                self.conn.send(('FAIL', report.nodeid, self.extract_output(report),
                     self.extract_trace(report.longrepr)))
         elif report.skipped:
             self.conn.send(('SKIP', report.nodeid))
@@ -55,7 +62,7 @@ class Collector(object):
     def pytest_collectreport(self, report):
         """:type report: _pytest.runner.CollectReport()"""
         if report.failed:
-            self.conn.send(('FAILED_COLLECT', report.nodeid, str(report.longrepr),
+            self.conn.send(('FAILED_COLLECT', report.nodeid, self.extract_output(report),
                 self.extract_trace(report.longrepr)))
 
     def pytest_internalerror(self, excrepr):

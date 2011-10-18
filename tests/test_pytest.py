@@ -58,3 +58,9 @@ def test_runner_must_ignore_skipped_collected_items():
         'test_first', files=['python_test/first.py']))
 
     assert result[1] == ('COLLECTED_TESTS', ['python_test/first.py::test_first'])
+
+def test_runner_must_return_output_of_failed_tests():
+    result = collect_results(*run_test(join_to_file_dir(__file__), files=['python_test/first.py'],
+        match='test_second'))
+
+    assert 'test-second-output' in result[3][2]
