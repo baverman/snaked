@@ -281,12 +281,6 @@ class Editor(SignalManager):
 
         return False
 
-    def add_widget_to_stack(self, widget, on_popup=None):
-        self.stack_add_request.emit(widget, on_popup)
-
-    def popup_widget(self, widget):
-        self.stack_popup_request.emit(widget)
-
     def on_close(self):
         self.view.destroy()
 

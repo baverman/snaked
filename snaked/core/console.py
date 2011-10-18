@@ -1,14 +1,20 @@
-import os
+import os, fcntl
 import gtk
 import glib
 import pango
+
+from uxie.escape import Escapable
 
 from snaked.util import mimic_to_sourceview_theme
 
 console_widget = []
 pty_master = [None]
 
-class Escape(object): pass
+def init(injector):
+    injector.bind_accel('editor', 'toggle-console', '_View/Toggle _console',
+        '<alt>grave', toggle_console)
+    injector.bind_accel('editor-active', 'send-to-console', '_Edit/Sen_d  to console',
+        '<alt>Return', send_to_console)
 
 def get_console_widget(editor):
     try:
@@ -18,12 +24,12 @@ def get_console_widget(editor):
 
     w = create_console_widget()
 
-    if editor.snaked_conf['MIMIC_PANEL_COLORS_TO_EDITOR_THEME']:
+    if editor.conf['MIMIC_PANEL_COLORS_TO_EDITOR_THEME']:
         mimic_to_sourceview_theme(w.view, editor.view)
 
     console_widget.append(w)
 
-    editor.add_widget_to_stack(w, on_console_popup)
+    editor.window.append_panel(w, on_console_popup)
     return w
 
 def create_console_widget():
@@ -46,20 +52,18 @@ def toggle_console(editor):
         console.hide()
         editor.view.grab_focus()
     else:
-        editor.popup_widget(console)
+        editor.window.popup_panel(console, editor)
 
-def hide(editor, widget, escape):
+def hide(widget, editor):
     widget.hide()
     editor.view.grab_focus()
 
 def on_console_popup(widget, editor):
-    if editor.snaked_conf['CONSOLE_FONT']:
-        widget.view.modify_font(pango.FontDescription(editor.snaked_conf['CONSOLE_FONT']))
-    widget.escape = Escape()
-    editor.push_escape(hide, widget, widget.escape)
+    if editor.conf['CONSOLE_FONT']:
+        widget.view.modify_font(pango.FontDescription(editor.conf['CONSOLE_FONT']))
+    editor.window.push_escape(Escapable(hide, widget, editor))
 
 def unblock_fd(fd):
-    import fcntl, os
     fl = fcntl.fcntl(fd, fcntl.F_GETFL)
     fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 
@@ -92,7 +96,7 @@ def consume_io(f, cond, editor, console, proc, on_finish):
 
     if data:
         if not console.props.visible:
-            editor.popup_widget(console)
+            editor.window.popup_panel(console, editor)
 
         buf = console.view.get_buffer()
         iter = buf.get_bounds()[1]
@@ -116,6 +120,6 @@ def send_to_console(editor):
         if pty_master[0]:
             os.write(pty_master[0], selection)
         else:
-            editor.message('There is no interactive console')
+            editor.message('There is no interactive console', 'warn')
     else:
-        editor.message('You need to select something')
+        editor.message('You need to select something', 'warn')

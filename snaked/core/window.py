@@ -236,12 +236,10 @@ class Window(gtk.Window):
         self.note.set_show_tabs(not self.note.get_show_tabs())
         self.window_conf['show-tabs'] = self.note.get_show_tabs()
 
-    #@snaked.core.editor.Editor.stack_add_request
-    def on_stack_add_request(self, editor, widget, on_popup):
+    def append_panel(self, widget, on_popup):
         self.panels[widget] = on_popup
 
-    #@snaked.core.editor.Editor.stack_popup_request
-    def on_stack_popup_request(self, editor, widget):
+    def popup_panel(self, widget, *args):
         if widget in self.panels:
             for w in self.panels:
                 if w is not widget and w is self.main_pane.get_child2():
@@ -256,15 +254,7 @@ class Window(gtk.Window):
             widget.show()
 
             if self.panels[widget]:
-                self.panels[widget](widget, editor)
-
-    def toggle_console(self, editor):
-        from snaked.core.console import toggle_console
-        toggle_console(editor)
-
-    def send_to_console(self, editor):
-        from snaked.core.console import send_to_console
-        send_to_console(editor)
+                self.panels[widget](widget, *args)
 
     def on_page_reordered(self, note, child, num):
         for i, e in enumerate(self.editors):
