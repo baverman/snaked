@@ -468,13 +468,14 @@ class EditorManager(object):
                 window.attach_editor(e)
                 opened_files.add(f)
 
+        for w in self.windows:
+            if w:
+                if w.window_conf.get('active-uri', None):
+                    w.open_or_activate(w.window_conf['active-uri'])
+
         #if not manager.editors:
         #    import snaked.core.quick_open
         #    snaked.core.quick_open.quick_open(manager.get_fake_editor())
-        #
-        #if editor_to_focus and active_file != opened_files[-1]:
-        #    manager.focus_editor(editor_to_focus)
-
 
 class EditorSpot(object):
     def __init__(self, manager, editor):

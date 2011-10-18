@@ -177,6 +177,10 @@ class Window(gtk.Window):
             self.close()
 
     def close(self, notify_manager=True):
+        current_editor = self.get_editor_context()
+        if current_editor:
+            self.window_conf['active-uri'] = current_editor.uri
+
         files = self.window_conf.setdefault('files', [])
         files[:] = []
         for e in self.editors[:]:
