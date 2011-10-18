@@ -1,3 +1,16 @@
+ATTENTION!!! HAZARD!!!
+======================
+
+I've merged experimental uxie branch into master. I advise not to update a day
+or two. Critical functionality is missed now:
+
+* Preferences dialogs
+* Test runner
+* Custom key bindings
+
+I hope this decision helps and motivates me to finish snaked refactoring more
+quickly.
+
 Snaked
 ======
 
