@@ -11,7 +11,7 @@ import gtk, gobject
 from gtksourceview2 import CompletionProvider, CompletionProposal
 from gtksourceview2 import COMPLETION_ACTIVATION_USER_REQUESTED
 
-from uxie.utils import idle, join_to_settings_dir
+from uxie.utils import idle, join_to_data_dir
 
 from .parser import parse_snippets_from
 
@@ -70,7 +70,7 @@ def load_snippets_for(ctx, prior=None):
 def discover_snippet_contexts():
     dirs_to_scan = [
         os.path.join(os.path.dirname(__file__), 'snippets'),
-        join_to_settings_dir('snaked', 'snippets'),
+        join_to_data_dir('snaked', 'snippets'),
     ]
 
     for d in dirs_to_scan:
