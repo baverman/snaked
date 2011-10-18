@@ -292,7 +292,7 @@ class EditorManager(object):
 
         self.save_conf()
 
-        #self.plugin_manager.quit()
+        self.plugin_manager.done('manager', self)
 
         for q in self.on_quit:
             try:
