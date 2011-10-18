@@ -1,42 +1,36 @@
-import os, time
+import sys, os, time
 import socket
-from multiprocessing.connection import Client, Listener, arbitrary_address
+from multiprocessing.connection import Client, Listener
 import multiprocessing.connection
 
 def _init_timeout(timeout=3):
     return time.time() + timeout
 
-def create_master_listener(fd):
-    addr = arbitrary_address('AF_UNIX')
-    os.write(fd, addr)
-    os.close(fd)
-
-    return Listener(addr)
-
-def get_session_lock_file(session):
-    return '/tmp/snaked.session.%i.%s' % (os.geteuid(), session)
+def get_addr(session):
+    if sys.platform == 'win32':
+        return '\\.\pipe\snaked.session.%s.%s' % (os.environ.get('USERNAME', 'USERNAME'), session)
+    else:
+        return '/tmp/snaked.session.%i.%s' % (os.geteuid(), session)
 
 def is_master(session):
-    # Ahtung! Possible races, for example on opening multiple files from file browser.
-    filename = get_session_lock_file(session)
+    addr = get_addr(session)
     try:
-        fd = os.open(filename, os.O_WRONLY | os.O_CREAT | os.O_EXCL)
-        return True, create_master_listener(fd)
-    except OSError:
+        return True, Listener(addr)
+    except socket.error:
         multiprocessing.connection._init_timeout = _init_timeout
         i = 2
         while i > 0:
             try:
-                conn = Client(open(filename).read())
+                conn = Client(addr)
                 return False, conn
-            except socket.error:
-                pass
+            except socket.error, e:
+                print e
 
             time.sleep(0.1)
             i -= 1
 
-        fd = os.open(filename, os.O_WRONLY | os.O_CREAT)
-        return True, create_master_listener(fd)
+        os.remove(addr)
+        return is_master(session)
 
 def serve(manager, listener):
     def runner():
@@ -51,8 +45,8 @@ def serve(manager, listener):
                             conn_alive = False
                         elif data[0] == 'OPEN':
                             for f in data[1:]:
-                                manager.open(f)
-                            manager.activate_main_window()
+                                manager.open_or_activate(f)
+                            [w for w in manager.windows if w][0].present()
                     except EOFError:
                         break
                     except Exception:
@@ -63,10 +57,6 @@ def serve(manager, listener):
 
     def on_quit():
         listener.close()
-        try:
-            os.unlink(get_session_lock_file(manager.session))
-        except:
-            pass
 
     manager.on_quit.append(on_quit)
 
