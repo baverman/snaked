@@ -149,22 +149,26 @@ class EditorManager(object):
         self.plugin_manager.ready('editor', editor)
         return editor
 
-    def open_or_activate(self, uri, window=None):
+    def open_or_activate(self, uri, window=None, line=None):
         buf = self.get_buffer_for_uri(uri)
         if buf:
             if window:
                 for e in window.editors:
                     if e.buffer is buf:
+                        if line is not None:
+                            e.goto_line(line)
                         e.focus()
                         return e
 
             for e in self.get_editors():
                 if e.buffer is buf:
+                    if line is not None:
+                        e.goto_line(line)
                     e.focus()
                     return e
         else:
             window = window or [w for w in self.windows if w][0]
-            e = self.open(uri)
+            e = self.open(uri, line)
             window.attach_editor(e)
             return e
 

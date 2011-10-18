@@ -80,7 +80,7 @@ class Plugin(object):
             fname = None
 
         if fname:
-            editor = self.editor.open_file(fname, line - 1)
+            editor = self.editor.window.open_or_activate(fname, line - 1)
             editor.supplement_project_root = self.project_path
         else:
             if line:

@@ -121,7 +121,7 @@ class RopeCompletionProvider(gobject.GObject, CompletionProvider):
         except Exception, e:
             import traceback
             traceback.print_exc()
-            self.plugin().editor.message(str(e), 5000)
+            self.plugin().editor.message(str(e), 'error', 5000)
             context.add_proposals(self, [], True)
             return
 

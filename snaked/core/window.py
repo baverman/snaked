@@ -289,8 +289,8 @@ class Window(gtk.Window):
     def save_editor(self, editor):
         editor.save()
 
-    def open_or_activate(self, uri):
-        return self.manager.open_or_activate(uri, self)
+    def open_or_activate(self, uri, line=None):
+        return self.manager.open_or_activate(uri, self, line)
 
     def message(self, message, category=None, timeout=None, parent=None):
         fb = TextFeedback(message, category)
