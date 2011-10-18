@@ -44,6 +44,11 @@ map_generic('delete', 'Delete')
 map_generic('prev', '<ctrl>Up', 1)
 map_generic('next', '<ctrl>Down', 1)
 
+map_generic('goto-definition', 'F3')
+map_generic('show-outline', '<ctrl>o')
+map_generic('show-calltip', '<ctrl>Return')
+
+
 class EditorManager(object):
     def __init__(self, session):
         self.buffers = []

@@ -2,8 +2,6 @@ author = 'Anton Bobrov<bobrov@vl.ru>'
 name = 'Python support'
 desc = 'Autocompletion, definitions navigation and smart ident'
 
-langs = ['python']
-
 import weakref
 
 handlers = weakref.WeakKeyDictionary()
@@ -11,43 +9,52 @@ outline_dialog = None
 test_runner = []
 last_run_test = []
 
-def init(manager):
-    manager.add_shortcut('python-goto-definition', 'F3', 'Python',
-        'Navigates to python definition', goto_definition)
+def is_python_editor(editor):
+    return editor.lang == 'python'
 
-    manager.add_shortcut('python-outline', '<ctrl>o', 'Python',
-        'Opens outline dialog', open_outline)
+def init(injector):
+    injector.add_context('python-editor', 'editor-active',
+        lambda e: e if is_python_editor(e) else None)
 
-    manager.add_shortcut('python-calltip', '<ctrl>Return', 'Python',
-        'Shows calltips', show_calltips)
+    injector.bind('python-editor', 'goto-definition', '_Python/Goto _defenition', goto_definition)
+    injector.bind('python-editor', 'show-outline', '_Python/Show _outline', open_outline)
 
-    manager.add_shortcut('run-test', '<ctrl>F10', 'Tests', 'Run test in cursor scope', run_test)
-    manager.add_shortcut('run-all-tests', '<ctrl><shift>F10', 'Tests',
-        'Run all project tests', run_all_tests)
-    manager.add_shortcut('rerun-test', '<shift><alt>X', 'Tests', 'Rerun last test suite', rerun_test)
-    manager.add_shortcut('toggle-test-panel', '<alt>1', 'Window',
-        'Toggle test panel', toggle_test_panel)
+    injector.bind('python-editor', 'show-calltip', '_Python/Show calltip', show_calltips)
 
-    manager.add_global_option('PYTHON_EXECUTABLE', 'default',
+    #injector.bind_accel('run-test', '<ctrl>F10', 'Tests', 'Run test in cursor scope', run_test)
+    #injector.bind_accel('run-all-tests', '<ctrl><shift>F10', 'Tests',
+    #    'Run all project tests', run_all_tests)
+    #injector.bind_accel('rerun-test', '<shift><alt>X', 'Tests', 'Rerun last test suite', rerun_test)
+    #injector.bind_accel('toggle-test-panel', '<alt>1', 'Window',
+    #    'Toggle test panel', toggle_test_panel)
+
+    from snaked.core.prefs import add_option
+    add_option('PYTHON_EXECUTABLE', 'default',
         'Path to python executable. Used by test runner and completion framework')
-    manager.add_global_option('PYTHON_EXECUTABLE_ENV', {},
+    add_option('PYTHON_EXECUTABLE_ENV', dict,
         'Python interpreter environment. Used by test runner and completion framework')
-    manager.add_global_option('PYTHON_SUPP_CONFIG', {},
-        'Config for supplement')
+    add_option('PYTHON_SUPP_CONFIG', dict, 'Config for supplement')
 
-    manager.add_global_option('PYTHON_SPYPKG_HANDLER_MAX_CHARS', 25,
-        'Maximum allowed python package title length')
+    add_option('PYTHON_SPYPKG_HANDLER_MAX_CHARS', 25, 'Maximum allowed python package title length')
 
-    manager.add_title_handler('pypkg', pypkg_handler)
-    manager.add_title_handler('spypkg', spypkg_handler)
+    from snaked.core.titler import add_title_handler
+    add_title_handler('pypkg', pypkg_handler)
+    add_title_handler('spypkg', spypkg_handler)
+
+    injector.on_ready('editor-with-new-buffer-created', editor_created)
+    injector.on_ready('editor-with-new-buffer', editor_opened)
+    injector.on_done('last-buffer-editor', editor_closed)
+    injector.on_done('manager', quit)
 
 def editor_created(editor):
-    editor.connect('get-project-larva', on_editor_get_project_larva)
+    if is_python_editor(editor):
+        editor.connect('get-project-larva', on_editor_get_project_larva)
 
 def editor_opened(editor):
-    from plugin import Plugin
-    h = Plugin(editor)
-    handlers[editor] = h
+    if is_python_editor(editor):
+        from plugin import Plugin
+        h = Plugin(editor)
+        handlers[editor] = h
 
 def editor_closed(editor):
     try:
@@ -55,7 +62,7 @@ def editor_closed(editor):
     except KeyError:
         pass
 
-def quit():
+def quit(manager):
     global outline_dialog
     if outline_dialog:
         outline_dialog.window.destroy()
@@ -143,7 +150,7 @@ def spypkg_handler(editor):
 
     import re
 
-    max_chars_in_title = editor.snaked_conf['PYTHON_SPYPKG_HANDLER_MAX_CHARS']
+    max_chars_in_title = editor.conf['PYTHON_SPYPKG_HANDLER_MAX_CHARS']
 
     parts = package.split('.')
     if parts < 3 or len(package) <= max_chars_in_title:
@@ -179,7 +186,7 @@ def get_pytest_runner(editor):
     from pytest_runner import TestRunner
     test_runner.append(TestRunner())
 
-    editor.add_widget_to_stack(test_runner[0].panel, test_runner[0].on_popup)
+    editor.window.append_panel(test_runner[0].panel, test_runner[0].on_popup)
     return test_runner[0]
 
 def toggle_test_panel(editor):
@@ -189,14 +196,14 @@ def toggle_test_panel(editor):
         editor.view.grab_focus()
     else:
         runner.editor_ref = weakref.ref(editor)
-        editor.popup_widget(runner.panel)
+        editor.window.popup_panel(runner.panel, editor)
         runner.tests_view.grab_focus()
 
 def pytest_available(editor):
     try:
         import pytest
     except ImportError:
-        editor.message('You need installed pytest\nsudo pip install pytest')
+        editor.message('You need installed pytest\nsudo pip install pytest', 'warn')
         return False
 
     return True
@@ -209,25 +216,24 @@ def set_last_run_test(*args):
 
 def run_all_tests(editor):
     if pytest_available(editor):
-        editor.message('Collecting tests...')
+        editor.message('Collecting tests...', 'info')
         set_last_run_test(editor.project_root, '', [])
         get_pytest_runner(editor).run(editor, editor.project_root)
 
 def run_test(editor):
     if pytest_available(editor):
         filename, func_name = handlers[editor].get_scope()
-        print 'SCOPE', filename, func_name
         if filename:
-            editor.message('Collecting tests...')
+            editor.message('Collecting tests...', 'info')
             set_last_run_test(editor.project_root, func_name, [filename])
             get_pytest_runner(editor).run(editor, editor.project_root, func_name, [filename])
         else:
-            editor.message('Test scope can not be defined')
+            editor.message('Test scope can not be defined', 'warn')
 
 def rerun_test(editor):
     if pytest_available(editor):
         if last_run_test:
-            editor.message('Collecting tests...')
+            editor.message('Collecting tests...', 'info')
             get_pytest_runner(editor).run(editor, *last_run_test[0])
         else:
-            editor.message('You did not run any test yet')
+            editor.message('You did not run any test yet', 'warn')

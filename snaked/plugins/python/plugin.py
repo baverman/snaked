@@ -22,11 +22,11 @@ class Plugin(object):
 
     @property
     def env(self):
-        executable = self.editor.snaked_conf['PYTHON_EXECUTABLE']
+        executable = self.editor.conf['PYTHON_EXECUTABLE']
         if executable == 'default':
             executable = sys.executable
 
-        env = self.editor.snaked_conf['PYTHON_EXECUTABLE_ENV']
+        env = self.editor.conf['PYTHON_EXECUTABLE_ENV']
 
         try:
             env = environments[executable]
@@ -41,11 +41,10 @@ class Plugin(object):
         root = getattr(self.editor, 'ropeproject_root', self.editor.project_root)
 
         if not root:
-            self.editor.message('Supp warning: there is no project. Assist was degraded', 3000)
             root = os.path.dirname(self.editor.uri)
 
         if root not in configured_projects:
-            conf = self.editor.snaked_conf['PYTHON_SUPP_CONFIG']
+            conf = self.editor.conf['PYTHON_SUPP_CONFIG']
             if conf:
                 self.env.configure_project(root, conf)
 
@@ -74,7 +73,7 @@ class Plugin(object):
         except Exception, e:
             import traceback
             traceback.print_exc()
-            self.editor.message(str(e), 5000)
+            self.editor.message(str(e), 'error', 5000)
             return
 
         if fname == self.editor.uri:
@@ -88,7 +87,7 @@ class Plugin(object):
                 self.editor.add_spot()
                 self.editor.goto_line(line)
             else:
-                self.editor.message("Unknown definition")
+                self.editor.message("Unknown definition", 'warn')
 
     @connect_external('view', 'key-press-event')
     def on_textview_key_press_event(self, sender, event):
@@ -161,16 +160,16 @@ class Plugin(object):
         except Exception, e:
             import traceback
             traceback.print_exc()
-            self.editor.message(str(e), 5000)
+            self.editor.message(str(e), 'error', 5000)
             return
 
         if sig:
             docstring = sig + '\n\n' + ( docstring if docstring is not None else '' )
 
         if docstring:
-            self.editor.message(docstring, 20000)
+            self.editor.message(docstring, 'info', 20000)
         else:
-            self.editor.message('Info not found', 3000)
+            self.editor.message('Info not found', 'warn', 3000)
 
     def get_scope(self):
         source, _ = self.get_source_and_offset()
