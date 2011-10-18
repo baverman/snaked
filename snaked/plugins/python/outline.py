@@ -4,9 +4,9 @@ import re
 
 from uxie.utils import idle, join_to_file_dir, refresh_gui
 from uxie.misc import BuilderAware
+from uxie.actions import Activator
 
 from snaked.util import set_activate_the_one_item
-from snaked.core.shortcuts import ShortcutActivator
 
 match_ws = re.compile('^[ \t]+')
 def get_ws_len(line):
@@ -74,9 +74,9 @@ class OutlineVisitor(ast.NodeVisitor):
 class OutlineDialog(BuilderAware):
     def __init__(self):
         super(OutlineDialog, self).__init__(join_to_file_dir(__file__, 'outline.glade'))
-        self.shortcuts = ShortcutActivator(self.window)
-        self.shortcuts.bind('Escape', self.hide)
-        self.shortcuts.bind('<alt>s', self.focus_search)
+        self.activator = Activator(self.window)
+        self.activator.bind('any', 'escape', None, self.hide)
+        self.activator.bind('any', 'activate-search-entry', None, self.focus_search)
 
         set_activate_the_one_item(self.search_entry, self.outline_tree)
 
@@ -85,7 +85,7 @@ class OutlineDialog(BuilderAware):
         self.editor = weakref.ref(editor)
         self.search_entry.grab_focus()
 
-        editor.request_transient_for.emit(self.window)
+        self.window.set_transient_for(editor.window)
         self.window.present()
 
         idle(self.fill)
@@ -117,7 +117,7 @@ class OutlineDialog(BuilderAware):
             self.editor().add_spot()
             self.editor().goto_line(model.get_value(iter, 2))
         else:
-            self.editor().message('You need select item')
+            self.editor().message('You need select item', 'warn')
 
     def on_search_entry_changed(self, *args):
         what = self.search_entry.get_text().strip()
