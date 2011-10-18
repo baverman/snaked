@@ -1,4 +1,4 @@
-import os
+import os.path
 
 from uxie.utils import join_to_file_dir
 from uxie.misc import BuilderAware
@@ -19,9 +19,10 @@ class SessionSelector(BuilderAware):
         self.dialog.vbox.remove(self.dialog.action_area)
         self.dialog.set_default_response(1)
 
-        for p in os.listdir(get_settings_path('')):
-            if p.endswith('.session'):
-                self.sessions.append((p.rpartition('.')[0],))
+        cfg = get_settings_path('')
+        for p in os.listdir(cfg):
+            if os.path.isdir(os.path.join(cfg, p)):
+                self.sessions.append((p,))
 
     def on_row_activated(self, view, path, *args):
         self.dialog.selected_session = self.sessions[path][0]
