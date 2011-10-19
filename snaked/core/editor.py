@@ -43,6 +43,10 @@ class Editor(SignalManager):
         sw.add(self.view)
         self.view.editor_ref = weakref.ref(self)
 
+        self.ins_mark = self.sb_mark = None
+        self.view.connect('focus-in-event', self.on_focus_in)
+        self.view.connect('focus-out-event', self.on_focus_out)
+
         self.widget = gtk.VBox(False, 0)
         self.widget.pack_start(sw)
 
@@ -329,3 +333,24 @@ class Editor(SignalManager):
     @property
     def contexts(self):
         return self.buffer.contexts
+
+    def on_focus_in(self, view, event):
+        if self.ins_mark:
+            buf = self.buffer
+            buf.select_range(buf.get_iter_at_mark(self.ins_mark),
+                buf.get_iter_at_mark(self.sb_mark))
+
+    def on_focus_out(self, view, event):
+        buf = self.buffer
+        ins = buf.get_iter_at_mark(buf.get_insert())
+        sb = buf.get_iter_at_mark(buf.get_selection_bound())
+
+        if self.ins_mark:
+            buf.move_mark(self.ins_mark, ins)
+        else:
+            self.ins_mark = buf.create_mark(None, ins)
+
+        if self.sb_mark:
+            buf.move_mark(self.sb_mark, sb)
+        else:
+            self.sb_mark = buf.create_mark(None, sb)
