@@ -5,14 +5,14 @@ _snaked()
 
 	case "$prev" in
 		-s)
-			COMPREPLY=( $( compgen -W "`find $XDG_CONFIG_HOME/snaked -name '*.session' | xargs --replace=^ basename ^ .session`" -- "$cur" ) )
+			COMPREPLY=( $( compgen -W "`find $XDG_CONFIG_HOME/snaked -type d | xargs --replace=^ basename ^`" -- "$cur" ) )
 			return 0			
 			;;
 		*)
 		;;
 	esac
 
-    COMPREPLY=( $( compgen -f -- "$cur" ) )
+    _filedir
     return 0
 } &&
 complete -F _snaked snaked
