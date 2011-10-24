@@ -56,10 +56,14 @@ class EditorListDialog(BuilderAware):
     def editor_list(self):
         return list(self.pwindow().manager.get_editors())
 
+    @property
+    def current_editor(self):
+        return self.pwindow().get_editor_context()
+
     def fill(self):
         self.model.clear()
 
-        active_editor = self.pwindow().get_editor_context()
+        active_editor = self.current_editor
         titles = [(e.get_title.emit(), e) for e in self.editor_list]
         editor_uris = set()
 
@@ -108,9 +112,15 @@ class EditorListDialog(BuilderAware):
     def activate_editor(self, path):
         uri, editor = self.model[path][3]
         if editor and editor():
+            ce = self.current_editor
+            if ce:
+                ce.add_spot()
             idle(editor().focus)
             idle(self.hide)
         elif uri:
+            ce = self.current_editor
+            if ce:
+                ce.add_spot()
             idle(self.pwindow().open_or_activate, uri)
             idle(self.hide)
 

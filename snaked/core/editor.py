@@ -134,6 +134,7 @@ class Editor(SignalManager):
 
             self.on_modified_changed_handler.unblock()
             self.view.window.thaw_updates()
+            self.buffer.is_changed = False
 
             pos = line if line is not None else self.get_file_position.emit()
             if pos is not None and pos >= 0:
@@ -264,31 +265,16 @@ class Editor(SignalManager):
 
     def scroll_to_cursor(self):
         self.view.scroll_to_mark(self.buffer.get_insert(), 0.001, use_align=True, xalign=1.0)
+        self.clear_cursor()
 
     def message(self, message, category=None, timeout=None):
         self.window.message(message, category, timeout, parent=self.view)
 
     def push_escape(self, callback, *args):
         pass
-        #self.push_escape_callback.emit(callback, args)
 
     def add_spot(self):
-        self.window.manager.add_spot(self)
-
-    @connect_external('view', 'move-cursor')
-    def on_cursor_moved(self, view, step_size, count, extend_selection):
-        if not extend_selection:
-            if step_size in (gtk.MOVEMENT_PAGES, gtk.MOVEMENT_BUFFER_ENDS):
-                if self.last_cursor_move is None or time.time() - self.last_cursor_move > 7:
-                    self.add_spot()
-
-                self.last_cursor_move = time.time()
-            elif step_size in (gtk.MOVEMENT_VISUAL_POSITIONS, ):
-                self.last_cursor_move = None
-
-    @connect_external('buffer', 'changed')
-    def on_buffer_changed(self, buffer):
-        self.last_cursor_move = None
+        self.window.manager.spot_manager.add(self)
 
     def on_button_press_event(self, view, event):
         if event.button == 1:
@@ -350,6 +336,8 @@ class Editor(SignalManager):
             buf = self.buffer
             buf.select_range(buf.get_iter_at_mark(self.ins_mark),
                 buf.get_iter_at_mark(self.sb_mark))
+
+        return False
 
     def on_focus_out(self, view, event):
         buf = self.buffer

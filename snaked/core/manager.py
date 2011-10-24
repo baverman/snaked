@@ -21,6 +21,7 @@ import snaked.core.editor_list
 import snaked.core.window
 import snaked.core.plugins
 import snaked.core.console
+import snaked.core.spot
 
 prefs.add_option('RESTORE_POSITION', True, 'Restore snaked windows position')
 prefs.add_option('CONSOLE_FONT', 'Monospace 8', 'Font used in console panel')
@@ -69,7 +70,6 @@ class EditorManager(object):
 
         self.escape_stack = []
         self.escape_map = {}
-        self.spot_history = []
         self.context_processors = {}
         self.lang_contexts = {}
         self.ctx_contexts = {}
@@ -80,6 +80,9 @@ class EditorManager(object):
         self.plugin_manager.add_plugin(snaked.core.editor_list)
         self.plugin_manager.add_plugin(snaked.core.titler)
         self.plugin_manager.add_plugin(snaked.core.console)
+        self.plugin_manager.add_plugin(snaked.core.spot)
+
+        self.spot_manager = snaked.core.spot.Manager()
 
         add_context_setter('lang', self.set_lang_context)
         add_context_setter('ctx', self.set_ctx_context)
@@ -265,6 +268,8 @@ class EditorManager(object):
         buf = editor.buffer
         is_last_buffer = not any(e.buffer is buf for e in self.get_editors() if e is not editor)
 
+        self.plugin_manager.done('editor', editor)
+
         if is_last_buffer:
             self.plugin_manager.done('last-buffer-editor', editor)
 
@@ -319,60 +324,6 @@ class EditorManager(object):
         from snaked.core.gui.editor_prefs import PreferencesDialog
         dialog = PreferencesDialog(self.lang_prefs)
         dialog.show(editor)
-
-    def add_spot_with_feedback(self, editor):
-        self.add_spot(editor)
-        editor.message('Spot added')
-
-    def add_spot(self, editor):
-        self.add_spot_to_history(EditorSpot(self, editor))
-
-    def add_spot_to_history(self, spot):
-        self.spot_history = [s for s in self.spot_history
-            if s.is_valid() and not s.similar_to(spot)]
-
-        self.spot_history.insert(0, spot)
-
-        while len(self.spot_history) > 30:
-            self.spot_history.pop()
-
-    def goto_last_spot(self, back_to=None):
-        new_spot = EditorSpot(self, back_to) if back_to else None
-        spot = self.get_last_spot(new_spot)
-        if spot:
-            spot.goto(back_to)
-            if new_spot:
-                self.add_spot_to_history(new_spot)
-        else:
-            if back_to:
-                back_to.message('Spot history is empty')
-
-    def get_last_spot(self, exclude_spot=None, exclude_editor=None):
-        for s in self.spot_history:
-            if s.is_valid() and not s.similar_to(exclude_spot) and s.editor() is not exclude_editor:
-                return s
-
-        return None
-
-    def goto_next_prev_spot(self, editor, is_next):
-        current_spot = EditorSpot(self, editor)
-        if is_next:
-            seq = self.spot_history
-        else:
-            seq = reversed(self.spot_history)
-
-        prev_spot = None
-        for s in (s for s in seq if s.is_valid()):
-            if s.similar_to(current_spot):
-                if prev_spot:
-                    prev_spot.goto(editor)
-                else:
-                    editor.message('No more spots to go')
-                return
-
-            prev_spot = s
-
-        self.goto_last_spot(editor)
 
     def show_global_preferences(self, editor):
         self.save_conf(editor)
@@ -478,32 +429,3 @@ class EditorManager(object):
         #    import snaked.core.quick_open
         #    snaked.core.quick_open.quick_open(manager.get_fake_editor())
 
-class EditorSpot(object):
-    def __init__(self, manager, editor):
-        self.manager = manager
-        self.editor = weakref.ref(editor)
-        self.mark = editor.buffer.create_mark(None, editor.cursor)
-
-    @property
-    def iter(self):
-        return self.mark.get_buffer().get_iter_at_mark(self.mark)
-
-    def is_valid(self):
-        return self.editor() and not self.mark.get_deleted()
-
-    def similar_to(self, spot):
-        return spot and self.mark.get_buffer() is spot.mark.get_buffer() \
-            and abs(self.iter.get_line() - spot.iter.get_line()) < 7
-
-    def __del__(self):
-        buffer = self.mark.get_buffer()
-        if buffer:
-            buffer.delete_mark(self.mark)
-
-    def goto(self, back_to=None):
-        editor = self.editor()
-        editor.buffer.place_cursor(self.iter)
-        editor.scroll_to_cursor()
-
-        if editor is not back_to:
-            self.manager.focus_editor(editor)

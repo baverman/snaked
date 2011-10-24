@@ -6,7 +6,7 @@ import gtk
 from uxie.floating import Manager as FloatingManager, TextFeedback, add_float, remove_float, allocate_float
 from uxie.escape import Manager as EscapeManager
 from uxie.actions import wait_mod_unpress_for_last_shortcut
-from uxie.utils import idle
+from uxie.utils import idle, refresh_gui
 
 tab_bar_pos_mapping = {
     'top': gtk.POS_TOP,
@@ -211,19 +211,29 @@ class Window(gtk.Window):
         self.update_top_level_title()
 
     def on_page_removed(self, note, child, idx):
+        switch_to = None
         for e in self.editors:
             if e.widget is child:
-                spot = self.manager.get_last_spot(None, e)
+                spot = self.manager.spot_manager.get_last(None, e)
                 if spot:
-                    note.set_current_page(note.page_num(spot.editor().widget))
-                    return
+                    switch_to = note.page_num(spot.editor().widget)
 
-        if idx > 0:
-            note.set_current_page(idx - 1)
+                break
+
+        if switch_to is None and idx > 0:
+            switch_to = idx - 1
+
+        if switch_to is not None:
+            note.set_current_page(switch_to)
+            refresh_gui()
+
+        e = self.get_editor_context()
+        if e:
+            idle(e.view.grab_focus)
 
     def switch_to(self, editor, dir):
         if self.last_switch_time is None or time.time() - self.last_switch_time > 5:
-            self.manager.add_spot(editor)
+            self.manager.spot_manager.add(editor)
 
         self.last_switch_time = time.time()
 
