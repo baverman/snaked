@@ -212,9 +212,6 @@ class Window(gtk.Window):
     def on_switch_page(self, *args):
         self.update_top_level_title()
 
-        if getattr(self, 'tab_menu', None):
-            self.tab_menu.get_parent().window.show()
-
     def on_page_removed(self, note, child, idx):
         for e in self.editors:
             if e.widget is child:
