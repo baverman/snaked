@@ -243,6 +243,15 @@ class Editor(SignalManager):
         """
         return unicode(self.text, 'utf-8')
 
+    def clear_cursor(self):
+        if self.ins_mark:
+            self.buffer.delete_mark(self.ins_mark)
+            self.ins_mark = None
+
+        if self.sb_mark:
+            self.buffer.delete_mark(self.sb_mark)
+            self.sb_mark = None
+
     def goto_line(self, line, minimal=False):
         iterator = self.buffer.get_iter_at_line(line - 1)
         self.buffer.place_cursor(iterator)
@@ -250,6 +259,8 @@ class Editor(SignalManager):
             self.view.scroll_mark_onscreen(self.buffer.get_insert())
         else:
             self.view.scroll_to_mark(self.buffer.get_insert(), 0.001, use_align=True, xalign=1.0)
+
+        self.clear_cursor()
 
     def scroll_to_cursor(self):
         self.view.scroll_to_mark(self.buffer.get_insert(), 0.001, use_align=True, xalign=1.0)
