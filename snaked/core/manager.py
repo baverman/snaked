@@ -46,7 +46,7 @@ map_generic('next', '<ctrl>Down', 1)
 
 map_generic('goto-definition', 'F3')
 map_generic('show-outline', '<ctrl>o')
-map_generic('show-calltip', '<ctrl>Return')
+map_generic('show-calltip', '<ctrl>Return', 1)
 
 
 class EditorManager(object):
