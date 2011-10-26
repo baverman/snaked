@@ -4,7 +4,6 @@ import re
 
 from uxie.utils import idle, join_to_file_dir, refresh_gui
 from uxie.misc import BuilderAware
-from uxie.actions import Activator
 
 from snaked.util import set_activate_the_one_item
 
@@ -74,7 +73,9 @@ class OutlineVisitor(ast.NodeVisitor):
 class OutlineDialog(BuilderAware):
     def __init__(self):
         super(OutlineDialog, self).__init__(join_to_file_dir(__file__, 'outline.glade'))
-        self.activator = Activator(self.window)
+
+        from snaked.core.manager import keymap
+        self.activator = keymap.get_activator(self.window)
         self.activator.bind('any', 'escape', None, self.hide)
         self.activator.bind('any', 'activate-search-entry', None, self.focus_search)
 

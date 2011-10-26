@@ -17,7 +17,9 @@ class QuickOpenDialog(BuilderAware):
 
     def __init__(self):
         super(QuickOpenDialog, self).__init__(join_to_file_dir(__file__, 'gui.glade'))
-        self.shortcuts = Activator(self.window)
+
+        from snaked.core.manager import keymap
+        self.shortcuts = keymap.get_activator(self.window, 'quick_open')
         self.shortcuts.bind('any', 'escape', '$_Close', self.escape)
         self.shortcuts.bind('any', 'activate-search-entry',
             'Activate search entry', self.focus_search)

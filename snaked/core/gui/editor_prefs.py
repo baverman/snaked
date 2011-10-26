@@ -15,7 +15,9 @@ on_pref_refresh_hooks = []
 class PreferencesDialog(BuilderAware):
     def __init__(self, prefs):
         BuilderAware.__init__(self, join_to_file_dir(__file__, 'editor_prefs.glade'))
-        self.activator = Activator(self.window)
+
+        from snaked.core.manager import keymap
+        self.activator = keymap.get_activator(self.window)
         self.activator.bind_accel('window', 'close', 'Escape', '_Escape', self.hide)
 
         self.prefs = prefs

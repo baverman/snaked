@@ -6,7 +6,7 @@ import gtksourceview2
 
 from uxie.utils import idle, join_to_file_dir, join_to_settings_dir
 from uxie.plugins import Manager as PluginManager
-from uxie.actions import Activator, map_generic
+from uxie.actions import KeyMap
 
 from ..util import lazy_property, get_project_root, save_file
 
@@ -37,17 +37,18 @@ prefs.add_option('TAB_BAR_PLACEMENT', None,
 prefs.add_internal_option('WINDOWS', list)
 prefs.add_internal_option('MODIFIED_FILES', dict)
 
-map_generic('root-menu', 'F1')
-map_generic('activate-search-entry', '<ctrl>s')
-map_generic('escape', 'Escape')
-map_generic('delete', 'Delete')
+keymap = KeyMap(join_to_settings_dir('snaked', 'keys.conf'))
+keymap.map_generic('root-menu', 'F1')
+keymap.map_generic('activate-search-entry', '<ctrl>s')
+keymap.map_generic('escape', 'Escape')
+keymap.map_generic('delete', 'Delete')
 
-map_generic('prev', '<ctrl>Up', 1)
-map_generic('next', '<ctrl>Down', 1)
+keymap.map_generic('prev', '<ctrl>Up', 1)
+keymap.map_generic('next', '<ctrl>Down', 1)
 
-map_generic('goto-definition', 'F3')
-map_generic('show-outline', '<ctrl>o')
-map_generic('show-calltip', '<ctrl>Return', 1)
+keymap.map_generic('goto-definition', 'F3')
+keymap.map_generic('show-outline', '<ctrl>o')
+keymap.map_generic('show-calltip', '<ctrl>Return', 1)
 
 
 class EditorManager(object):
@@ -60,7 +61,7 @@ class EditorManager(object):
         self.lang_manager = gtksourceview2.language_manager_get_default()
         self.modify_lang_search_path(self.lang_manager)
 
-        self.activator = Activator()
+        self.activator = keymap.get_activator(config_section='editor_window')
         self.activator.add_context('manager', (), lambda: self)
         self.activator.bind_accel('manager', 'quit', '_File/$_Quit', '<ctrl>q', EditorManager.quit)
 

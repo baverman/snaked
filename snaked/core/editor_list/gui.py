@@ -19,7 +19,9 @@ class EditorListDialog(BuilderAware):
 
     def __init__(self):
         super(EditorListDialog, self).__init__(join_to_file_dir(__file__, 'gui.glade'))
-        self.activator = Activator(self.window)
+
+        from snaked.core.manager import keymap
+        self.activator = keymap.get_activator(self.window)
         self.activator.bind('any', 'escape', None, self.hide)
         self.activator.bind('any', 'delete', None, self.close_editor)
 

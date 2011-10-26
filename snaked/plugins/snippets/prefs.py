@@ -20,8 +20,8 @@ class PreferencesDialog(BuilderAware):
     def __init__(self, existing_snippets):
         BuilderAware.__init__(self, join_to_file_dir(__file__, 'prefs.glade'))
 
-        from snaked.core.shortcuts import ShortcutActivator
-        self.activator = ShortcutActivator(self.window)
+        from snaked.core.manager import keymap
+        self.activator = keymap.get_activator(self.window)
         self.activator.bind('Escape', self.hide)
         self.activator.bind('<alt>s', self.focus_search)
         self.existing_snippets = existing_snippets
