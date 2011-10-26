@@ -83,6 +83,12 @@ def backward_search(matcher, text, endpos):
 
     return match
 
+def scroll_to_buffer_cursor(view):
+    view.scroll_mark_onscreen(view.get_buffer().get_insert())
+    ed = getattr(view, 'editor_ref', None)
+    if ed:
+        ed().clear_cursor()
+
 def do_find(view, dir, start_from=None):
     if view in active_widgets:
         search = active_widgets[view].entry.get_text()
@@ -117,7 +123,7 @@ def do_find(view, dir, start_from=None):
     if match:
         bounds = map(buf.get_iter_at_offset, match.span())
         buf.select_range(bounds[1], bounds[0])
-        view.scroll_mark_onscreen(buf.get_insert())
+        scroll_to_buffer_cursor(view)
         if start_from:
             view.get_toplevel().message('Wrap search', 'info', parent=view)
 
@@ -279,7 +285,7 @@ def mark_occurences(view, search, ignore_case, regex, show_feedback=True):
 
 def on_search_activate(sender, view, widget):
     delete_all_marks(view)
-    #editor.add_spot() TODO
+    editor.add_spot()
     if mark_occurences(view, widget.entry.get_text(),
             widget.ignore_case.get_active(), widget.regex.get_active()):
         find_next(view, True)
@@ -365,7 +371,7 @@ def on_replace_activate(button, view, widget):
     buf.insert_at_cursor(match.expand(replace).encode('utf-8'))
     buf.end_user_action()
 
-    view.scroll_mark_onscreen(buf.get_insert())
+    scroll_to_buffer_cursor(view)
 
 def on_replace_all_activate(button, view, widget):
     if view not in active_widgets:
@@ -424,7 +430,7 @@ def on_replace_all_activate(button, view, widget):
     cursor.set_line(line)
     cursor.set_line_offset(offset)
     buf.place_cursor(cursor)
-    view.scroll_mark_onscreen(buf.get_insert())
+    scroll_to_buffer_cursor(view)
     view.grab_focus()
 
 def on_editor_view_move_cursor(view, step, count, selection, widget):
