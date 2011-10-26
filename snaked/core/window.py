@@ -171,9 +171,8 @@ class Window(gtk.Window):
         self.editors.remove(editor)
 
     def close_editor(self, editor):
-        self.detach_editor(editor)
-        editor.on_close()
         self.manager.editor_closed(editor)
+        self.detach_editor(editor)
 
         if not self.editors:
             self.close()
@@ -187,9 +186,8 @@ class Window(gtk.Window):
         files[:] = []
         for e in self.editors[:]:
             files.append(dict(uri=e.uri))
-            e.on_close()
-            self.editors.remove(e)
             self.manager.editor_closed(e)
+            self.editors.remove(e)
 
         state = self.window.get_state()
         if state & gtk.gdk.WINDOW_STATE_FULLSCREEN:

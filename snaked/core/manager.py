@@ -268,6 +268,7 @@ class EditorManager(object):
         if is_last_buffer:
             self.plugin_manager.done('last-buffer-editor', editor)
 
+        editor.on_close()
         del editor.view
         del editor.buffer
 
