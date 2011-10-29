@@ -285,7 +285,11 @@ def mark_occurences(view, search, ignore_case, regex, show_feedback=True):
 
 def on_search_activate(sender, view, widget):
     delete_all_marks(view)
-    editor.add_spot()
+    
+    editor = getattr(view, 'editor_ref')
+    if editor:
+        editor().add_spot()
+    
     if mark_occurences(view, widget.entry.get_text(),
             widget.ignore_case.get_active(), widget.regex.get_active()):
         find_next(view, True)
