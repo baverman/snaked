@@ -66,6 +66,7 @@ class EditorManager(object):
 
         self.activator.add_menu_entry('_File#1/')
         self.activator.add_menu_entry('_Edit#10/')
+        self.activator.add_menu_entry('_Preferences#15/_Session#100/')
         self.activator.add_menu_entry('_View#20/')
         self.activator.add_menu_entry('Too_ls#30/')
         self.activator.add_menu_entry('_Run#40/')
@@ -86,6 +87,7 @@ class EditorManager(object):
         self.on_quit = []
 
         # Init core plugins
+        self.plugin_manager.add_plugin(prefs)
         self.plugin_manager.add_plugin(snaked.core.quick_open)
         self.plugin_manager.add_plugin(snaked.core.editor_list)
         self.plugin_manager.add_plugin(snaked.core.titler)
@@ -234,30 +236,6 @@ class EditorManager(object):
         style_scheme = self.style_manager.get_scheme(buf.config['style'])
         buf.set_style_scheme(style_scheme)
 
-    def on_request_to_open_file(self, editor, filename, line, lang_id):
-        self.add_spot(editor)
-        filename = os.path.normpath(filename)
-
-        for e in self.editors:
-            if e.uri == filename:
-                self.focus_editor(e)
-
-                if line is not None:
-                    e.goto_line(line + 1)
-
-                break
-        else:
-            e = self.open(filename, line, lang_id)
-
-        return e
-
-    @Editor.settings_changed(idle=True)
-    def on_editor_settings_changed(self, editor):
-        self.set_editor_prefs(editor, editor.uri, editor.lang)
-        for e in self.editors:
-            if e is not editor:
-                idle(self.set_editor_prefs, e, e.uri, e.lang)
-
     def new_file_action(self, editor):
         from snaked.core.gui import new_file
         new_file.show_create_file(editor)
@@ -319,52 +297,6 @@ class EditorManager(object):
 
         if gtk.main_level() > 0:
             gtk.main_quit()
-
-    def show_key_preferences(self, editor):
-        from snaked.core.gui.shortcuts import ShortcutsDialog
-        dialog = ShortcutsDialog()
-        dialog.show(editor)
-
-    def show_preferences(self, editor):
-        from snaked.core.gui.prefs import PreferencesDialog
-        dialog = PreferencesDialog()
-        dialog.show(editor)
-
-    def show_editor_preferences(self, editor):
-        from snaked.core.gui.editor_prefs import PreferencesDialog
-        dialog = PreferencesDialog(self.lang_prefs)
-        dialog.show(editor)
-
-    def show_global_preferences(self, editor):
-        self.save_conf(editor)
-        e = editor.open_file(join_to_settings_dir('snaked', 'snaked.conf'), lang_id='python')
-        e.file_saved.connect(self, 'on_config_saved')
-
-    def show_session_preferences(self, editor):
-        self.save_conf(editor)
-        e = editor.open_file(join_to_settings_dir('snaked', self.session + '.session'), lang_id='python')
-        e.file_saved.connect(self, 'on_config_saved')
-
-    def on_config_saved(self, editor):
-        editor.message('Config updated')
-        self.load_conf()
-
-    def edit_contexts(self, editor):
-        import shutil
-        from os.path import join, exists, dirname
-        from uxie.utils import make_missing_dirs
-
-        contexts = join(editor.project_root, '.snaked_project', 'contexts')
-        if not exists(contexts):
-            make_missing_dirs(contexts)
-            shutil.copy(join(dirname(__file__), 'contexts.template'), contexts)
-
-        e = editor.open_file(contexts)
-        e.file_saved.connect(self, 'on_context_saved')
-
-    def on_context_saved(self, editor):
-        editor.message('File type associations changed')
-        self.process_project_contexts(editor.project_root, True)
 
     def modify_lang_search_path(self, manager):
         search_path = manager.get_search_path()
@@ -435,7 +367,6 @@ class EditorManager(object):
                 if w.window_conf.get('active-uri', None):
                     w.open_or_activate(w.window_conf['active-uri'])
 
-        #if not manager.editors:
-        #    import snaked.core.quick_open
-        #    snaked.core.quick_open.quick_open(manager.get_fake_editor())
+        if not self.buffers:
+            snaked.core.quick_open.quick_open(window)
 

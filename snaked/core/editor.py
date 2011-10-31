@@ -26,10 +26,6 @@ class Editor(SignalManager):
     get_title = Signal(return_type=str)
     get_window_title = Signal(return_type=str)
 
-    plugins_changed = Signal()
-
-    settings_changed = Signal()
-
     def __init__(self, conf, buf=None):
         self.last_cursor_move = None
 

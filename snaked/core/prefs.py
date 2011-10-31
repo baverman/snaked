@@ -6,6 +6,48 @@ from inspect import cleandoc
 
 from uxie.utils import make_missing_dirs, join_to_settings_dir
 
+def init(injector):
+    injector.bind('window', 'editor-prefs', 'Preferences/_Editor settings#1', show_editor_preferences)
+    injector.bind('window', 'default-config', 'Preferences/_Default config', show_global_preferences)
+    injector.bind('window', 'session-config', 'Preferences/Session/_Config', show_session_preferences)
+
+def show_editor_preferences(window):
+    from snaked.core.gui.editor_prefs import PreferencesDialog
+    dialog = PreferencesDialog(window.manager.lang_prefs)
+    dialog.show(window)
+
+def show_global_preferences(window):
+    self.save_conf(editor)
+    e = editor.open_file(join_to_settings_dir('snaked', 'snaked.conf'), lang_id='python')
+    e.file_saved.connect(self, 'on_config_saved')
+
+def show_session_preferences(window):
+    self.save_conf(editor)
+    e = editor.open_file(join_to_settings_dir('snaked', self.session + '.session'), lang_id='python')
+    e.file_saved.connect(self, 'on_config_saved')
+
+def on_config_saved(self, editor):
+    editor.message('Config updated')
+    self.load_conf()
+
+def edit_contexts(self, editor):
+    import shutil
+    from os.path import join, exists, dirname
+    from uxie.utils import make_missing_dirs
+
+    contexts = join(editor.project_root, '.snaked_project', 'contexts')
+    if not exists(contexts):
+        make_missing_dirs(contexts)
+        shutil.copy(join(dirname(__file__), 'contexts.template'), contexts)
+
+    e = editor.open_file(contexts)
+    e.file_saved.connect(self, 'on_context_saved')
+
+def on_context_saved(self, editor):
+    editor.message('File type associations changed')
+    self.process_project_contexts(editor.project_root, True)
+
+
 default_prefs = {
     'default': {
         'font': 'Monospace 11',
