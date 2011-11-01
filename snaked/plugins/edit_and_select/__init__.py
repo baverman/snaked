@@ -8,21 +8,21 @@ import gtk
 last_smart_selections = weakref.WeakKeyDictionary()
 
 def init(injector):
-    injector.bind_accel('editor-active', 'delete-line', '_Edit/_Delete line', '<ctrl>d', delete_line)
+    injector.bind_accel('editor-active', 'delete-line', 'Edit/_Delete line#20', '<ctrl>d', delete_line)
 
-    injector.bind_accel('editor-active', 'smart-select', '_Edit/Smart _select', '<alt>w', smart_select)
-    injector.bind_accel('editor-with-selection', 'smart-unselect', '_Edit/Smart _unselect',
+    injector.bind_accel('editor-active', 'smart-select', 'Edit/Smart _select', '<alt>w', smart_select)
+    injector.bind_accel('editor-with-selection', 'smart-unselect', 'Edit/Smart _unselect',
         '<shift><alt>w', smart_unselect)
 
-    injector.bind_accel('editor-active', 'show_offset', '_Tools/Show offset and column',
+    injector.bind_accel('editor-active', 'show_offset', 'Tools/Show offset and column#10',
         '<ctrl><alt>o', show_offset)
 
-    injector.bind_accel('editor-with-selection', 'wrap-text', '_Edit/_Wrap block', '<alt>f', wrap_text)
+    injector.bind_accel('editor-with-selection', 'wrap-text', 'Edit/_Wrap block', '<alt>f', wrap_text)
 
     injector.bind_accel('editor-with-selection', 'move-selection-left',
-        '_Edit/Move selection _left', '<alt>Left', move_word_left)
+        'Edit/Move selection _left', '<alt>Left', move_word_left)
     injector.bind_accel('editor-with-selection', 'move-selection-right',
-        '_Edit/Move selection _right', '<alt>Right', move_word_right)
+        'Edit/Move selection _right', '<alt>Right', move_word_right)
 
     from snaked.core.prefs import add_option
     add_option('DOUBLE_BRACKET_MATCHER', True, "Enable custom bracket matcher")

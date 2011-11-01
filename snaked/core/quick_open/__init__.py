@@ -3,8 +3,8 @@ dialog = [None]
 def init(injector):
     from .. import prefs, context
 
-    injector.bind_accel(('window', 'editor'), 'slow-open', '_File/_Open', '<ctrl>F12', slow_open)
-    injector.bind_accel('window', 'quick-open', '_File/Quic_k open', '<ctrl><alt>r', quick_open)
+    injector.bind_accel(('window', 'editor'), 'slow-open', 'File/_Open#10', '<ctrl>F12', slow_open)
+    injector.bind_accel('window', 'quick-open', 'File/Quic_k open', '<ctrl><alt>r', quick_open)
 
     injector.on_ready('editor-with-new-buffer', editor_opened)
 

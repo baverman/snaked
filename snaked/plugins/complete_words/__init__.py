@@ -9,7 +9,7 @@ from uxie.utils import refresh_gui, connect, idle
 buffers_to_update = []
 
 def init(injector):
-    injector.bind_accel('editor-active', 'complete-word', '_Edit/Complete _word',
+    injector.bind_accel('editor-active', 'complete-word', 'Edit/Complete _word#80',
         '<alt>slash', cycle)
 
     timeout_add(3000, update_words_timer)

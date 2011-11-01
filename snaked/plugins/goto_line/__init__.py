@@ -7,7 +7,7 @@ import gtk
 from uxie.utils import idle
 
 def init(injector):
-    injector.bind_accel('editor-active', 'goto-line', '_Edit/_Goto line', '<ctrl>l', goto_line)
+    injector.bind_accel('editor-active', 'goto-line', 'Edit/_Goto line#50', '<ctrl>l', goto_line)
 
 def goto_line(editor):
     widget = get_widget(editor)

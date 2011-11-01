@@ -22,27 +22,27 @@ def init(injector):
         lambda e: e if e.buffer.get_has_selection else None)
 
     with injector.on('window', 'editor') as ctx:
-        ctx.bind_accel('save', '_File/_Save', '<ctrl>s', Window.save_editor)
+        ctx.bind_accel('save', 'File/_Save#20', '<ctrl>s', Window.save_editor)
 
-        ctx.bind_accel('close-editor', '_Tab/_Close', '<ctrl>w', Window.close_editor)
-        ctx.bind_accel('next-editor', '_Tab/_Next', '<ctrl>Page_Down', Window.switch_to, 1, 1)
-        ctx.bind_accel('prev-editor', '_Tab/_Prev', '<ctrl>Page_Up', Window.switch_to, 1, -1)
-        ctx.bind_accel('move-tab-left', '_Tab/Move to _left',
+        ctx.bind_accel('close-editor', 'Tab/_Close#100', '<ctrl>w', Window.close_editor)
+        ctx.bind_accel('next-editor', 'Tab/_Next#50', '<ctrl>Page_Down', Window.switch_to, 1, 1)
+        ctx.bind_accel('prev-editor', 'Tab/_Prev', '<ctrl>Page_Up', Window.switch_to, 1, -1)
+        ctx.bind_accel('move-tab-left', 'Tab/Move to _left',
             '<shift><ctrl>Page_Up', Window.move_tab, 1, False)
-        ctx.bind_accel('move-tab-right', '_Tab/Move to _right',
+        ctx.bind_accel('move-tab-right', 'Tab/Move to _right',
             '<shift><ctrl>Page_Down', Window.move_tab, 1, True)
 
-        ctx.bind('detach-editor', '_Tab/_Detach', Window.retach_editor)
-        ctx.bind('duplicate-editor', '_Tab/D_uplicate', Window.duplicate_editor)
+        ctx.bind('detach-editor', 'Tab/_Detach', Window.retach_editor)
+        ctx.bind('duplicate-editor', 'Tab/D_uplicate', Window.duplicate_editor)
 
     with injector.on('window') as ctx:
         ctx.bind('escape', None, Window.process_escape)
-        ctx.bind('close-window', '_Window/_Close', Window.close)
+        ctx.bind('close-window', 'Window/_Close#100', Window.close)
 
         #ctx.bind_accel('save-all', '_File/Save _all', '<ctrl><shift>s', Window.save_all)
         #ctx.bind_accel('new-file', Window.new_file_action)
-        ctx.bind_accel('fullscreen', '_Window/Toggle _fullscreen', 'F11', Window.toggle_fullscreen)
-        ctx.bind_accel('toggle-tabs-visibility', '_Window/Toggle ta_bs', '<Alt>F11', Window.toggle_tabs)
+        ctx.bind_accel('fullscreen', 'Window/Toggle _fullscreen#50', 'F11', Window.toggle_fullscreen)
+        ctx.bind_accel('toggle-tabs-visibility', 'Window/Toggle ta_bs', '<Alt>F11', Window.toggle_tabs)
 
         #ctx.bind_accel('place-spot', self.add_spot_with_feedback)
         #ctx.bind_accel('goto-last-spot', self.goto_last_spot)

@@ -63,7 +63,16 @@ class EditorManager(object):
 
         self.activator = keymap.get_activator(config_section='editor_window')
         self.activator.add_context('manager', (), lambda: self)
-        self.activator.bind_accel('manager', 'quit', '_File/$_Quit', '<ctrl>q', EditorManager.quit)
+
+        self.activator.add_menu_entry('_File#1/')
+        self.activator.add_menu_entry('_Edit#10/')
+        self.activator.add_menu_entry('_View#20/')
+        self.activator.add_menu_entry('Too_ls#30/')
+        self.activator.add_menu_entry('_Run#40/')
+        self.activator.add_menu_entry('_Tab#90/')
+        self.activator.add_menu_entry('_Window#100/')
+
+        self.activator.bind_accel('manager', 'quit', 'File/_Quit#100', '<ctrl>q', EditorManager.quit)
 
         self.plugin_manager = PluginManager(self.activator)
 

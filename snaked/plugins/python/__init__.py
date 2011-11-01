@@ -16,10 +16,10 @@ def init(injector):
     injector.add_context('python-editor', 'editor-active',
         lambda e: e if is_python_editor(e) else None)
 
-    injector.bind('python-editor', 'goto-definition', '_Python/Goto _defenition', goto_definition)
-    injector.bind('python-editor', 'show-outline', '_Python/Show _outline', open_outline)
+    injector.bind('python-editor', 'goto-definition', '_Python#70/Goto _defenition', goto_definition)
+    injector.bind('python-editor', 'show-outline', 'Python/Show _outline', open_outline)
 
-    injector.bind('python-editor', 'show-calltip', '_Python/Show calltip', show_calltips)
+    injector.bind('python-editor', 'show-calltip', 'Python/Show calltip', show_calltips)
 
     #injector.bind_accel('run-test', '<ctrl>F10', 'Tests', 'Run test in cursor scope', run_test)
     #injector.bind_accel('run-all-tests', '<ctrl><shift>F10', 'Tests',

@@ -8,16 +8,16 @@ def init(injector):
     injector.add_context('regular-spot', 'editor-active', spot_context('regular'))
 
     injector.bind_accel(('spot-manager', 'editor-active', 'regular-spot'), 'goto-last-spot',
-        '_Edit/Goto last spot', '<Alt>q', Manager.goto_last)
+        'Edit/Goto last spot#70', '<Alt>q', Manager.goto_last)
 
     #injector.bind_accel(('spot-manager', 'editor-active', 'edit-spot'), 'goto-last-spot',
     #    '_Edit/Goto last edit spot', '<Alt>q', Manager.goto_last, 5)
 
     injector.bind_accel(('spot-manager', 'editor-active'), 'goto-next-spot',
-        '_Edit/Goto next spot', '<ctrl>bracketright', Manager.goto_next_prev, None, True)
+        'Edit/Goto next spot', '<ctrl>bracketright', Manager.goto_next_prev, None, True)
 
     injector.bind_accel(('spot-manager', 'editor-active'), 'goto-prev-spot',
-        '_Edit/Goto prev spot', '<ctrl>bracketleft', Manager.goto_next_prev, None, False)
+        'Edit/Goto prev spot', '<ctrl>bracketleft', Manager.goto_next_prev, None, False)
 
     #injector.bind_accel(('spot-manager', 'editor-active', 'master-spot'), 'goto-last-spot',
     #    '_Edit/Goto last master spot', '<Alt>q', Manager.goto_last, 10)

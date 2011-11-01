@@ -25,11 +25,11 @@ def init(injector):
     injector.add_context('search', 'textview-active',
         lambda t: t if t in active_widgets or search_selections else None)
 
-    injector.bind_accel('textview-active', 'search',  '_Edit/_Search', '<ctrl>f', search)
-    injector.bind_accel('textview-active', 'mark-selection', '_Edit/_Mark', '<ctrl>h', mark_selection)
+    injector.bind_accel('textview-active', 'search',  'Edit/_Search#30', '<ctrl>f', search)
+    injector.bind_accel('textview-active', 'mark-selection', 'Edit/_Mark', '<ctrl>h', mark_selection)
 
-    injector.bind('search', 'next', '_Edit/Find _next', find_next)
-    injector.bind('search', 'prev', '_Edit/Find _prev', find_prev)
+    injector.bind('search', 'next', 'Edit/Find _next', find_next)
+    injector.bind('search', 'prev', 'Edit/Find _prev', find_prev)
 
     from snaked.core.prefs import add_internal_option
     add_internal_option('SEARCH_IGNORE_CASE', False, 'Ignore case while searching')
@@ -285,11 +285,11 @@ def mark_occurences(view, search, ignore_case, regex, show_feedback=True):
 
 def on_search_activate(sender, view, widget):
     delete_all_marks(view)
-    
+
     editor = getattr(view, 'editor_ref')
     if editor:
         editor().add_spot()
-    
+
     if mark_occurences(view, widget.entry.get_text(),
             widget.ignore_case.get_active(), widget.regex.get_active()):
         find_next(view, True)

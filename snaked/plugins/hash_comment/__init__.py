@@ -11,7 +11,7 @@ def init(injector):
     injector.add_context('hash-comment-aware', 'editor-active',
         lambda e: e if e.buffer.lang in langs else None)
 
-    injector.bind_accel('hash-comment-aware', 'comment-code', '_Edit/(Un)_comment',
+    injector.bind_accel('hash-comment-aware', 'comment-code', 'Edit/(Un)_comment#60',
         '<ctrl>slash', comment, 1)
 
 def comment(editor):

@@ -3,7 +3,7 @@ name = 'Goto dir'
 desc = "Opens file's directory"
 
 def init(injector):
-    injector.bind_accel('editor-active', 'goto-dir', '_File/Open file\'s directory',
+    injector.bind_accel('editor-active', 'goto-dir', 'File/Open file\'s directory#30',
         '<ctrl><alt>l', goto_dir)
 
 def goto_dir(editor):
