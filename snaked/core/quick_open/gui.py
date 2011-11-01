@@ -167,7 +167,7 @@ class QuickOpenDialog(BuilderAware):
         bad_matchers = {}
         for r in self.roots:
             try:
-                bad_re = settings.ignore_contexts[r]['ignore']
+                bad_re = self.pwindow().manager.get_context_manager(r).get()['quick_open']['ignore']
             except KeyError:
                 bad_matchers[r] = None
             else:

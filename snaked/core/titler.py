@@ -8,7 +8,6 @@ wtitle_contexts = {}
 
 def init(injector):
     from .prefs import add_option
-    from .context import add_setter
 
     add_option('TAB_TITLE_FORMAT', '%modified{%pypkg|%name2}{%writeable|[ro]}',
         'Default format string for tab titles')
@@ -16,9 +15,6 @@ def init(injector):
     add_option('WINDOW_TITLE_FORMAT',
         '%modified{%project|NOP}:{%path|%fullpath}{%writeable|[ro]}',
         'Default format string for window title')
-
-    add_setter('title', on_set_title_context)
-    add_setter('wtitle', on_set_wtitle_context)
 
     add_title_handler('name', name_handler)
     add_title_handler('name2', name2_handler)
@@ -34,32 +30,23 @@ def editor_created(editor):
     editor.connect('get-title', on_editor_get_title)
     editor.connect('get-window-title', on_editor_get_window_title)
 
-def get_format_from_contexts(editor, contexts):
-    root = editor.project_root
-    if root in contexts:
-        for fstr, matcher in contexts[root].items():
-            if matcher.match(editor.uri):
-                return fstr
+def get_format_from_context(editor, context):
+    return editor.window.manager.get_context_manager(
+        editor.project_root).get_first(context, editor.uri)
 
 def on_editor_get_title(editor):
-    format = get_format_from_contexts(editor, title_contexts)
+    format = get_format_from_context(editor, 'title')
     if not format:
         format = editor.conf['TAB_TITLE_FORMAT']
 
     return get_title(editor, format)
 
 def on_editor_get_window_title(editor):
-    format = get_format_from_contexts(editor, wtitle_contexts)
+    format = get_format_from_context(editor, 'wtitle')
     if not format:
         format = editor.conf['WINDOW_TITLE_FORMAT']
 
     return get_title(editor, format)
-
-def on_set_title_context(root, contexts):
-    title_contexts[root] = contexts
-
-def on_set_wtitle_context(root, contexts):
-    wtitle_contexts[root] = contexts
 
 def add_title_handler(name, callback):
     title_handlers[name] = callback

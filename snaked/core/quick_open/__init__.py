@@ -1,7 +1,7 @@
 dialog = [None]
 
 def init(injector):
-    from .. import prefs, context
+    from .. import prefs
 
     injector.bind_accel(('window', 'editor'), 'slow-open', 'File/_Open#10', '<ctrl>F12', slow_open)
     injector.bind_accel('window', 'quick-open', 'File/Quic_k open', '<ctrl><alt>r', quick_open)
@@ -20,9 +20,6 @@ def init(injector):
 
     prefs.add_internal_option('QUICK_OPEN_CURRENT_PROJECTS', list,
         "Projects will be selected in quick open dialog")
-
-    context.add_setter('quick_open', set_context)
-
 
 def editor_opened(editor):
     from . import settings
@@ -63,7 +60,3 @@ def slow_open(window, editor):
 
 def quit():
     dialog[0] = None
-
-def set_context(project_root, contexts):
-    from . import settings
-    settings.ignore_contexts[project_root] = contexts

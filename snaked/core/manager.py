@@ -13,7 +13,8 @@ from ..util import lazy_property, get_project_root, save_file
 from . import prefs
 
 from .editor import Editor
-from .context import add_setter as add_context_setter, Processor as ContextProcessor
+from .context import Processor as ContextProcessor, Manager as ContextManager, \
+                     FakeManager as FakeContextManager
 
 import snaked.core.quick_open
 import snaked.core.titler
@@ -79,11 +80,12 @@ class EditorManager(object):
 
         self.init_conf()
 
+        self.default_ctx_processor = ContextProcessor(join_to_settings_dir('snaked', 'contexts.conf'))
+        self.session_ctx_processor = ContextProcessor(join_to_settings_dir(self.session, 'contexts'))
+        self.ctx_managers = {}
+
         self.escape_stack = []
         self.escape_map = {}
-        self.context_processors = {}
-        self.lang_contexts = {}
-        self.ctx_contexts = {}
         self.on_quit = []
 
         # Init core plugins
@@ -95,9 +97,6 @@ class EditorManager(object):
         self.plugin_manager.add_plugin(snaked.core.spot)
 
         self.spot_manager = snaked.core.spot.Manager()
-
-        add_context_setter('lang', self.set_lang_context)
-        add_context_setter('ctx', self.set_ctx_context)
 
         self.plugin_manager.ready('manager', self)
 
@@ -122,14 +121,21 @@ class EditorManager(object):
         self.internal_config.save()
         self.session_config.save()
 
-    def process_project_contexts(self, project_root, force=False):
-        if project_root not in self.context_processors:
-            contexts_filename = os.path.join(project_root, '.snaked_project', 'contexts')
-            p = self.context_processors[project_root] = ContextProcessor(project_root, contexts_filename)
-            p.process()
+    def get_context_manager(self, project_root):
+        try:
+            return self.ctx_managers[project_root]
+        except KeyError:
+            pass
+
+        if project_root:
+            manager = ContextManager(project_root,
+                [self.default_ctx_processor, self.session_ctx_processor],
+                os.path.join(project_root, '.snaked_project', 'contexts'))
         else:
-            if force:
-                self.context_processors[project_root].process()
+            manager = FakeContextManager()
+
+        self.ctx_managers[project_root] = manager
+        return manager
 
     def get_buffer_for_uri(self, filename):
         for buf in self.buffers:
@@ -192,17 +198,10 @@ class EditorManager(object):
     def set_buffer_prefs(self, buf, filename, lang_id=None):
         lang = None
         buf.lang = 'default'
-        buf.contexts = [buf.lang]
 
         root = get_project_root(filename)
-        if root:
-            self.process_project_contexts(root)
-
-        if not lang_id and root in self.lang_contexts:
-            for id, matcher in self.lang_contexts[root].items():
-                if matcher.search(filename):
-                    lang_id = id
-                    break
+        ctx_manager = self.get_context_manager(root)
+        lang_id = ctx_manager.get_first('lang', filename)
 
         if lang_id:
             lang = self.lang_manager.get_language(lang_id)
@@ -214,18 +213,14 @@ class EditorManager(object):
             if lang:
                 buf.lang = lang.get_id()
 
-        buf.contexts = [buf.lang]
-
         if lang:
             buf.set_language(lang)
 
+        buf.contexts = [buf.lang]
+        buf.contexts += ctx_manager.get_all('ctx', filename)
+
         if self.session:
             buf.contexts.append('session:' + self.session)
-
-        if root in self.ctx_contexts:
-            for ctx, matcher in self.ctx_contexts[root].items():
-                if matcher.search(filename):
-                    buf.contexts.append(ctx)
 
         buf.config = prefs.CompositePreferences(self.lang_prefs.get(buf.lang, {}),
             self.lang_prefs.get('default', {}), prefs.default_prefs.get(buf.lang, {}),
@@ -305,12 +300,6 @@ class EditorManager(object):
 
         search_path.insert(i, join_to_file_dir(__file__, 'lang-specs'))
         manager.set_search_path(search_path)
-
-    def set_lang_context(self, project_root, contexts):
-        self.lang_contexts[project_root] = contexts
-
-    def set_ctx_context(self, project_root, contexts):
-        self.ctx_contexts[project_root] = contexts
 
     def save_all(self, editor):
         for e in self.editors:

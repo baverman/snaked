@@ -1,19 +1,82 @@
 import os.path
 import re
 
-setters = {}
+class Manager(object):
+    def __init__(self, project_root, parent_processors, project_context_config):
+        self.root = project_root
+        self.processors = list(parent_processors)
+        self.project_processor = Processor(project_context_config)
+        self.processors.append(self.project_processor)
 
-def add_setter(ctx, callback):
-    setters[ctx] = callback
+    def invalidate(self):
+        try:
+            del self.contexts
+        except AttributeError:
+            pass
+
+        for p in self.processors:
+            p.invalidate()
+
+    def get(self):
+        try:
+            return self.contexts
+        except AttributeError:
+            pass
+
+        rules = {}
+        for p in self.processors:
+            for ctx, params in p.get_rules().iteritems():
+                for p, expr_list in params.iteritems():
+                    pe = rules.setdefault(ctx, {}).setdefault(p, [])
+                    pe += expr_list
+
+        result = self.contexts = {}
+        root = re.escape(self.root)
+        for ctx, params in rules.iteritems():
+            for param, expr_list in params.iteritems():
+                result.setdefault(ctx, {})[param] = re.compile(
+                    '|'.join(root + r for r in expr_list))
+
+        return result
+
+    def get_first(self, ctx, uri):
+        for p, matcher in self.get().get(ctx, {}).iteritems():
+            if matcher.match(uri):
+                return p
+
+        return None
+
+    def get_all(self, ctx, uri):
+        result = []
+        for p, matcher in self.get().get(ctx, {}).iteritems():
+            if matcher.match(uri):
+                result.append(p)
+
+        return result
+
+
+class FakeManager(Manager):
+    def __init__(self):
+        self.contexts = {}
+
+    def invalidate(self):
+        pass
+
+    def get(self):
+        return self.contexts
+
 
 class Processor(object):
-    def __init__(self, root, filename):
-        self.root = root
+    def __init__(self, filename):
         self.filename = filename
 
-    def process(self):
-        result = {}
+    def get_rules(self):
+        try:
+            return self.rules
+        except AttributeError:
+            pass
 
+        self.rules = {}
         try:
             for l in open(self.filename):
                 l = l.strip()
@@ -32,7 +95,7 @@ class Processor(object):
                 if not l.startswith('/'):
                     expr = '/*/' + expr
 
-                expr = self.root + re.escape(expr).replace('\*', '.*') + '$'
+                expr = re.escape(expr).replace('\*', '.*') + '$'
 
                 for c in contexts:
                     try:
@@ -41,20 +104,14 @@ class Processor(object):
                         print 'Bad context:', c
                         continue
 
-                    result.setdefault(ctx, {}).setdefault(param, []).append(expr)
+                    self.rules.setdefault(ctx, {}).setdefault(param, []).append(expr)
         except IOError:
             pass
 
-        for params in result.values():
-            for param in params:
-                params[param] = re.compile('|'.join(params[param]))
+        return self.rules
 
-        self.send_contexts(result)
-
-    def send_contexts(self, contexts):
-        for ctx, callback in setters.items():
-            callback(self.root, contexts.get(ctx, {}))
-
-        unknown_contexts = [c for c in contexts if c not in setters]
-        if unknown_contexts:
-            print "I don't know how to handle", unknown_contexts, "contexts"
+    def invalidate(self):
+        try:
+            del self.rules
+        except AttributeError:
+            pass

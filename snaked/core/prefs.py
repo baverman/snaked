@@ -8,8 +8,16 @@ from uxie.utils import make_missing_dirs, join_to_settings_dir
 
 def init(injector):
     injector.bind('window', 'editor-prefs', 'Preferences/_Editor settings#1', show_editor_preferences)
-    injector.bind('window', 'default-config', 'Preferences/_Default config', show_default_config)
+    injector.bind('window', 'default-config', 'Preferences/Default _config', show_default_config)
+    injector.bind('window', 'default-contexts', 'Preferences/Default conte_xts',
+        show_contexts_config, 'default')
+
     injector.bind('window', 'session-config', 'Preferences/Session/_Config', show_session_config)
+    injector.bind('window', 'session-contexts', 'Preferences/Session/Conte_xts',
+        show_contexts_config, 'session')
+
+    injector.bind('window', 'project-contexts', 'Preferences/_Project/Conte_xts',
+        show_contexts_config, 'project')
 
     injector.map_menu('Preferences', '<ctrl><shift>p')
     injector.map_menu('Preferences/Session', '<ctrl>p')
@@ -34,26 +42,48 @@ def show_session_config(window):
     e.connect('file-saved', on_config_saved, window.manager.session_config, uri)
 
 def on_config_saved(editor, config, config_path):
-    editor.message('Config updated')
+    editor.message('Config updated', 'done')
     config.load(config_path)
 
-def edit_contexts(self, editor):
+def show_contexts_config(window, config_type):
     import shutil
     from os.path import join, exists, dirname
     from uxie.utils import make_missing_dirs
 
-    contexts = join(editor.project_root, '.snaked_project', 'contexts')
-    if not exists(contexts):
-        make_missing_dirs(contexts)
-        shutil.copy(join(dirname(__file__), 'contexts.template'), contexts)
+    manager = window.manager
 
-    e = editor.open_file(contexts)
-    e.file_saved.connect(self, 'on_context_saved')
+    if config_type == 'default':
+        processor = manager.default_ctx_processor
+    elif config_type == 'session':
+        processor = manager.session_ctx_processor
+    elif config_type == 'project':
+        editor = window.get_editor_context()
+        if not editor:
+            window.message('Hmm. Project?', 'warn')
+            return
 
-def on_context_saved(self, editor):
-    editor.message('File type associations changed')
-    self.process_project_contexts(editor.project_root, True)
+        root = editor.project_root
+        if not root:
+            editor.message('Current project root is not defined', 'warn')
+            return
 
+        processor = manager.get_context_manager(root).project_processor
+    else:
+        raise Exception('Unknown context config type: ' + str(config_type))
+
+    uri = processor.filename
+    if not exists(uri):
+        make_missing_dirs(uri)
+        shutil.copy(join(dirname(__file__), 'contexts.template'), uri)
+
+    e = window.manager.open(uri)
+    window.attach_editor(e)
+    e.connect('file-saved', on_context_saved)
+
+def on_context_saved(editor):
+    editor.message('Contexts updated', 'done')
+    for m in editor.window.manager.ctx_managers.values():
+        m.invalidate()
 
 default_prefs = {
     'default': {

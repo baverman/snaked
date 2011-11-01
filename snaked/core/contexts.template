@@ -1,6 +1,6 @@
 # This config defines mappings of project files to editor contexts
-# For example contexts are token in action by choosing
-# right language or snippet set for editor.
+# For example contexts are taken into account by plugins choosing
+# right language or snippet set.
 # Here some examples. You MUST edit it to suite your needs.
 
 # Map CHANGES file in project's root to be a 'rst' (restructured text) document.
