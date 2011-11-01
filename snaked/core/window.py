@@ -240,15 +240,14 @@ class Window(gtk.Window):
         idx = ( self.note.get_current_page() + dir ) % self.note.get_n_pages()
         self.note.set_current_page(idx)
 
-        if not self.note.get_show_tabs():
+        if not self.note.get_show_tabs() and \
+                wait_mod_unpress_for_last_shortcut(self, self.hide_tab_menu):
             menu = self.get_tab_menu()
 
             for c in menu.get_children():
                 c.deselect()
 
             menu.get_children()[idx].select()
-
-            wait_mod_unpress_for_last_shortcut(self, self.hide_tab_menu)
 
     def get_tab_menu(self):
         try:
