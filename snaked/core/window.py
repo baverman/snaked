@@ -262,18 +262,8 @@ class Window(gtk.Window):
         f.add(vb)
 
         for e in self.editors:
-            it = gtk.MenuItem(e.get_title.emit())
+            it = gtk.MenuItem(e.get_title.emit(), False)
             vb.pack_start(it)
-
-        #def get_coords(menu):
-        #    win = self.window
-        #    x, y, w, h, _ = win.get_geometry()
-        #    x, y = win.get_origin()
-        #    mw, mh = menu.size_request()
-        #    return x + w - mw, y + h - mh, False
-        #
-        #self.tab_menu.show_all()
-        #self.tab_menu.popup(None, None, get_coords, 1, gtk.get_current_event_time())
 
         add_float(self, f)
         self.tab_menu = vb
