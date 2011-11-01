@@ -8,27 +8,34 @@ from uxie.utils import make_missing_dirs, join_to_settings_dir
 
 def init(injector):
     injector.bind('window', 'editor-prefs', 'Preferences/_Editor settings#1', show_editor_preferences)
-    injector.bind('window', 'default-config', 'Preferences/_Default config', show_global_preferences)
-    injector.bind('window', 'session-config', 'Preferences/Session/_Config', show_session_preferences)
+    injector.bind('window', 'default-config', 'Preferences/_Default config', show_default_config)
+    injector.bind('window', 'session-config', 'Preferences/Session/_Config', show_session_config)
+
+    injector.map_menu('Preferences', '<ctrl><shift>p')
+    injector.map_menu('Preferences/Session', '<ctrl>p')
 
 def show_editor_preferences(window):
     from snaked.core.gui.editor_prefs import PreferencesDialog
     dialog = PreferencesDialog(window.manager.lang_prefs)
     dialog.show(window)
 
-def show_global_preferences(window):
-    self.save_conf(editor)
-    e = editor.open_file(join_to_settings_dir('snaked', 'snaked.conf'), lang_id='python')
-    e.file_saved.connect(self, 'on_config_saved')
+def show_default_config(window):
+    window.manager.default_config.save()
+    uri = join_to_settings_dir('snaked', 'snaked.conf')
+    e = window.manager.open(uri, contexts='python')
+    window.attach_editor(e)
+    e.connect('file-saved', on_config_saved, window.manager.default_config, uri)
 
-def show_session_preferences(window):
-    self.save_conf(editor)
-    e = editor.open_file(join_to_settings_dir('snaked', self.session + '.session'), lang_id='python')
-    e.file_saved.connect(self, 'on_config_saved')
+def show_session_config(window):
+    window.manager.session_config.save()
+    uri = join_to_settings_dir('snaked', window.manager.session, 'config')
+    e = window.manager.open(uri, contexts='python')
+    window.attach_editor(e)
+    e.connect('file-saved', on_config_saved, window.manager.session_config, uri)
 
-def on_config_saved(self, editor):
+def on_config_saved(editor, config, config_path):
     editor.message('Config updated')
-    self.load_conf()
+    config.load(config_path)
 
 def edit_contexts(self, editor):
     import shutil

@@ -118,8 +118,6 @@ class EditorManager(object):
         self.conf = prefs.CompositePreferences(self.internal_config, self.session_config)
 
     def save_conf(self, active_editor=None):
-        #self.snaked_conf['OPENED_FILES'] = [e.uri for e in self.editors if e.uri]
-        #self.snaked_conf['ACTIVE_FILE'] = active_editor.uri if active_editor else None
         self.default_config.save()
         self.internal_config.save()
         self.session_config.save()
