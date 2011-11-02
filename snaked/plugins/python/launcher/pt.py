@@ -5,8 +5,8 @@ import pytest
 
 
 class Collector(object):
-    def __init__(self, conn):
-        self.conn = conn
+    def __init__(self, send):
+        self.send = send
         self._durations = {}
         self.tests = []
 
@@ -30,20 +30,20 @@ class Collector(object):
         """:type report: _pytest.runner.TestReport()"""
 
         if report.passed:
-            self.conn.send(('PASS', report.nodeid))
+            self.send(('PASS', report.nodeid))
         elif report.failed:
             if report.when != "call":
-                self.conn.send(('ERROR', report.nodeid, self.extract_output(report),
+                self.send(('ERROR', report.nodeid, self.extract_output(report),
                     self.extract_trace(report.longrepr)))
             else:
-                self.conn.send(('FAIL', report.nodeid, self.extract_output(report),
+                self.send(('FAIL', report.nodeid, self.extract_output(report),
                     self.extract_trace(report.longrepr)))
         elif report.skipped:
-            self.conn.send(('SKIP', report.nodeid))
+            self.send(('SKIP', report.nodeid))
 
     def pytest_runtest_call(self, item, __multicall__):
         names = tuple(item.listnames())
-        self.conn.send(('ITEM_CALL', item.nodeid))
+        self.send(('ITEM_CALL', item.nodeid))
         start = time.time()
         try:
             return __multicall__.execute()
@@ -62,21 +62,21 @@ class Collector(object):
     def pytest_collectreport(self, report):
         """:type report: _pytest.runner.CollectReport()"""
         if report.failed:
-            self.conn.send(('FAILED_COLLECT', report.nodeid, self.extract_output(report),
+            self.send(('FAILED_COLLECT', report.nodeid, self.extract_output(report),
                 self.extract_trace(report.longrepr)))
 
     def pytest_internalerror(self, excrepr):
-        self.conn.send(('INTERNAL_ERROR', excrepr))
+        self.send(('INTERNAL_ERROR', excrepr))
 
     def pytest_sessionstart(self, session):
         self.suite_start_time = time.time()
-        self.conn.send(('START', str(session.fspath)))
+        self.send(('START', str(session.fspath)))
 
     def pytest_sessionfinish(self, session, exitstatus, __multicall__):
-        self.conn.send(('END', ))
+        self.send(('END', ))
 
     def pytest_collection_finish(self):
-        self.conn.send(('COLLECTED_TESTS', self.tests))
+        self.send(('COLLECTED_TESTS', self.tests))
 
     def pytest_deselected(self, items):
         for node in items:
@@ -94,4 +94,12 @@ if __name__ == '__main__':
     from multiprocessing.connection import Listener
     listener = Listener(sys.argv[1])
     conn = listener.accept()
-    pytest.main(sys.argv[2:], plugins=[Collector(conn)])
+
+    if sys.version_info[0] == 3:
+        from pickle import dumps
+        def sender(data):
+            return conn.send_bytes(dumps(data, 2))
+    else:
+        sender = conn.send
+
+    pytest.main(sys.argv[2:], plugins=[Collector(sender)])
