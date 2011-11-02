@@ -56,20 +56,26 @@ def search(root, top, match, already_matched, bad_match, tick):
     tick()
 
     dirs_to_visit = []
-    for name in listdir(join(root, top)):
-        tick()
-        fullpath = join(root, top, name)
-        path = join(top, name)
 
-        if bad_match and bad_match(fullpath):
-            continue
+    try:
+        dir_list = listdir(join(root, top))
+    except OSError:
+        pass
+    else:
+        for name in dir_list:
+            tick()
+            fullpath = join(root, top, name)
+            path = join(top, name)
 
-        if isdir(fullpath):
-            if dir_is_good(name, path):
-                dirs_to_visit.append(path)
-        elif (name, top, fullpath, root) not in already_matched \
-                and match(name, path) and file_is_good(name, path):
-            yield name, top, fullpath, root
+            if bad_match and bad_match(fullpath):
+                continue
+
+            if isdir(fullpath):
+                if dir_is_good(name, path):
+                    dirs_to_visit.append(path)
+            elif (name, top, fullpath, root) not in already_matched \
+                    and match(name, path) and file_is_good(name, path):
+                yield name, top, fullpath, root
 
     for path in dirs_to_visit:
         for p in search(root, path, match, already_matched, bad_match, tick):
