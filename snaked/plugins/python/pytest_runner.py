@@ -8,9 +8,12 @@ import gtk
 
 from gtk.gdk import color_parse
 
-from snaked.util import BuilderAware, join_to_file_dir
+from uxie.utils import join_to_file_dir
+from uxie.misc import BuilderAware
+from uxie.escape import Escapable
 
-import pytest_launcher
+from . import pytest_launcher
+from .utils import get_executable
 
 class Escape(object): pass
 
@@ -38,7 +41,6 @@ class TestRunner(BuilderAware):
         self.nodes_traces = {}
         self.nodes_buffer_positions = {}
         self.panel.hide()
-        self.escape = None
 
     def collect(self, conn):
         while conn.poll():
@@ -79,21 +81,17 @@ class TestRunner(BuilderAware):
         self.stop_run.show()
         self.trace_buttons.hide()
 
-        executable = editor.snaked_conf['PYTHON_EXECUTABLE']
-        if executable == 'default':
-            executable = sys.executable
-
-        env = editor.snaked_conf['PYTHON_EXECUTABLE_ENV']
+        executable = get_executable(editor.conf)
+        env = editor.conf['PYTHON_EXECUTABLE_ENV']
 
         proc, conn = pytest_launcher.run_test(project_root, executable, matches, files, env=env)
         self.test_proc = proc
         self.timer_id = glib.timeout_add(100, self.collect, conn)
 
     def show(self):
-        self.editor_ref().popup_widget(self.panel)
+        self.editor_ref().window.popup_panel(self.panel)
 
     def hide(self, editor=None, *args):
-        self.escape = None
         self.panel.hide()
         if editor:
             editor.view.grab_focus()
@@ -268,9 +266,8 @@ class TestRunner(BuilderAware):
             self.buffer.set_text('')
             self.buffer.node = None
 
-    def on_popup(self, widget, editor):
-        self.escape = Escape()
-        editor.push_escape(self.hide, self.escape)
+    def on_popup(self, widget):
+        self.editor_ref().window.push_escape(Escapable(self.hide))
 
     def on_tests_view_row_activated(self, view, path, *args):
         iter = self.tests.get_iter(path)

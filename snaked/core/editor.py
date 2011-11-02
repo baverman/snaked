@@ -266,9 +266,6 @@ class Editor(SignalManager):
     def message(self, message, category=None, timeout=None):
         self.window.message(message, category, timeout, parent=self.view)
 
-    def push_escape(self, callback, *args):
-        pass
-
     def add_spot(self):
         self.window.manager.spot_manager.add(self)
 

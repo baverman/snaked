@@ -51,6 +51,11 @@ keymap.map_generic('goto-definition', 'F3')
 keymap.map_generic('show-outline', '<ctrl>o')
 keymap.map_generic('show-calltip', '<ctrl>Return', 1)
 
+keymap.map_generic('run-test', '<ctrl>F10')
+keymap.map_generic('run-all-tests', '<ctrl><shift>F10')
+keymap.map_generic('rerun-test', '<shift><alt>x')
+keymap.map_generic('toggle-test-panel', '<alt>1')
+
 
 class EditorManager(object):
     def __init__(self, session):

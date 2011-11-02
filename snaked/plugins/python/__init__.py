@@ -19,17 +19,15 @@ def init(injector):
     injector.bind('python-editor', 'goto-definition', '_Python#70/Goto _defenition', goto_definition)
     injector.bind('python-editor', 'show-outline', 'Python/Show _outline', open_outline)
 
-    injector.bind('python-editor', 'show-calltip', 'Python/Show call_tip', show_calltips)
+    injector.bind('python-editor', 'show-calltip', 'Python/Show _calltip', show_calltips)
 
     injector.bind_menu('python-editor', 'select-interpreter', 'Python/_Executable',
         generate_python_executable_menu, resolve_python_executable_menu_entry)
 
-    #injector.bind_accel('run-test', '<ctrl>F10', 'Tests', 'Run test in cursor scope', run_test)
-    #injector.bind_accel('run-all-tests', '<ctrl><shift>F10', 'Tests',
-    #    'Run all project tests', run_all_tests)
-    #injector.bind_accel('rerun-test', '<shift><alt>X', 'Tests', 'Rerun last test suite', rerun_test)
-    #injector.bind_accel('toggle-test-panel', '<alt>1', 'Window',
-    #    'Toggle test panel', toggle_test_panel)
+    injector.bind('editor', 'run-test', 'Python/_Tests/_Run test in cursor scope', run_test)
+    injector.bind('editor', 'run-all-tests', 'Python/Tests/Run _all tests', run_all_tests)
+    injector.bind('editor', 'rerun-test', 'Python/Tests/Rerun last test', rerun_test)
+    injector.bind('editor', 'toggle-test-panel', 'View/Toggle _test panel', toggle_test_panel)
 
     from snaked.core.prefs import add_option, add_internal_option
 
@@ -201,7 +199,7 @@ def toggle_test_panel(editor):
         editor.view.grab_focus()
     else:
         runner.editor_ref = weakref.ref(editor)
-        editor.window.popup_panel(runner.panel, editor)
+        editor.window.popup_panel(runner.panel)
         runner.tests_view.grab_focus()
 
 def pytest_available(editor):
