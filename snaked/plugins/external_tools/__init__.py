@@ -4,6 +4,7 @@ desc = 'Allows one to define own commands'
 
 import gtk
 from uxie.utils import join_to_settings_dir
+from snaked.plugins.python.utils import get_executable
 
 tools = []
 
@@ -124,6 +125,7 @@ def run(editor, tool):
     env.update(os.environ)
     env['FILENAME'] = editor.uri
     env['OFFSET'] = str(editor.cursor.get_offset())
+    env['PYTHON'] = get_executable(editor.conf)
 
     def on_finish():
         os.remove(filename)

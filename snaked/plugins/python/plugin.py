@@ -6,6 +6,8 @@ from uxie.utils import idle
 from snaked.util import lazy_property
 from snaked.signals import connect_external, connect_all
 
+from .utils import get_executable
+
 environments = {}
 configured_projects = {}
 
@@ -22,10 +24,7 @@ class Plugin(object):
 
     @property
     def env(self):
-        executable = self.editor.conf['PYTHON_EXECUTABLE']
-        if executable == 'default':
-            executable = sys.executable
-
+        executable = get_executable(self.editor.conf)
         env = self.editor.conf['PYTHON_EXECUTABLE_ENV']
 
         try:

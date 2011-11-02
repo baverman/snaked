@@ -1,6 +1,6 @@
 author = 'Anton Bobrov<bobrov@vl.ru>'
 name = 'Python support'
-desc = 'Autocompletion, definitions navigation and smart ident'
+desc = 'Autocompletion, navigation and smart ident'
 
 import weakref
 
@@ -19,7 +19,10 @@ def init(injector):
     injector.bind('python-editor', 'goto-definition', '_Python#70/Goto _defenition', goto_definition)
     injector.bind('python-editor', 'show-outline', 'Python/Show _outline', open_outline)
 
-    injector.bind('python-editor', 'show-calltip', 'Python/Show calltip', show_calltips)
+    injector.bind('python-editor', 'show-calltip', 'Python/Show call_tip', show_calltips)
+
+    injector.bind_menu('python-editor', 'select-interpreter', 'Python/_Executable',
+        generate_python_executable_menu, resolve_python_executable_menu_entry)
 
     #injector.bind_accel('run-test', '<ctrl>F10', 'Tests', 'Run test in cursor scope', run_test)
     #injector.bind_accel('run-all-tests', '<ctrl><shift>F10', 'Tests',
@@ -28,9 +31,11 @@ def init(injector):
     #injector.bind_accel('toggle-test-panel', '<alt>1', 'Window',
     #    'Toggle test panel', toggle_test_panel)
 
-    from snaked.core.prefs import add_option
-    add_option('PYTHON_EXECUTABLE', 'default',
-        'Path to python executable. Used by test runner and completion framework')
+    from snaked.core.prefs import add_option, add_internal_option
+
+    add_internal_option('PYTHON_EXECUTABLE', 'default')
+    add_option('PYTHON_EXECUTABLES', dict,
+        'Path to python executables. Used by test runner and completion framework')
     add_option('PYTHON_EXECUTABLE_ENV', dict,
         'Python interpreter environment. Used by test runner and completion framework')
     add_option('PYTHON_SUPP_CONFIG', dict, 'Config for supplement')
@@ -237,3 +242,15 @@ def rerun_test(editor):
             get_pytest_runner(editor).run(editor, *last_run_test[0])
         else:
             editor.message('You did not run any test yet', 'warn')
+
+def set_python_executable(editor, name):
+    from .utils import get_executable
+    editor.conf['PYTHON_EXECUTABLE'] = name
+    editor.message('Python executable was set to:\n' + get_executable(editor.conf))
+
+def generate_python_executable_menu(editor):
+    for t in sorted(set(('default', 'python2', 'python3')).union(editor.conf['PYTHON_EXECUTABLES'])):
+        yield t, t, (set_python_executable, (editor, t))
+
+def resolve_python_executable_menu_entry(editor, entry_id):
+    return set_python_executable, (editor, entry_id), entry_id
