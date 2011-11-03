@@ -208,7 +208,9 @@ class EditorManager(object):
 
         root = get_project_root(filename)
         ctx_manager = self.get_context_manager(root)
-        lang_id = ctx_manager.get_first('lang', filename)
+
+        if not lang_id:
+            lang_id = ctx_manager.get_first('lang', filename)
 
         if lang_id:
             lang = self.lang_manager.get_language(lang_id)
