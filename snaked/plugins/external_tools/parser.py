@@ -7,17 +7,6 @@ allowed_outputs = ('replace-buffer-or-selection', 'replace-buffer', 'replace-sel
 remove_tags = re.compile(r'<[^<]*?/?>')
 
 
-class Tool(object):
-    def __init__(self):
-        self.context = None
-        self.name = None
-        self.input = None
-        self.output = 'to-console'
-        self.script = None
-
-    @property
-    def title(self):
-        return remove_tags.sub('', self.name).strip().replace('_', '')
 
 
 class ParseException(Exception): pass

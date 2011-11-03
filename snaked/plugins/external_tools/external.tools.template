@@ -34,10 +34,30 @@
 #
 # Here some examples:
 
-tool "_Run" for "python" from-buffer to-console
-    python -u
-    
-tool "Sphinx _make" for "session:myproject" to-console
-    cd doc
-    make html
-    
+from snaked.plugins.external_tools.plugin import tool
+
+tool('_Run').when('python').from_buffer('''
+    $PYTHON -u
+''')
+
+tool('Py_Flakes').when('python').from_buffer('''
+    pyflakes
+''')
+
+tool('sphinx _make').when('sphinx-project')('''
+	cd `ls -la | egrep -o 'doc.?$'` &&	make html
+''')
+
+tool('sphinx _clean').when('sphinx-project')('''
+	cd `ls -la | egrep -o 'doc.?$'` &&	make clean html
+''')
+
+tool('_View ReST').when('rst').from_buffer.to_feedback('''
+	rst2html.py > /tmp/wow.html
+	opera /tmp/wow.html
+''')
+
+tool('_Run').when('groovy').from_buffer('''
+    cat > /tmp/temp_groovy_file.groovy
+	groovy /tmp/temp_groovy_file.groovy
+''')
