@@ -7,17 +7,19 @@ from inspect import cleandoc
 from uxie.utils import make_missing_dirs, join_to_settings_dir
 
 def init(injector):
-    injector.bind('window', 'editor-prefs', 'Preferences/_Editor settings#1', show_editor_preferences)
-    injector.bind('window', 'default-config', 'Preferences/Default _config', show_default_config)
-    injector.bind('window', 'default-contexts', 'Preferences/Default conte_xts',
+    injector.bind('window', 'editor-prefs', 'Prefs/_Editor settings#1', show_editor_preferences)
+    injector.bind('window', 'default-config', 'Prefs/Global/_Config', show_default_config)
+    injector.bind('window', 'default-contexts', 'Prefs/Global/Conte_xts',
         show_contexts_config, 'default')
 
-    injector.bind('window', 'session-config', 'Preferences/Session/_Config', show_session_config)
-    injector.bind('window', 'session-contexts', 'Preferences/Session/Conte_xts',
+    injector.bind('window', 'session-config', 'Prefs/Session/_Config', show_session_config)
+    injector.bind('window', 'session-contexts', 'Prefs/Session/Conte_xts',
         show_contexts_config, 'session')
 
-    injector.bind('window', 'project-contexts', 'Preferences/_Project/Conte_xts',
+    injector.bind('window', 'project-contexts', 'Prefs/_Project/Conte_xts',
         show_contexts_config, 'project')
+
+    injector.map_menu('Prefs', '<ctrl>p')
 
 def show_editor_preferences(window):
     from snaked.core.gui.editor_prefs import PreferencesDialog

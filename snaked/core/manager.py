@@ -72,7 +72,9 @@ class EditorManager(object):
 
         self.activator.add_menu_entry('_File#1/')
         self.activator.add_menu_entry('_Edit#10/')
-        self.activator.add_menu_entry('_Preferences#15/_Session#100/')
+        self.activator.add_menu_entry('_Prefs#15/_Global#90/')
+        self.activator.add_menu_entry('Prefs/_Session/')
+        self.activator.add_menu_entry('Prefs/_Project/')
         self.activator.add_menu_entry('_View#20/')
         self.activator.add_menu_entry('Too_ls#30/')
         self.activator.add_menu_entry('_Run#40/')
