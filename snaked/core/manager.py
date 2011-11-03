@@ -88,7 +88,8 @@ class EditorManager(object):
         self.init_conf()
 
         self.default_ctx_processor = ContextProcessor(join_to_settings_dir('snaked', 'contexts.conf'))
-        self.session_ctx_processor = ContextProcessor(join_to_settings_dir(self.session, 'contexts'))
+        self.session_ctx_processor = ContextProcessor(
+            join_to_settings_dir('snaked', self.session, 'contexts'))
         self.ctx_managers = {}
 
         self.escape_stack = []
