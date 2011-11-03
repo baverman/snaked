@@ -341,7 +341,8 @@ class Window(gtk.Window):
 
     def message(self, message, category=None, timeout=None, parent=None):
         fb = TextFeedback(message, category)
-        timeout = timeout or fb.timeout
+        if timeout is None:
+            timeout = fb.timeout
         self.push_escape(fb)
         return self.floating_manager.add(parent or self, fb, 5, timeout)
 
