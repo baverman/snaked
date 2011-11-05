@@ -226,38 +226,63 @@ class ListSettings(object):
 
 
 class DefaultValue(object):
-    def __init__(self, name, default, additional=None):
-        self.default = default
-
-        if additional is None:
-            self.additional = self.get_default()
-        else:
-            self.additional = additional
-
+    def __init__(self, conf, name, additional=None):
+        self.conf = conf
         self.name = name
+        self.additional = additional
 
-    def __repr__(self):
-        return 'default[%s] + %s' % (self.name, repr(self.additional))
+    @property
+    def value(self):
+        try:
+            return self._value
+        except AttributeError:
+            pass
 
+        default_value = self.conf[self.name]
+        if isinstance(default_value, dict):
+            value = DefaultDictValue(default_value, self.additional)
+        elif isinstance(default_value, list):
+            value = DefaultListValue(default_value, self.additional)
+        else:
+            raise Exception('Unsupported default type: ' + str(type(default_value)))
 
-class DefaultListValue(DefaultValue):
-    def get_default(self):
-        return []
+        self._value = value
+        return value
+
+    def __iter__(self):
+        return self.value.__iter__()
 
     def __add__(self, x):
-        return DefaultListValue(self.name, self.default + x, x, True)
+        return DefaultValue(self.conf, self.name, x)
 
-    def __iter__(self, x):
+    def __getitem__(self, name):
+        return self.value[name]
+
+    def __contains__(self, name):
+        return name in self.value
+
+    def __setitem__(self, name, value):
+        self.value[name] = value
+
+    def __repr__(self):
+        if self.additional is None:
+            return "default['%s']" % self.name
+        else:
+            return "default['%s'] + %s" % (self.name, repr(self.additional))
+
+class DefaultListValue(object):
+    def __init__(self, default, x):
+        self.default = default + x
+
+    def __iter__(self):
         return iter(self.default)
 
 
-class DefaultDictValue(DefaultValue):
-    def get_default(self):
-        return {}
-
-    def __add__(self, x):
-        comp = self.default.copy()
-        return DefaultListValue(self.name, comp.update(x), x, True)
+class DefaultDictValue(object):
+    def __init__(self, default, x):
+        self.default = default.copy()
+        self.default.update(x)
+        self.additional = x
 
     def __getitem__(self, name):
         return self.default[name]
@@ -269,19 +294,16 @@ class DefaultDictValue(DefaultValue):
         self.additional[name] = value
         self.default[name] = value
 
+    def __iter__(self):
+        return iter(self.default)
+
 
 class DefaultValuesProvider(object):
     def __init__(self, conf):
         self.conf = conf
 
     def __getitem__(self, name):
-        v = self.conf[name]
-        if isinstance(v, list):
-            return DefaultListValue(name, v)
-        if isinstance(v, dict):
-            return DefaultDictValue(name, v)
-        else:
-            return v
+        return DefaultValue(self.conf, name)
 
 
 class PySettings(object):
