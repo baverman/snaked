@@ -113,7 +113,7 @@ def do_find(view, dir, start_from=None):
         else:
             iter = buf.get_iter_at_mark(buf.get_insert())
 
-    utext = buf.get_text(*buf.get_bounds())
+    utext = buf.get_text(*buf.get_bounds()).decode('utf-8')
     match = None
     if dir == 0:
         match = matcher.search(utext, iter.get_offset())
@@ -263,7 +263,7 @@ def mark_occurences(view, search, ignore_case, regex, show_feedback=True):
 
     count = 0
     buf = view.get_buffer()
-    utext = buf.get_text(*buf.get_bounds())
+    utext = buf.get_text(*buf.get_bounds()).decode('utf-8')
     for m in matcher.finditer(utext):
         buf.apply_tag(get_tag(view),
             *map(buf.get_iter_at_offset, m.span()))
@@ -356,7 +356,7 @@ def on_replace_activate(button, view, widget):
         return
 
     buf = view.get_buffer()
-    utext = buf.get_text(*buf.get_bounds())
+    utext = buf.get_text(*buf.get_bounds()).decode('utf-8')
 
     if buf.get_has_selection():
         iter = buf.get_selection_bounds()[0]
@@ -372,7 +372,7 @@ def on_replace_activate(button, view, widget):
     buf.begin_user_action()
     buf.place_cursor(start)
     buf.delete(start, end)
-    buf.insert_at_cursor(match.expand(replace).encode('utf-8'))
+    buf.insert_at_cursor(match.expand(replace).decode('utf-8'))
     buf.end_user_action()
 
     scroll_to_buffer_cursor(view)
@@ -391,7 +391,7 @@ def on_replace_all_activate(button, view, widget):
         return
 
     buf = view.get_buffer()
-    utext = buf.get_text(*buf.get_bounds())
+    utext = buf.get_text(*buf.get_bounds()).decode('utf-8')
     cursor = buf.get_iter_at_mark(buf.get_insert())
 
     line, offset = cursor.get_line(), cursor.get_line_offset()
@@ -418,7 +418,7 @@ def on_replace_all_activate(button, view, widget):
 
         buf.place_cursor(start)
         buf.delete(start, end)
-        buf.insert_at_cursor(match.expand(replace).encode('utf-8'))
+        buf.insert_at_cursor(match.expand(replace).decode('utf-8'))
         count += 1
 
     buf.end_user_action()
