@@ -1,4 +1,4 @@
-import anydbm
+import anydbm, whichdb
 import os.path
 import json
 from itertools import chain
@@ -188,7 +188,21 @@ class CompositePreferences(object):
 
 class KVSettings(object):
     def __init__(self, *name):
-        self.db = anydbm.open(get_settings_path(*name), 'cu')
+        filename = get_settings_path(*name)
+
+        # Dirty. Try to avoid locking of gdbm files
+        result = whichdb.whichdb(filename)
+        if result is None:
+            result = anydbm._defaultmod.__name__
+        elif result == "":
+            raise Exception("db type of %s could not be determined" % filename)
+
+        if result == 'gdbm':
+            flags = 'cu'
+        else:
+            flags = 'c'
+
+        self.db = anydbm.open(filename, flags)
 
     def get_key(self, key):
         if isinstance(key, unicode):
