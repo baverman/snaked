@@ -23,6 +23,7 @@ import snaked.core.window
 import snaked.core.plugins
 import snaked.core.console
 import snaked.core.spot
+import snaked.core.monitor
 
 prefs.add_option('RESTORE_POSITION', True, 'Restore snaked windows position')
 prefs.add_option('CONSOLE_FONT', 'Monospace 8', 'Font used in console panel')
@@ -107,6 +108,7 @@ class EditorManager(object):
         self.plugin_manager.add_plugin(snaked.core.titler)
         self.plugin_manager.add_plugin(snaked.core.console)
         self.plugin_manager.add_plugin(snaked.core.spot)
+        self.plugin_manager.add_plugin(snaked.core.monitor)
 
         self.spot_manager = snaked.core.spot.Manager()
 
@@ -250,10 +252,14 @@ class EditorManager(object):
             self.quit()
 
     def get_editors(self):
+        for w in self.get_windows():
+            for e in w.editors:
+                yield e
+
+    def get_windows(self):
         for w in self.windows:
             if w:
-                for e in w.editors:
-                    yield e
+                yield w
 
     def editor_closed(self, editor):
         buf = editor.buffer

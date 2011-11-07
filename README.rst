@@ -64,8 +64,6 @@ What should be done before v0.5 release
 
 * Ability to spawn external tools on editor events (for example on-save).
 
-* File changes monitor.
-
 * Encoding editor context.
 
 * Encoding selector when chardet fails.

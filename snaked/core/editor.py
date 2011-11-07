@@ -160,8 +160,10 @@ class Editor(SignalManager):
                 from snaked.core.processors import remove_trailing_spaces
                 remove_trailing_spaces(self.buffer)
 
+            # TODO quick hack to ignore file changes by snaked itself
             try:
                 save_file(self.uri, self.utext, self.encoding)
+                self.buffer.monitor.saved_by_snaked = True
                 if not self.buffer.get_modified():
                     self.message("%s saved" % self.uri, 'done')
                 self.buffer.set_modified(False)
