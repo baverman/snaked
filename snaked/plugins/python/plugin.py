@@ -155,13 +155,18 @@ class Plugin(object):
     def show_calltips(self):
         source, offset = self.get_source_and_offset()
         try:
-            sig, docstring = self.env.get_docstring(self.project_path, source, offset, self.editor.uri)
+            result = self.env.get_docstring(self.project_path, source, offset, self.editor.uri)
         except Exception, e:
             import traceback
             traceback.print_exc()
             self.editor.message(str(e), 'error', 5000)
             return
 
+        if not result:
+            self.editor.message("Can't get docstring", 'warn')
+            return
+
+        sig, docstring = result
         if sig:
             docstring = sig + '\n\n' + ( docstring if docstring is not None else '' )
 
