@@ -239,10 +239,6 @@ class EditorManager(object):
         style_scheme = self.style_manager.get_scheme(buf.config['style'])
         buf.set_style_scheme(style_scheme)
 
-    def new_file_action(self, editor):
-        from snaked.core.gui import new_file
-        new_file.show_create_file(editor)
-
     def window_closed(self, window):
         self.windows[self.windows.index(window)] = False
         window.destroy()

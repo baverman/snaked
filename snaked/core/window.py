@@ -35,19 +35,15 @@ def init(injector):
         ctx.bind('detach-editor', 'Tab/_Detach', Window.retach_editor)
         ctx.bind('duplicate-editor', 'Tab/D_uplicate', Window.duplicate_editor)
 
+        ctx.bind_accel('new-file', 'File/_New', '<ctrl>n', Window.new_file_action)
+
     with injector.on('window') as ctx:
         ctx.bind('escape', None, Window.process_escape)
         ctx.bind('close-window', 'Window/_Close#100', Window.close)
 
         #ctx.bind_accel('save-all', '_File/Save _all', '<ctrl><shift>s', Window.save_all)
-        #ctx.bind_accel('new-file', Window.new_file_action)
         ctx.bind_accel('fullscreen', 'Window/Toggle _fullscreen#50', 'F11', Window.toggle_fullscreen)
         ctx.bind_accel('toggle-tabs-visibility', 'Window/Toggle ta_bs', '<Alt>F11', Window.toggle_tabs)
-
-        #ctx.bind_accel('place-spot', self.add_spot_with_feedback)
-        #ctx.bind_accel('goto-last-spot', self.goto_last_spot)
-        #ctx.bind_accel('goto-next-spot', self.goto_next_prev_spot, True)
-        #ctx.bind_accel('goto-prev-spot', self.goto_next_prev_spot, False)
 
 
 class Window(gtk.Window):
@@ -359,3 +355,8 @@ class Window(gtk.Window):
 
     def process_escape(self):
         self.escape_manager.process()
+
+    def new_file_action(self, editor):
+        from snaked.core.gui import new_file
+        new_file.show_create_file(editor)
+

@@ -1,7 +1,7 @@
 import os.path
-import os
-
 import gtk
+
+from uxie.escape import Escapable
 
 def show_create_file(editor):
     widget = create_widget(editor)
@@ -11,7 +11,7 @@ def show_create_file(editor):
     widget.entry.set_position(-1)
     widget.show_all()
 
-    editor.push_escape(hide, widget)
+    editor.window.push_escape(Escapable(hide, editor, widget))
 
 def create_widget(editor):
     widget = gtk.HBox(False, 10)
@@ -60,7 +60,7 @@ def on_entry_activate(entry, editor, widget):
         editor.message("%s already exists" % filename)
     else:
         hide(editor, widget)
-        editor.open_file(filename)
+        editor.window.open_or_activate(filename)
 
 def on_entry_changed(entry, model):
     path = os.path.dirname(entry.get_text())
