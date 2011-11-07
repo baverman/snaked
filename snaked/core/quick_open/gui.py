@@ -20,7 +20,6 @@ class QuickOpenDialog(BuilderAware):
 
         from snaked.core.manager import keymap
         self.shortcuts = keymap.get_activator(self.window, 'quick_open')
-        self.shortcuts.bind('any', 'escape', '$_Close', self.escape)
         self.shortcuts.bind('any', 'activate-search-entry',
             'Activate search entry', self.focus_search)
 
@@ -37,6 +36,7 @@ class QuickOpenDialog(BuilderAware):
             'Return', self.use_as_root, 1)
 
         self.shortcuts.bind_accel('any', 'goto-parent', 'Goto p_arent', 'BackSpace', self.browse_top)
+        self.shortcuts.bind('any', 'escape', '_Close', self.escape)
 
         self.shortcuts.add_context('projectlist', (),
             lambda: self.projectlist_tree if self.projectlist_tree.is_focus() else None)

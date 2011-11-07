@@ -85,6 +85,8 @@ class EditorManager(object):
         self.activator.bind('window', 'plugin-list', 'Prefs/Pl_ugins#10',
             snaked.core.plugins.show_plugins_prefs)
 
+        self.activator.add_menu_entry('Prefs/_Root menu#100', ('window', 'activator'), 'root-menu')
+
         self.plugin_manager = PluginManager(self.activator)
 
         self.init_conf()
