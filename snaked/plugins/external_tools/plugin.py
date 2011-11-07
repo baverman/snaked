@@ -31,14 +31,11 @@ def get_stdin(editor, id):
         editor.message('Unknown input action ' + id, 'warn')
 
 def replace(editor, bounds, text):
-    line = editor.cursor.get_line()
     editor.view.window.freeze_updates()
-
     editor.buffer.begin_user_action()
     editor.buffer.delete(*bounds)
     editor.buffer.insert_at_cursor(text)
     editor.buffer.end_user_action()
-    editor.goto_line(line + 1)
     editor.view.window.thaw_updates()
 
 def insert(editor, iter, text):
@@ -51,8 +48,9 @@ def process_stdout(editor, stdout, stderr, id):
         editor.message(stderr, 'error', 5000)
 
     if id == 'to-feedback':
-        msg = stdout + stderr
-        if not msg:
+        if stdout or stderr:
+            msg = '\n'.join(r for r in (stdout, stderr) if r)
+        else:
             msg = 'Empty command output'
         editor.message(msg, 'done', 5000)
     elif id == 'replace-selection':
@@ -71,15 +69,43 @@ def process_stdout(editor, stdout, stderr, id):
         insert(editor, editor.buffer.get_bounds()[1], stdout)
         editor.goto_line(last_line)
     elif id == 'to-clipboard':
-        print stdout
         clipboard = editor.view.get_clipboard(gtk.gdk.SELECTION_CLIPBOARD)
         clipboard.set_text(stdout)
         editor.message('Command output was placed on clipboard', 'done')
+    elif id == 'to-console' and stdout:
+        from snaked.core.console import get_console_widget
+        console = get_console_widget(editor)
+        if not console.props.visible:
+            editor.window.popup_panel(console, editor)
+
+        buf = console.view.get_buffer()
+        buf.set_text(stdout)
+        buf.place_cursor(buf.get_bounds()[1])
+        console.view.scroll_mark_onscreen(buf.get_insert())
     else:
         editor.message('Unknown stdout action ' + id, 'warn')
 
 def run(editor, tool):
+    if tool._callable:
+        run_as_python_func(editor, tool)
+    else:
+        run_as_command(editor, tool)
 
+def run_as_python_func(editor, tool):
+    stdin = get_stdin(editor, tool._input)
+    stderr = None
+
+    try:
+        stdout = tool._callable(editor, stdin.decode('utf-8'))
+    except:
+        import traceback
+        stderr = traceback.format_exc()
+
+    stdout = stdout or ''
+    stderr = stderr or ''
+    process_stdout(editor, stdout, stderr, tool._output)
+
+def run_as_command(editor, tool):
     editor.message('Running ' + tool._title, 'info')
 
     fd, filename = tempfile.mkstemp()
@@ -286,6 +312,9 @@ class Tool(object):
     def _handle_arg(self, callable_or_script):
         if callable(callable_or_script):
             self._callable = callable_or_script
+            if not self._name:
+                self._name = self._callable.__name__.replace('___', '###').replace(
+                    '__', '%%%').replace('_', ' ').replace('###', ' _').replace('%%%', '_')
         else:
             self._script = cleandoc(callable_or_script)
 

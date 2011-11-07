@@ -27,6 +27,9 @@ def get_console_widget(editor):
     if editor.conf['MIMIC_PANEL_COLORS_TO_EDITOR_THEME']:
         mimic_to_sourceview_theme(w.view, editor.view)
 
+    if editor.conf['CONSOLE_FONT']:
+        w.view.modify_font(pango.FontDescription(editor.conf['CONSOLE_FONT']))
+
     console_widget.append(w)
 
     editor.window.append_panel(w, on_console_popup)
@@ -59,8 +62,6 @@ def hide(widget, editor):
     editor.view.grab_focus()
 
 def on_console_popup(widget, editor):
-    if editor.conf['CONSOLE_FONT']:
-        widget.view.modify_font(pango.FontDescription(editor.conf['CONSOLE_FONT']))
     editor.window.push_escape(Escapable(hide, widget, editor))
 
 def unblock_fd(fd):

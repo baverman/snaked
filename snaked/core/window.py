@@ -111,6 +111,8 @@ class Window(gtk.Window):
 
         return None
 
+    active_editor = property(get_editor_context)
+
     def attach_editor(self, editor):
         self.editors.append(editor)
         label = gtk.Label('Unknown')
