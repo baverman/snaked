@@ -56,8 +56,7 @@ def changes_done():
             message = 'External change detected:\n'
             message += '\n'.join(r.uri for r in changed_buffers)
             message += '\nOriginal content stored in an undo history.'
-
-        window.message(message, 'warn', 0)
+            window.message(message, 'warn', 0)
 
     collected_file_changes.clear()
     timer_id[0] = None
