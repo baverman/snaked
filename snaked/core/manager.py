@@ -82,6 +82,8 @@ class EditorManager(object):
         self.activator.add_menu_entry('_Window#100/')
 
         self.activator.bind_accel('manager', 'quit', 'File/_Quit#100', '<ctrl>q', EditorManager.quit)
+        self.activator.bind('window', 'plugin-list', 'Prefs/Pl_ugins#10',
+            snaked.core.plugins.show_plugins_prefs)
 
         self.plugin_manager = PluginManager(self.activator)
 

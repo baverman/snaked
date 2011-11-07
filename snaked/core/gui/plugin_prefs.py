@@ -6,17 +6,18 @@ from glib import markup_escape_text
 from uxie.utils import join_to_file_dir, idle
 from uxie.misc import BuilderAware
 
-from snaked.core.shortcuts import ShortcutActivator
-
 from snaked.core.plugins import get_plugin
 
 def discover_plugins():
     import snaked.plugins
     result = {}
     for p in snaked.plugins.__path__:
-        for n in os.listdir(p):
-            if isdir(join(p, n)) and exists(join(p, n, '__init__.py')):
-                result[n] = True
+        try:
+            for n in os.listdir(p):
+                if isdir(join(p, n)) and exists(join(p, n, '__init__.py')):
+                    result[n] = True
+        except OSError:
+            pass
 
     return result.keys()
 
@@ -24,10 +25,11 @@ def discover_plugins():
 class PluginDialog(BuilderAware):
     def __init__(self):
         BuilderAware.__init__(self, join_to_file_dir(__file__, 'plugin_prefs.glade'))
-        self.activator = ShortcutActivator(self.window)
-        self.activator.bind('Escape', self.hide)
 
-        self.plugins_tree.get_columns()[0].get_cell_renderers()[0].props.activatable = True
+        from snaked.core.manager import keymap
+        self.activator = keymap.get_activator(self.window)
+        self.activator.bind('any', 'escape', None, self.hide)
+
 
     def show(self, enabled_plugins, callback):
         self.callback = callback
@@ -45,13 +47,14 @@ class PluginDialog(BuilderAware):
 
     def get_aviable_plugins(self):
         for pname in discover_plugins():
+            failed = False
             try:
                 package = get_plugin(pname)
             except:
-                pass
+                failed = True
 
             name = getattr(package, 'name', pname)
-            desc = getattr(package, 'desc', 'Some weird plugin')
+            desc = getattr(package, 'desc', 'Load failed' if failed else 'Some weird plugin')
             markup = "<b>%s</b>\n<small>%s</small>" % tuple(
                 map(markup_escape_text, (name, desc)))
 

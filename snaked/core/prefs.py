@@ -229,11 +229,11 @@ class ListSettings(object):
     def exists(self):
         return os.path.exists(self.path)
 
-    def load(self):
+    def load(self, default):
         try:
             return [l.strip() for l in open(self.path)]
         except IOError:
-            return []
+            return default
 
     def store(self, data):
         open(self.path, 'w').write('\n'.join(data))

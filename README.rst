@@ -50,10 +50,6 @@ Changes from v0.4 (implemented already)
 What should be done before v0.5 release
 ---------------------------------------
 
-* Plugin selector.
-
-* New file popup panel.
-
 * Snippets preferences.
 
 * Nested snippets configs.
