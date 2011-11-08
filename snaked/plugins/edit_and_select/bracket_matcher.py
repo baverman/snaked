@@ -75,11 +75,15 @@ def on_buffer_notify(buf, prop):
     add_highlight_task(buf)
 
 def find_bracket(from_iter, br, obr, dir):
+    has_context = from_iter.get_buffer().iter_has_context_class
     iter = from_iter.copy()
     depth = 1
     while True:
         if not iter.forward_cursor_positions(dir):
             break
+
+        if has_context(iter, 'string'):
+            continue
 
         c = iter.get_char()
         if c == br:
