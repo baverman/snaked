@@ -45,14 +45,14 @@ def insert(editor, iter, text):
 
 def process_stdout(editor, stdout, stderr, id):
     if id != 'to-feedback' and stderr:
-        editor.message(stderr, 'error', 5000)
+        editor.message(stderr, 'error', 0)
 
     if id == 'to-feedback':
         if stdout or stderr:
             msg = '\n'.join(r for r in (stdout, stderr) if r)
         else:
             msg = 'Empty command output'
-        editor.message(msg, 'done', 5000)
+        editor.message(msg, 'done')
     elif id == 'replace-selection':
         replace(editor, editor.buffer.get_selection_bounds(), stdout)
     elif id == 'replace-buffer':
@@ -72,16 +72,17 @@ def process_stdout(editor, stdout, stderr, id):
         clipboard = editor.view.get_clipboard(gtk.gdk.SELECTION_CLIPBOARD)
         clipboard.set_text(stdout)
         editor.message('Command output was placed on clipboard', 'done')
-    elif id == 'to-console' and stdout:
-        from snaked.core.console import get_console_widget
-        console = get_console_widget(editor)
-        if not console.props.visible:
-            editor.window.popup_panel(console, editor)
+    elif id == 'to-console':
+        if stdout:
+            from snaked.core.console import get_console_widget
+            console = get_console_widget(editor)
+            if not console.props.visible:
+                editor.window.popup_panel(console, editor)
 
-        buf = console.view.get_buffer()
-        buf.set_text(stdout)
-        buf.place_cursor(buf.get_bounds()[1])
-        console.view.scroll_mark_onscreen(buf.get_insert())
+            buf = console.view.get_buffer()
+            buf.set_text(stdout)
+            buf.place_cursor(buf.get_bounds()[1])
+            console.view.scroll_mark_onscreen(buf.get_insert())
     else:
         editor.message('Unknown stdout action ' + id, 'warn')
 
@@ -93,10 +94,13 @@ def run(editor, tool):
 
 def run_as_python_func(editor, tool):
     stdin = get_stdin(editor, tool._input)
-    stderr = None
+    if stdin:
+        stdin = stdin.decode('utf-8')
+
+    stderr = stdout = None
 
     try:
-        stdout = tool._callable(editor, stdin.decode('utf-8'))
+        stdout = tool._callable(editor, stdin)
     except:
         import traceback
         stderr = traceback.format_exc()
