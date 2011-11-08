@@ -141,7 +141,7 @@ def forward_word_end(iter, include_hyphen=False):
     return iter
 
 def line_smart_extend(has_selection, start, end):
-    from snaked.util import pairs_parser
+    from .util import cursor_in_string, source_view_pairs_parser, get_text
 
     def ahtung():
         start.set_line(start.get_line())
@@ -164,21 +164,22 @@ def line_smart_extend(has_selection, start, end):
     if not lchars:
         lchars = [None]
 
-    text = start.get_buffer().get_text(*start.get_buffer().get_bounds()).decode('utf8')
-    br, spos, epos = pairs_parser.get_brackets(text, start.get_offset())
-    in_quotes = br in ('"', "'", '"""', "'''")
-    #print br, spos, epos, start.get_offset()
+    in_quotes = cursor_in_string(start)
+    start_br, end_br = source_view_pairs_parser(start)
+    br = get_text(start_br, 3) if start_br else None
+    if br:
+        if br not in ('"""', "'''"):
+            br = br[0]
+
+        start_br_inner = start_br.copy()
+        start_br_inner.forward_chars(len(br))
+        end_br_inner = end_br.copy()
+        end_br_inner.backward_chars(len(br))
 
     if not in_quotes and rchars[0] in (u'(', u'[', "'", '"'):
-        try:
-            br, spos, epos = pairs_parser.get_brackets(text, end.get_offset() + 1)
-            #print br, spos, epos, end.get_offset() + 1
-        except TypeError:
-            br = None
-
-        if not br: return ahtung()
-
-        end.set_offset(epos)
+        end.forward_cursor_positions(1)
+        _, end = source_view_pairs_parser(end)
+        if not end: return ahtung()
     elif char_is_word(lchars[-1]) or char_is_word(rchars[0]):
         start = backward_word_start(start, in_quotes)
         end = forward_word_end(end, in_quotes)
@@ -192,14 +193,11 @@ def line_smart_extend(has_selection, start, end):
     else:
         if not br: return ahtung()
 
-        ostart = start.copy()
-        oend = end.copy()
-
-        start.set_offset(spos)
-        end.set_offset(epos - 1)
-
-        if ostart.equal(start) and oend.equal(end):
-            start.backward_chars(len(br))
-            end.forward_chars(len(br))
+        if start_br_inner.equal(start) and end_br_inner.equal(end):
+            start = start_br
+            end = end_br
+        else:
+            start = start_br_inner
+            end = end_br_inner
 
     return start, end
