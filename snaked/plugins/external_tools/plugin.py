@@ -223,7 +223,7 @@ def resolve_menu_entry(editor, entry_id):
         if entry_id == title:
             return cbargs + (name,)
 
-    return None, None
+    return None, None, None
 
 allowed_inputs = ('from_buffer_or_selection', 'from_buffer', 'from_selection')
 allowed_outputs = ('replace_buffer_or_selection', 'replace_buffer', 'replace_selection',
