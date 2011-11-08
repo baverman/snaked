@@ -13,6 +13,7 @@ from snaked.core.console import consume_pty
 from snaked.plugins.python.utils import get_executable
 
 tools = None
+tools_module = {}
 
 def get_stdin(editor, id):
     if id == 'none' or id is None:
@@ -179,6 +180,7 @@ def on_external_tools_save(editor):
 
 def get_tools(editor):
     global tools, tool
+    tools_module.clear()
 
     if tools is None:
         tools = []
@@ -191,7 +193,7 @@ def get_tools(editor):
             tool = ToolExtractor()
 
             try:
-                execfile(f, {}, {})
+                execfile(f, tools_module.setdefault(f, {}), tools_module.setdefault(f, {}))
             except IOError:
                 pass
             except:
