@@ -8,6 +8,8 @@ import gtk
 last_smart_selections = weakref.WeakKeyDictionary()
 
 def init(injector):
+    injector.add_context('editor-with-cursor-in-string', 'editor', in_string)
+
     injector.bind_accel('editor-active', 'delete-line', 'Edit/_Delete line#20', '<ctrl>d', delete_line)
 
     injector.bind_accel('editor-active', 'smart-select', 'Edit/Smart _select', '<alt>w', smart_select)
@@ -24,6 +26,9 @@ def init(injector):
     injector.bind_accel('editor-with-selection', 'move-selection-right',
         'Edit/Move selection _right', '<alt>Right', move_word_right)
 
+    injector.bind_accel('editor-with-cursor-in-string', 'swap-quotes',
+        'Edit/Swap _quotes', '<alt>apostrophe', swap_quotes)
+
     from snaked.core.prefs import add_option
     add_option('DOUBLE_BRACKET_MATCHER', True, "Enable custom bracket matcher")
     add_option('COPY_DELETED_LINE', True, "Put deleted line into clipboard")
@@ -34,6 +39,10 @@ def editor_created(editor):
     if editor.conf['DOUBLE_BRACKET_MATCHER']:
         from bracket_matcher import attach
         attach(editor)
+
+def in_string(editor):
+    from .util import cursor_in_string
+    return editor if cursor_in_string(editor.cursor) else None
 
 def delete_line(editor):
     from util import get_line_bounds, line_is_empty
@@ -150,3 +159,32 @@ def move_word_right(editor):
         return
 
     move_word(buf, end, buf.create_mark(None, start))
+
+def swap_quotes(editor):
+    from .util import source_view_pairs_parser
+    start, end = source_view_pairs_parser(editor.cursor)
+
+    buf = editor.buffer
+    text = buf.get_text(start, end).decode('utf-8')
+
+    q = text[0]
+    if q == '"':
+        aq = "'"
+    elif q == "'":
+        aq = '"'
+    else:
+        editor.message('Swap quote? What quote?', 'warn')
+        return
+
+    if text[-1] == q:
+        text = aq + text[1:-1].replace(aq, '\\' + aq).replace('\\' + q, q) + aq
+    else:
+        editor.message('Swap quote? What quote?', 'warn')
+        return
+
+    offset = editor.cursor.get_offset()
+    buf.begin_user_action()
+    buf.delete(start, end)
+    buf.insert_at_cursor(text)
+    buf.place_cursor(buf.get_iter_at_offset(offset))
+    buf.end_user_action()
