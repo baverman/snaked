@@ -32,7 +32,7 @@ def add_highlight_task(buf):
 
 def attach(editor):
     editor.buffer.set_highlight_matching_brackets(False)
-    editor.buffer.connect_after('notify', on_buffer_notify)
+    editor.buffer.connect_after('notify::cursor-position', on_buffer_notify)
 
 def reset_tags(buf):
     if matched_tags[0] and buf.get_tag_table().lookup(matched_tags[0]):
@@ -72,8 +72,7 @@ def highlight_matching_brackets(buf):
         mark_brackets(buf, iter, find_bracket(iter, rbr, char, rd))
 
 def on_buffer_notify(buf, prop):
-    if prop.name == 'cursor-position':
-        add_highlight_task(buf)
+    add_highlight_task(buf)
 
 def find_bracket(from_iter, br, obr, dir):
     iter = from_iter.copy()

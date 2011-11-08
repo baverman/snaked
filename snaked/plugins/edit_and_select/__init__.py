@@ -28,6 +28,8 @@ def init(injector):
     add_option('DOUBLE_BRACKET_MATCHER', True, "Enable custom bracket matcher")
     add_option('COPY_DELETED_LINE', True, "Put deleted line into clipboard")
 
+    injector.on_ready('editor-with-new-buffer', editor_created)
+
 def editor_created(editor):
     if editor.conf['DOUBLE_BRACKET_MATCHER']:
         from bracket_matcher import attach
