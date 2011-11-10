@@ -1,6 +1,4 @@
 import os.path
-import time
-
 import weakref
 
 import gtk, pango
@@ -265,8 +263,8 @@ class Editor(SignalManager):
         self.view.scroll_to_mark(self.buffer.get_insert(), 0.001, use_align=True, xalign=1.0)
         self.clear_cursor()
 
-    def message(self, message, category=None, timeout=None):
-        self.window.message(message, category, timeout, parent=self.view)
+    def message(self, message, category=None, timeout=None, markup=False):
+        return self.window.message(message, category, timeout, markup=markup, parent=self.view)
 
     def add_spot(self):
         self.window.manager.spot_manager.add(self)

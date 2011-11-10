@@ -337,19 +337,21 @@ class Window(gtk.Window):
     def open_or_activate(self, uri, line=None):
         return self.manager.open_or_activate(uri, self, line)
 
-    def message(self, message, category=None, timeout=None, parent=None):
-        fb = TextFeedback(message, category)
+    def message(self, message, category=None, timeout=None, markup=False, parent=None):
+        fb = TextFeedback(message, category, markup)
         if timeout is None:
             timeout = fb.timeout
         self.push_escape(fb)
         return self.floating_manager.add(parent or self, fb, 5, timeout)
 
-    def emessage(self, message, category=None, timeout=None):
-        fb = TextFeedback(message, category)
-        timeout = timeout or fb.timeout
+    def emessage(self, message, category=None, timeout=None, markup=False):
+        fb = TextFeedback(message, category, markup)
+        if timeout is None:
+            timeout = fb.timeout
 
         e = self.get_editor_context()
         parent = e.view if e else self
+        self.push_escape(fb)
         return self.floating_manager.add(parent, fb, 5, timeout)
 
     def push_escape(self, obj):
