@@ -2,61 +2,75 @@ author = 'Anton Bobrov<bobrov@vl.ru>'
 name = 'Bad python code save preventer'
 desc = 'Prevents from saving of code with syntax errors'
 
-langs = ['python']
-
 import weakref
 import time
 
 import glib
 
-last_saves = weakref.WeakKeyDictionary()
+last_feedbacks = weakref.WeakKeyDictionary()
 
-def init(manager):
-    manager.add_global_option('PYTHON_BCSP_GOTO_TO_ERROR', True,
+def init(injector):
+    injector.on_ready('editor-with-new-buffer', editor_created)
+
+    from snaked.core.prefs import add_option
+    add_option('PYTHON_BCSP_GOTO_TO_ERROR', True,
         'Automatically jumps to line where syntax error occured')
 
 def editor_created(editor):
     editor.connect('before-file-save', on_editor_before_file_save)
 
-def add_last_save(editor):
-    last_saves[editor] = time.time()
+def last_save_occurred_in(fb, seconds):
+    return fb and time.time() - fb.start < seconds
 
-def last_save_occurred_in(editor, seconds):
-    return editor in last_saves and time.time() - last_saves[editor] < seconds
-
-def process_error(editor):
-    if last_save_occurred_in(editor, 0.5):
+def process_error(editor, fb, newfb):
+    last_feedbacks[editor] = newfb
+    if last_save_occurred_in(fb, 0.5):
         return False
     else:
-        add_last_save(editor)
         editor.before_file_save.stop_emission()
         return True
 
 def on_editor_before_file_save(editor):
-    import ast
+    from snaked.plugins.python import handlers
     try:
-        ast.parse(editor.utext.encode(editor.encoding), editor.uri)
-    except SyntaxError, e:
-        message = '%s at line <b>%d</b>' % (glib.markup_escape_text(e.msg), e.lineno)
-        if e.text:
-            message += '\n\n' + glib.markup_escape_text(e.text)
-
-        editor.message(message, 10000, markup=True)
-
-        if editor.snaked_conf['PYTHON_BCSP_GOTO_TO_ERROR']:
-            if editor.cursor.get_line() != e.lineno - 1:
-                editor.add_spot()
-                editor.goto_line(e.lineno)
-
-        return process_error(editor)
-    except Exception, e:
-        editor.message(str(e), 10000)
-        return process_error(editor)
-
-    if last_save_occurred_in(editor, 10):
-        editor.message('Good job!')
-
-    try:
-        del last_saves[editor]
+        h = handlers[editor]
     except KeyError:
-        pass
+        return False
+
+    last_fb = last_feedbacks.pop(editor, None)
+    if last_fb:
+        last_fb.cancel()
+
+    errors = h.env.lint(h.project_path, editor.utext, editor.uri, True)
+    if errors and errors[0][0] == 'syntax-error':
+        _, msg, location = errors[0]
+        if location[0] == 'end-of-file':
+            lineno = editor.buffer.get_line_count()
+        else:
+            lineno = location[1]
+
+        message = '%s at line <b>%d</b>' % (glib.markup_escape_text(msg), lineno)
+
+        new_fb = editor.message(message, 'error', 10000, markup=True)
+
+        if editor.conf['PYTHON_BCSP_GOTO_TO_ERROR']:
+            if editor.cursor.get_line() != lineno - 1:
+                editor.add_spot()
+                if location[0] == 'line-offset':
+                    it = editor.buffer.get_iter_at_line_offset(lineno-1, location[2])
+                elif location[0] == 'end-of-line':
+                    it = editor.buffer.get_iter_at_line(location[1] - 1)
+                    if not it.ends_line():
+                        it.forward_to_line_end()
+                elif location[0] == 'end-of-file':
+                    it = editor.buffer.get_bounds()[1]
+                else:
+                    it = editor.cursor
+
+                editor.buffer.place_cursor(it)
+                editor.scroll_to_cursor()
+
+        return process_error(editor, last_fb, new_fb)
+
+    if last_save_occurred_in(last_fb, 10):
+        editor.message('Good job!', 'done')
