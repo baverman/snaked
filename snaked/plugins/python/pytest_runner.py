@@ -288,7 +288,7 @@ class TestRunner(BuilderAware):
         if not filename.startswith('/'):
             filename = os.path.join(self.test_dir, filename)
 
-        e = self.editor_ref().open_file(filename, line - 1)
+        e = self.editor_ref().window.open_or_activate(filename, line)
         e.view.grab_focus()
 
     def on_stop_run_activate(self, button):
