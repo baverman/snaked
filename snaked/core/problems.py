@@ -96,3 +96,22 @@ def mark_problems(editor, prefix, problems):
             editor.buffer.apply_tag(get_tag(editor, prefix, num, message), nstart, nend)
         else:
             print "%s: can't find name [%s] on line %d in %s" % (prefix, name, line, editor.uri)
+
+def mark_exact_problems(editor, prefix, problems):
+    """Marks problems with error underline
+
+    Also binds messages which can be seen as tooltips to these marks
+
+    :param prefix: problem namespace, e.g. ``python_flakes`` plugin define ``flakes``
+                   namespace.
+    :param problems: list of ((line, offset), name, message) tuples. Where name is suspicious
+                      symbol and message is detailed description.
+
+    """
+    clear_problems(editor, prefix)
+
+    for num, ((line, offset), name, message) in enumerate(problems):
+        nstart = editor.buffer.get_iter_at_line_offset(line - 1, offset)
+        nend = nstart.copy()
+        nend.forward_chars(len(name))
+        editor.buffer.apply_tag(get_tag(editor, prefix, num, message), nstart, nend)

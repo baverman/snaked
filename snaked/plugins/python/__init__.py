@@ -3,6 +3,10 @@ name = 'Python support'
 desc = 'Autocompletion, navigation and smart ident'
 
 import weakref
+import os.path
+
+from snaked.core.problems import mark_exact_problems, \
+    attach_to_editor as attach_problem_tooltips_to_editor
 
 handlers = weakref.WeakKeyDictionary()
 outline_dialog = None
@@ -40,6 +44,8 @@ def init(injector):
 
     add_option('PYTHON_SPYPKG_HANDLER_MAX_CHARS', 25, 'Maximum allowed python package title length')
 
+    add_option('PYTHON_LINT_ON_FILE_LOAD', False, 'Run lint check on file load')
+
     from snaked.core.titler import add_title_handler
     add_title_handler('pypkg', pypkg_handler)
     add_title_handler('spypkg', spypkg_handler)
@@ -59,11 +65,37 @@ def editor_opened(editor):
         h = Plugin(editor)
         handlers[editor] = h
 
+        editor.connect('file-saved', add_lint_job)
+        attach_problem_tooltips_to_editor(editor)
+        if editor.conf['PYTHON_LINT_ON_FILE_LOAD'] \
+                and editor.uri and os.path.exists(editor.uri):
+            add_lint_job(editor)
+
 def editor_closed(editor):
     try:
         del handlers[editor]
     except KeyError:
         pass
+
+def add_lint_job(editor):
+    from threading import Thread
+    from uxie.utils import idle
+
+    def job():
+        try:
+            plugin = handlers[editor]
+        except KeyError:
+            return
+
+        try:
+            problems = plugin.env.lint(plugin.project_path, editor.utext, editor.uri)
+        except Exception, e:
+            idle(editor.message, str(e), 'error')
+            return
+
+        idle(mark_exact_problems, editor, 'supp-lint', problems)
+
+    Thread(target=job).start()
 
 def quit(manager):
     global outline_dialog
@@ -252,3 +284,5 @@ def generate_python_executable_menu(editor):
 
 def resolve_python_executable_menu_entry(editor, entry_id):
     return set_python_executable, (editor, entry_id), entry_id
+
+

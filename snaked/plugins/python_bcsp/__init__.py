@@ -41,9 +41,9 @@ def on_editor_before_file_save(editor):
     if last_fb:
         last_fb.cancel()
 
-    errors = h.env.lint(h.project_path, editor.utext, editor.uri, True)
-    if errors and errors[0][0] == 'syntax-error':
-        _, msg, location = errors[0]
+    error = h.env.check_syntax(editor.utext)
+    if error:
+        location, msg = error
         if location[0] == 'end-of-file':
             lineno = editor.buffer.get_line_count()
         else:
