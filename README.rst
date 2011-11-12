@@ -54,8 +54,6 @@ What should be done before v0.5 release
 
 * Nested snippets configs.
 
-* Python linter using supplement.
-
 * Fix IPython plugin for new snaked API.
 
 * Dynamic external tool contexts (via shell scripts and python functions).
