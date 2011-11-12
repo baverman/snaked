@@ -3,10 +3,10 @@ import weakref
 
 import gtk
 
-from uxie.floating import Manager as FloatingManager, TextFeedback, add_float, remove_float, allocate_float
+from uxie.floating import Manager as FloatingManager, TextFeedback, add_float, remove_float
 from uxie.escape import Manager as EscapeManager
 from uxie.actions import wait_mod_unpress_for_last_shortcut
-from uxie.utils import idle, refresh_gui
+from uxie.utils import idle, refresh_gui, lazy_func
 
 tab_bar_pos_mapping = {
     'top': gtk.POS_TOP,
@@ -35,7 +35,8 @@ def init(injector):
         ctx.bind('detach-editor', 'Tab/_Detach', Window.retach_editor)
         ctx.bind('duplicate-editor', 'Tab/D_uplicate', Window.duplicate_editor)
 
-        ctx.bind_accel('new-file', 'File/_New', '<ctrl>n', Window.new_file_action)
+    injector.bind_accel('editor', 'new-file', 'File/_New', '<ctrl>n',
+        lazy_func('snaked.core.gui.new_file.show_create_file'))
 
     with injector.on('window') as ctx:
         ctx.bind('escape', None, Window.process_escape)
@@ -359,8 +360,3 @@ class Window(gtk.Window):
 
     def process_escape(self):
         self.escape_manager.process()
-
-    def new_file_action(self, editor):
-        from snaked.core.gui import new_file
-        new_file.show_create_file(editor)
-
