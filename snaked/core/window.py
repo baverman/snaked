@@ -320,9 +320,10 @@ class Window(gtk.Window):
                 _, _, _, wh, _ = self.window.get_geometry()
                 self.main_pane.set_position(wh - self.window_conf.get('panel-height', 200))
 
+            if self.main_pane.get_child2() is not widget:
+                self.main_pane.add2(widget)
+
             if not widget.get_visible():
-                if self.main_pane.get_child2() is not widget:
-                    self.main_pane.add2(widget)
                 widget.show()
                 self.panels[widget].popup(*args)
             else:

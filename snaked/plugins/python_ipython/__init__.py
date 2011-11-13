@@ -102,6 +102,9 @@ class IPythonRunner:
     def visible(self):
         return self.panel.props.visible
 
+    def grab_focus(self, panel):
+        self.widget.grab_focus()
+
     def reset(self):
         if self.panel is not None:
             self.panel.destroy()
@@ -114,6 +117,7 @@ class IPythonRunner:
         self.widget.modify_font(pango.FontDescription(FONT))
         self.widget.set_wrap_mode(gtk.WRAP_CHAR)
         self.panel.add(self.widget)
+        self.panel.show_all()
 
     def enable_matplotlib_support(self):
         try:
@@ -181,29 +185,24 @@ else:
 ipython_runner = []
 
 
-def init(manager):
-    manager.add_shortcut('ipython', '<ctrl>i', 'IPython',
-                         'Toggle IPython console', show_ipython)
-    manager.add_shortcut('run-current-code', '<ctrl>r', 'IPython',
-                         'Send current line or selection to IPython',
-                         send_code)
-    manager.add_shortcut('run-file', 'F6', 'IPython',
-                         'Run current file in IPython', run_file)
-    manager.add_shortcut('run-last', '<shift>F6', 'IPython',
-                         'Execute last run command', run_last)
-    manager.add_shortcut('debug', '<ctrl>F6', 'IPython',
-                         'Debug current file in IPython', debug_file)
-    manager.add_shortcut('restart-ipython', '<ctrl><shift>i', 'IPython'
-                         , 'Restart IPython', restart_ipython)
+def init(injector):
+    injector.bind_accel('editor', 'toggle-ipython', 'View/Toggle _IPython', '<ctrl>i', show_ipython)
+    injector.bind_accel('editor', 'ipython-run-current-code',
+        'Python/Run current code', '<ctrl>r', send_code)
+    injector.bind_accel('editor', 'ipython-run-file', 'Python/Run file', 'F6', run_file)
+    injector.bind_accel('editor', 'ipython-run-last', 'Python/Run last command', '<shift>F6', run_last)
+    injector.bind_accel('editor', 'ipython-debug', 'Python/Debug', '<ctrl>F6', debug_file)
+    injector.bind_accel('editor', 'restart-ipython', 'Python/Restart IPython',
+        '<ctrl><shift>i', restart_ipython)
 
-    manager.add_global_option('IPYTHON_GRAB_FOCUS_ON_SHOW', True,
-                              'Option controls ipython panel focus grabbing on its show'
-                              )
-    manager.add_global_option('IPYTHON_MATPLOTLIB_INTERACTIVE_SUPPORT',
-                              False,
-                              'Option controls matplotlib interactive mode in ipython console'
-                              )
-    manager.add_global_option('IPYTHON_AUTOEXECUTE', '', 'Automatically run the specified scripts when the console is started.')
+    from snaked.core.prefs import add_option
+
+    add_option('IPYTHON_GRAB_FOCUS_ON_SHOW', True,
+        'Option controls ipython panel focus grabbing on its show')
+    add_option('IPYTHON_MATPLOTLIB_INTERACTIVE_SUPPORT', False,
+        'Option controls matplotlib interactive mode in ipython console')
+    add_option('IPYTHON_AUTOEXECUTE', '',
+        'Automatically run the specified scripts when the console is started.')
 
 
 def get_ipython_runner(editor):
@@ -217,45 +216,19 @@ def get_ipython_runner(editor):
         os.chdir(root)
 
     ipython_runner.append(IPythonRunner())
-    if editor.snaked_conf['IPYTHON_MATPLOTLIB_INTERACTIVE_SUPPORT']:
+    if editor.conf['IPYTHON_MATPLOTLIB_INTERACTIVE_SUPPORT']:
         ipython_runner[0].enable_matplotlib_support()
-    if editor.snaked_conf['IPYTHON_AUTOEXECUTE']:
+    if editor.conf['IPYTHON_AUTOEXECUTE']:
         ipython_runner[0].run_lines_hidden(editor.snaked_conf['IPYTHON_AUTOEXECUTE'].split('\n'))
-    editor.add_widget_to_stack(ipython_runner[0].panel,
-                               on_ipython_popup)
+
+    editor.window.append_panel(ipython_runner[0].panel)\
+        .on_activate(ipython_runner[0].grab_focus)
+
     return ipython_runner[0]
-
-
-def hide(editor, widget, escape):
-    if widget.get_focus_child():
-        editor.view.grab_focus()
-        class Escape(object): pass
-        widget.escape = Escape()
-        editor.push_escape(hide, widget, widget.escape)
-    else:
-        widget.hide()
-        editor.view.grab_focus()
-
-
-def on_ipython_popup(widget, editor):
-    class Escape(object): pass
-    widget.escape = Escape()
-    editor.push_escape(hide, widget, widget.escape)
-
 
 def show_ipython(editor):
     runner = get_ipython_runner(editor)
-    if runner.visible():
-        if not runner.widget.is_focus():
-            runner.widget.grab_focus()
-        else:
-            editor.view.grab_focus()
-            runner.hide()
-    else:
-        runner.show()
-        editor.popup_widget(runner.panel)
-        if editor.snaked_conf['IPYTHON_GRAB_FOCUS_ON_SHOW']:
-            runner.widget.grab_focus()
+    editor.window.popup_panel(runner.panel, editor.conf['IPYTHON_GRAB_FOCUS_ON_SHOW'])
 
 
 def get_selection_or_buffer(editor):
@@ -272,9 +245,7 @@ def send_code(editor):
 
 def show_and_run(editor, lines):
     runner = get_ipython_runner(editor)
-    if not runner.visible():
-        runner.show()
-        editor.popup_widget(runner.panel)
+    editor.window.popup_panel(runner.panel)
     runner.run_lines(lines)
 
 
@@ -305,10 +276,6 @@ def restart_ipython(editor):
         os.chdir(root)
 
     runner.reset()
-    editor.add_widget_to_stack(ipython_runner[0].panel,
-                               on_ipython_popup)
-    runner.show()
-    editor.popup_widget(runner.panel)
-    runner.widget.grab_focus()
-
-
+    editor.window.append_panel(ipython_runner[0].panel)\
+        .on_activate(runner.grab_focus)
+    editor.window.popup_panel(runner.panel, True)
