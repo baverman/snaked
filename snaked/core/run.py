@@ -1,8 +1,10 @@
 from optparse import OptionParser
 import os
 
+from snaked import VERSION
+
 def get_manager():
-    parser = OptionParser()
+    parser = OptionParser(version='%prog ' + VERSION)
     parser.add_option('-s', '--session', dest='session',
         help="Open snaked with specified session", default='default')
     parser.add_option('', '--select-session', action="store_true", dest='select_session',
