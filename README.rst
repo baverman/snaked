@@ -64,6 +64,8 @@ What should be done before v0.5 release
 
 * Encoding selector when chardet fails.
 
+* use_tabs context
+
 
 How to install and try v0.5dev?
 -------------------------------
