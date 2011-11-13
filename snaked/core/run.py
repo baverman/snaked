@@ -9,6 +9,7 @@ def get_manager():
         help="Show dialog to select session at startup", default=False)
     parser.add_option('-d', '--debug', action="store_true", dest='debug',
         help="Run embedded drainhunter", default=False)
+    parser.add_option('', '--g-fatal-warnings', action="store_true")
 
     options, args = parser.parse_args()
     if options.select_session:
