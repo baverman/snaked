@@ -31,8 +31,8 @@ def get_console_widget(editor):
         w.view.modify_font(pango.FontDescription(editor.conf['CONSOLE_FONT']))
 
     console_widget.append(w)
-
-    editor.window.append_panel(w, on_console_popup)
+    editor.window.append_panel(w)\
+        .on_activate(lambda w: w.view.grab_focus())
     return w
 
 def create_console_widget():
@@ -50,19 +50,7 @@ def create_console_widget():
 
 def toggle_console(editor):
     console = get_console_widget(editor)
-
-    if console.props.visible:
-        console.hide()
-        editor.view.grab_focus()
-    else:
-        editor.window.popup_panel(console, editor)
-
-def hide(widget, editor):
-    widget.hide()
-    editor.view.grab_focus()
-
-def on_console_popup(widget, editor):
-    editor.window.push_escape(Escapable(hide, widget, editor))
+    editor.window.popup_panel(console)
 
 def unblock_fd(fd):
     fl = fcntl.fcntl(fd, fcntl.F_GETFL)

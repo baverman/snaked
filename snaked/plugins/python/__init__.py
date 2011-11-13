@@ -221,18 +221,14 @@ def get_pytest_runner(editor):
     from pytest_runner import TestRunner
     test_runner.append(TestRunner())
 
-    editor.window.append_panel(test_runner[0].panel, test_runner[0].on_popup)
+    editor.window.append_panel(test_runner[0].panel)\
+        .on_activate(test_runner[0].on_activate)
+
     return test_runner[0]
 
 def toggle_test_panel(editor):
     runner = get_pytest_runner(editor)
-    if runner.panel.get_focus_child():
-        runner.hide()
-        editor.view.grab_focus()
-    else:
-        runner.editor_ref = weakref.ref(editor)
-        editor.window.popup_panel(runner.panel)
-        runner.tests_view.grab_focus()
+    editor.window.popup_panel(runner.panel)
 
 def pytest_available(editor):
     try:

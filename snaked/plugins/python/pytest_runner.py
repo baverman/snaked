@@ -1,4 +1,3 @@
-import sys
 import os.path
 import weakref
 
@@ -10,7 +9,6 @@ from gtk.gdk import color_parse
 
 from uxie.utils import join_to_file_dir
 from uxie.misc import BuilderAware
-from uxie.escape import Escapable
 
 from . import pytest_launcher
 from .utils import get_executable
@@ -90,11 +88,6 @@ class TestRunner(BuilderAware):
 
     def show(self):
         self.editor_ref().window.popup_panel(self.panel)
-
-    def hide(self, editor=None, *args):
-        self.panel.hide()
-        if editor:
-            editor.view.grab_focus()
 
     def find_common_parent(self, nodes):
         if not nodes:
@@ -266,8 +259,8 @@ class TestRunner(BuilderAware):
             self.buffer.set_text('')
             self.buffer.node = None
 
-    def on_popup(self, widget):
-        self.editor_ref().window.push_escape(Escapable(self.hide))
+    def on_activate(self, widget):
+        self.tests_view.grab_focus()
 
     def on_tests_view_row_activated(self, view, path, *args):
         iter = self.tests.get_iter(path)

@@ -47,6 +47,29 @@ def init(injector):
         ctx.bind_accel('toggle-tabs-visibility', 'Window/Toggle ta_bs', '<Alt>F11', Window.toggle_tabs)
 
 
+class PanelHandler(object):
+    def __init__(self, widget):
+        self.widget = widget
+        self.activate_handler = None
+        self.popup_handler = None
+
+    def on_activate(self, cb):
+        self.activate_handler = cb
+        return self
+
+    def on_popup(self, cb):
+        self.popup_handler = cb
+        return self
+
+    def activate(self, *args):
+        if self.activate_handler:
+            self.activate_handler(*((self.widget,) + args))
+
+    def popup(self, *args):
+        if self.popup_handler:
+            self.popup_handler(*((self.widget,) + args))
+
+
 class Window(gtk.Window):
     def __init__(self, manager, window_conf):
         gtk.Window.__init__(self, gtk.WINDOW_TOPLEVEL)
@@ -282,10 +305,11 @@ class Window(gtk.Window):
         self.note.set_show_tabs(not self.note.get_show_tabs())
         self.window_conf['show-tabs'] = self.note.get_show_tabs()
 
-    def append_panel(self, widget, on_popup):
-        self.panels[widget] = on_popup
+    def append_panel(self, widget):
+        v = self.panels[widget] = PanelHandler(widget)
+        return v
 
-    def popup_panel(self, widget, *args):
+    def popup_panel(self, widget, activate=False, *args):
         if widget in self.panels:
             for w in self.panels:
                 if w is not widget and w is self.main_pane.get_child2():
@@ -296,11 +320,16 @@ class Window(gtk.Window):
                 _, _, _, wh, _ = self.window.get_geometry()
                 self.main_pane.set_position(wh - self.window_conf.get('panel-height', 200))
 
-            self.main_pane.add2(widget)
-            widget.show()
+            if not widget.get_visible():
+                if self.main_pane.get_child2() is not widget:
+                    self.main_pane.add2(widget)
+                widget.show()
+                self.panels[widget].popup(*args)
+            else:
+                activate = True
 
-            if self.panels[widget]:
-                self.panels[widget](widget, *args)
+            if activate:
+                self.panels[widget].activate(*args)
 
     def on_page_reordered(self, note, child, num):
         for i, e in enumerate(self.editors):
@@ -359,4 +388,17 @@ class Window(gtk.Window):
         return self.escape_manager.push(obj)
 
     def process_escape(self):
-        self.escape_manager.process()
+        if not self.escape_manager.process():
+            widget = self.main_pane.get_child2()
+            if widget:
+                if widget.get_visible():
+                    if widget.get_focus_child():
+                        e = self.active_editor
+                        if e:
+                            e.view.grab_focus()
+                    else:
+                        widget.hide()
+
+                    return True
+
+        return False
