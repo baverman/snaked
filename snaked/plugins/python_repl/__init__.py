@@ -1,50 +1,138 @@
-import gtk
+author = 'Anton Bobrov<bobrov@vl.ru>'
+name = 'Python REPL'
+desc = 'Slim and slick python console'
 
-class Escape(object): pass
-repl_widget = []
+import os.path
+import gtk.gdk
+import gtksourceview2
+from cPickle import dumps
 
-def init(manager):
-    manager.add_shortcut('python-repl', '<alt>2', 'Window',
-        'Toggle python interactive repl', toggle_repl)
+from snaked.core.prefs import update_view_preferences
 
+def init(injector):
+    injector.add_context('python-repl', 'editor',
+        lambda e: get_repl_widget(e) if get_repl_widget(e).view.is_focus() else None)
+
+    injector.add_context('python-repl-result-chunk', 'python-repl',
+        lambda p: p if cursor_in_result_chunk(p) else None)
+
+    injector.bind_accel('editor', 'python-repl', 'View/Python console', '<alt>2', toggle_repl)
+    injector.bind_accel(('editor', 'python-repl'), 'python-repl-exec', 'Python/_Execute',
+        '<ctrl>Return', exec_code, 1)
+
+    injector.bind_accel('python-repl-result-chunk', 'python-repl-squash-result-chunk',
+        'Python/S_quash result chunk', '<ctrl>d', squash_result_chunk)
+
+repl_widget = None
 def get_repl_widget(editor):
-    try:
-        return repl_widget[0]
-    except IndexError:
-        pass
+    global repl_widget
+    if repl_widget:
+        return repl_widget
 
-    w = create_repl_widget()
-    repl_widget.append(w)
+    repl_widget = create_repl_widget(editor)
 
-    editor.add_widget_to_stack(w, on_repl_popup)
-    return w
+    editor.window.append_panel(repl_widget).on_activate(lambda p: p.view.grab_focus())
+    return repl_widget
 
-def create_repl_widget():
+def create_repl_widget(editor):
     panel = gtk.ScrolledWindow()
-    panel.set_border_width(5)
+    #panel.set_border_width(5)
     panel.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 
-    panel.view = gtk.TextView()
-    panel.view.set_buffer(gtk.TextBuffer())
+    panel.view = gtksourceview2.View()
+    panel.buffer = gtksourceview2.Buffer()
+    panel.view.set_buffer(panel.buffer)
     panel.add(panel.view)
-    panel.view.show()
+    panel.view.show_all()
+
+    editor.window.manager.set_buffer_prefs(panel.buffer, '', 'python')
+    panel.buffer.config.prefs.insert(0, {'show-line-numbers':False, 'highlight-current-line':False})
+    update_view_preferences(panel.view, panel.buffer)
+
+    style = panel.buffer.get_style_scheme().get_style('text')
+
+    color = gtk.gdk.color_parse(style.props.background)
+    mul = 1.4 if color.value < 0.5 else 1/1.4
+    color = str(gtk.gdk.color_from_hsv(color.hue, color.saturation, color.value * mul))
+
+    panel.buffer.create_tag('exec-result', editable=False, scale=0.9, indent=20,
+        foreground=style.props.foreground, background=color, background_full_height=True,
+        paragraph_background=color)
 
     return panel
 
 def toggle_repl(editor):
     repl = get_repl_widget(editor)
+    editor.window.popup_panel(repl)
 
-    if repl.get_focus_child():
-        repl.hide()
-        editor.view.grab_focus()
-    else:
-        editor.popup_widget(repl)
+server = None
+def get_server_conn(editor):
+    global server
+    if not server:
+        from .executor import run_server
+        from ..python.utils import get_executable
+        root = editor.project_root
+        if not root:
+            root = os.path.dirname(editor.uri)
+        server = run_server(root, get_executable(editor.conf))
 
-def hide(editor, widget, escape):
-    widget.hide()
-    editor.view.grab_focus()
+    return server
 
-def on_repl_popup(widget, editor):
-    widget.escape = Escape()
-    editor.push_escape(hide, widget, widget.escape)
-    widget.view.grab_focus()
+def cursor_in_result_chunk(panel):
+    buf = panel.buffer
+    tag = buf.get_tag_table().lookup('exec-result')
+    cursor = buf.get_iter_at_mark(buf.get_insert())
+    return cursor.has_tag(tag)
+
+def squash_result_chunk(panel):
+    buf = panel.buffer
+    tag = buf.get_tag_table().lookup('exec-result')
+    cursor = buf.get_iter_at_mark(buf.get_insert())
+
+    start = cursor.copy()
+    if not start.toggles_tag(tag):
+        start.backward_to_tag_toggle(tag)
+
+    end = cursor
+    end.forward_to_tag_toggle(tag)
+    buf.begin_user_action()
+    buf.delete(start, end)
+    buf.end_user_action()
+
+def exec_code(editor, panel):
+    buf = panel.buffer
+    tag = buf.get_tag_table().lookup('exec-result')
+
+    cursor = buf.get_iter_at_mark(buf.get_insert())
+    if cursor.has_tag(tag):
+        editor.window.message('You are at result chunk. Nothing to exec', 'warn', parent=panel.view)
+        return True
+
+    start = cursor.copy()
+    if not start.toggles_tag(tag):
+        start.backward_to_tag_toggle(tag)
+
+    end = cursor
+    end.forward_to_tag_toggle(tag)
+
+    source = buf.get_text(start, end).decode('utf-8')
+
+    _, conn = get_server_conn(editor)
+    conn.send_bytes(dumps(('run', source, start.get_line() + 1), 2))
+    result = conn.recv()
+
+    start = end
+    end = start.copy()
+    end.forward_to_tag_toggle(tag)
+
+    buf.begin_user_action()
+    buf.delete(start, end)
+
+    if not start.starts_line():
+        buf.insert(start, '\n')
+
+    if not result.endswith('\n'):
+        result += '\n'
+
+    buf.insert_with_tags_by_name(start, result, 'exec-result')
+    buf.end_user_action()

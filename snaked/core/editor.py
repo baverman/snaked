@@ -1,12 +1,12 @@
 import os.path
 import weakref
 
-import gtk, pango
+import gtk
 import gtksourceview2
 
 from uxie.utils import idle
 
-from .prefs import add_option
+from .prefs import add_option, update_view_preferences
 from ..util import save_file, get_project_root
 from ..signals import SignalManager, Signal, connect_all, connect_external, weak_connect
 
@@ -279,30 +279,7 @@ class Editor(SignalManager):
         self.view.destroy()
 
     def update_view_preferences(self):
-        # Try to fix screen flickering
-        # No hope, should mail bug to upstream
-        #text_style = style_scheme.get_style('text')
-        #if text_style and editor.view.window:
-        #    color = editor.view.get_colormap().alloc_color(text_style.props.background)
-        #    editor.view.modify_bg(gtk.STATE_NORMAL, color)
-
-        pref = self.buffer.config
-
-        font = pango.FontDescription(pref['font'])
-        self.view.modify_font(font)
-
-        self.view.set_auto_indent(pref['auto-indent'])
-        self.view.set_indent_on_tab(pref['indent-on-tab'])
-        self.view.set_insert_spaces_instead_of_tabs(not pref['use-tabs'])
-        self.view.set_smart_home_end(pref['smart-home-end'])
-        self.view.set_highlight_current_line(pref['highlight-current-line'])
-        self.view.set_show_line_numbers(pref['show-line-numbers'])
-        self.view.set_tab_width(pref['tab-width'])
-        self.view.set_draw_spaces(pref['show-whitespace'])
-        self.view.set_right_margin_position(pref['right-margin'])
-        self.view.set_show_right_margin(pref['show-right-margin'])
-        self.view.set_wrap_mode(gtk.WRAP_WORD if pref['wrap-text'] else gtk.WRAP_NONE)
-        self.view.set_pixels_above_lines(pref['line-spacing'])
+        update_view_preferences(self.view, self.buffer)
 
     @property
     def window(self):

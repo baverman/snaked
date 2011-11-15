@@ -20,8 +20,6 @@ class SearchSelection(object):
         self.search = search
 
 def init(injector):
-    injector.add_context('textview-active', 'window',
-        lambda w: w.get_focus() if isinstance(w.get_focus(), gtk.TextView) else None)
     injector.add_context('search', 'textview-active',
         lambda t: t if t in active_widgets or search_selections else None)
 

@@ -1,6 +1,7 @@
 import sys
+from inspect import cleandoc
 
-from snaked.plugins.python_repl.executor import execute, patch
+from snaked.plugins.python_repl.executor import execute, patch, Interpreter
 
 def remove_test_modules():
     try:
@@ -91,3 +92,14 @@ def decorator(func):
 
     result = another_decorated_func(3)
     assert result == 36
+
+def test_interpreter():
+    e = Interpreter()
+    e.execute('a = 10; a')
+    e.execute('a + 10')
+    result = e.get_buffer()
+    assert result == '10\n20\n'
+
+    e.execute('a + 20')
+    result = e.get_buffer()
+    assert result == '30\n'

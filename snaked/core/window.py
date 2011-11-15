@@ -20,6 +20,8 @@ def init(injector):
     injector.add_context('editor-active', 'editor', lambda e: e if e.view.is_focus() else None)
     injector.add_context('editor-with-selection', 'editor-active',
         lambda e: e if e.buffer.get_has_selection() else None)
+    injector.add_context('textview-active', 'window',
+        lambda w: w.get_focus() if isinstance(w.get_focus(), gtk.TextView) else None)
 
     with injector.on('window', 'editor') as ctx:
         ctx.bind_accel('save', 'File/_Save#20', '<ctrl>s', Window.save_editor)

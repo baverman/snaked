@@ -4,6 +4,8 @@ import json
 from itertools import chain
 from inspect import cleandoc
 
+import gtk, pango
+
 from uxie.utils import make_missing_dirs, join_to_settings_dir
 
 def init(injector):
@@ -120,6 +122,32 @@ default_prefs = {
     }
 }
 
+def update_view_preferences(view, buf):
+    # Try to fix screen flickering
+    # No hope, should mail bug to upstream
+    #text_style = style_scheme.get_style('text')
+    #if text_style and editor.view.window:
+    #    color = editor.view.get_colormap().alloc_color(text_style.props.background)
+    #    editor.view.modify_bg(gtk.STATE_NORMAL, color)
+
+    pref = buf.config
+
+    font = pango.FontDescription(pref['font'])
+    view.modify_font(font)
+
+    view.set_auto_indent(pref['auto-indent'])
+    view.set_indent_on_tab(pref['indent-on-tab'])
+    view.set_insert_spaces_instead_of_tabs(not pref['use-tabs'])
+    view.set_smart_home_end(pref['smart-home-end'])
+    view.set_highlight_current_line(pref['highlight-current-line'])
+    view.set_show_line_numbers(pref['show-line-numbers'])
+    view.set_tab_width(pref['tab-width'])
+    view.set_draw_spaces(pref['show-whitespace'])
+    view.set_right_margin_position(pref['right-margin'])
+    view.set_show_right_margin(pref['show-right-margin'])
+    view.set_wrap_mode(gtk.WRAP_WORD if pref['wrap-text'] else gtk.WRAP_NONE)
+    view.set_pixels_above_lines(pref['line-spacing'])
+
 def load_json_settings(name, default=None):
     filename = get_settings_path(name)
     try:
@@ -163,7 +191,7 @@ def add_editor_preferences(on_dialog_created, on_pref_refresh, default_values):
 
 class CompositePreferences(object):
     def __init__(self, *prefs):
-        self.prefs = prefs
+        self.prefs = list(prefs)
 
     def __getitem__(self, key):
         for p in self.prefs:
