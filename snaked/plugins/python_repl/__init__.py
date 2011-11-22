@@ -3,7 +3,7 @@ name = 'Python REPL'
 desc = 'Slim and slick python console'
 
 import os.path
-import gtk.gdk
+import gtk.gdk, pango
 import gtksourceview2
 from cPickle import dumps
 
@@ -57,7 +57,7 @@ def create_repl_widget(editor):
 
     panel.buffer.create_tag('exec-result', editable=False, scale=0.9, indent=20,
         foreground=style.props.foreground, background=color, background_full_height=True,
-        paragraph_background=color)
+        paragraph_background=color, weight=pango.WEIGHT_NORMAL)
 
     return panel
 
@@ -82,7 +82,11 @@ def cursor_in_result_chunk(panel):
     buf = panel.buffer
     tag = buf.get_tag_table().lookup('exec-result')
     cursor = buf.get_iter_at_mark(buf.get_insert())
-    return cursor.has_tag(tag)
+    if cursor.has_tag(tag):
+        cursor.backward_char()
+        return cursor.has_tag(tag)
+
+    return False
 
 def squash_result_chunk(panel):
     buf = panel.buffer
@@ -104,9 +108,12 @@ def exec_code(editor, panel):
     tag = buf.get_tag_table().lookup('exec-result')
 
     cursor = buf.get_iter_at_mark(buf.get_insert())
+
     if cursor.has_tag(tag):
-        editor.window.message('You are at result chunk. Nothing to exec', 'warn', parent=panel.view)
-        return True
+        cursor.backward_char()
+        if cursor.has_tag(tag):
+            editor.window.message('You are at result chunk. Nothing to exec', 'warn', parent=panel.view)
+            return True
 
     start = cursor.copy()
     if not start.toggles_tag(tag):
@@ -124,15 +131,23 @@ def exec_code(editor, panel):
     start = end
     end = start.copy()
     end.forward_to_tag_toggle(tag)
+    end_mark = buf.create_mark(None, end)
 
     buf.begin_user_action()
-    buf.delete(start, end)
 
-    if not start.starts_line():
-        buf.insert(start, '\n')
+    if start.starts_line():
+        start.backward_char()
+
+    buf.delete(start, end)
 
     if not result.endswith('\n'):
         result += '\n'
 
+    result = '\n' + result
+
     buf.insert_with_tags_by_name(start, result, 'exec-result')
     buf.end_user_action()
+
+    buf.place_cursor(buf.get_iter_at_mark(end_mark))
+    panel.view.scroll_mark_onscreen(buf.get_insert())
+    buf.delete_mark(end_mark)
