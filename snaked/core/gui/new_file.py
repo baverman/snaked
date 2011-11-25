@@ -1,7 +1,9 @@
 import os.path
 import gtk
 
+from uxie.utils import idle
 from uxie.escape import Escapable
+from uxie.complete import EntryCompleter, create_simple_complete_view
 
 def show_create_file(editor):
     widget = create_widget(editor)
@@ -23,26 +25,12 @@ def create_widget(editor):
     entry.set_width_chars(50)
     widget.pack_start(entry, False)
     entry.connect('activate', on_entry_activate, editor, widget)
-    entry.connect('key-press-event', on_key_press)
-
-    completion = gtk.EntryCompletion()
-    model = gtk.ListStore(str)
-    completion.set_model(model)
-    completion.set_inline_completion(True)
-
-    cell = gtk.CellRendererText()
-    completion.pack_start(cell)
-    completion.add_attribute(cell, 'text', 0)
-
-    completion.set_match_func(match_func)
-
-    entry.set_completion(completion)
 
     path = os.path.dirname(editor.uri)
     entry.set_text(path + '/')
-    fill_model(model, path)
 
-    entry.connect('changed', on_entry_changed, model)
+    widget.completion = EntryCompleter(create_simple_complete_view())
+    widget.completion.attach(entry, fill_func, activate_func)
 
     widget.entry = entry
 
@@ -67,34 +55,6 @@ def on_entry_changed(entry, model):
     if path != model.last_path:
         fill_model(model, path, entry)
 
-def on_key_press(sender, event):
-    if event.keyval in (gtk.keysyms.ISO_Left_Tab, gtk.keysyms.Up, gtk.keysyms.Down):
-        return True
-
-    if event.keyval == gtk.keysyms.Tab:
-        matches = get_matches(sender)
-        if len(matches) == 1:
-            sender.set_text(matches[0])
-            sender.set_position(-1)
-        elif len(matches) > 1:
-            idx = -1
-            text = sender.get_text()
-            for i, m in enumerate(matches):
-                if m == text:
-                    idx = i
-                    break
-
-            old_pos = get_pos(sender)
-            sender.handler_block_by_func(on_entry_changed)
-            sender.set_text(matches[(idx + 1) % len(matches)])
-            sender.set_position(old_pos)
-            sender.select_region(old_pos, -1)
-            sender.handler_unblock_by_func(on_entry_changed)
-
-        return True
-
-    return False
-
 def get_pos(entry):
     try:
         start, end = entry.get_selection_bounds()
@@ -104,30 +64,46 @@ def get_pos(entry):
     return start
 
 def get_key(entry):
-    return os.path.basename(entry.get_text()[:get_pos(entry)])
+    return os.path.split(entry.get_text()[:get_pos(entry)])
 
-def match_func(completion, key, iter):
-    key = get_key(completion.get_entry())
-    model = completion.get_model()
-    text = model.get_value(iter, 0)
-    if text and text.startswith(key):
-        return True
-
-    return False
-
-def get_matches(entry):
-    model = entry.get_completion().get_model()
-    key = get_key(entry)
-    return sorted([os.path.join(model.last_path, text) + '/'
-        for (text,) in model if text.startswith(key)])
-
-def fill_model(model, path, entry=None):
+def fill_func(view, entry, check):
+    root, key = get_key(entry)
+    model = view.get_model()
     model.clear()
-    model.last_path = path
-    try:
-        for p in os.listdir(path):
-            fullpath = os.path.join(path, p)
-            if os.path.isdir(fullpath):
-                model.append((p,))
-    except OSError:
-        pass
+
+    view.set_model(None)
+    dirs = []
+    files = []
+    for p in os.listdir(root):
+        if not next(check, False):
+            return
+
+        if p.startswith(key):
+            if os.path.isdir(os.path.join(root, p)):
+                dirs.append(p + '/')
+            else:
+                files.append(p)
+
+    for p in sorted(dirs) + sorted(files):
+        model.append((p,))
+
+    view.set_model(model)
+
+    completer = view.get_toplevel()
+    if not len(model):
+        idle(completer.popdown, entry)
+    else:
+        view.set_cursor((0,))
+        view.get_selection().unselect_all()
+        completer.set_position(entry)
+
+def activate_func(view, path, entry, is_final):
+    pos = get_pos(entry)
+    root, key = get_key(entry)
+    if root[-1] != '/':
+        root += '/'
+
+    if is_final:
+        entry.set_text(root + view.get_model()[path][0])
+        entry.set_position(-1)
+        idle(entry.emit, 'changed')
