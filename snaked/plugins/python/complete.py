@@ -1,13 +1,10 @@
 import textwrap
 
 import weakref
-
-import gtk
-from gtksourceview2 import CompletionProvider, CompletionProposal
-from gtksourceview2 import COMPLETION_ACTIVATION_USER_REQUESTED
-
-import gobject
 from glib import markup_escape_text
+
+from snaked.core.completer import Provider
+
 
 def pangonify_rst(text):
     result = ''
@@ -61,58 +58,17 @@ def pangonify_rst(text):
     return result
 
 
-class Proposal(gobject.GObject, CompletionProposal):
-    def __init__(self, proposal):
-        gobject.GObject.__init__(self)
-        self.proposal = proposal
-
-    def do_get_label(self):
-        return self.proposal
-
-    def do_get_text(self):
-        return self.proposal
-
-    #def do_get_info(self):
-    #    info = self.proposal.get_doc()
-    #    if info:
-    #        return pangonify_rst(info)
-    #    else:
-    #        return ''
-
-class RopeCompletionProvider(gobject.GObject, CompletionProvider):
+class RopeCompletionProvider(Provider):
     def __init__(self, plugin):
-        gobject.GObject.__init__(self)
         self.plugin = weakref.ref(plugin)
-        self.info_widget = gtk.ScrolledWindow()
-        self.info_widget.set_size_request(400, 300)
-        self.info_widget.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        label = gtk.Label()
-        label.set_alignment(0, 0)
-        label.set_line_wrap(False)
-        self.info_widget.add_with_viewport(label)
-        self.info_widget.label = label
-        self.info_widget.show_all()
 
-    def do_get_name(self):
+    def get_name(self):
         return 'python'
 
-    def do_get_priority(self):
-        return 100
+    def is_match(self, it):
+        return it
 
-    def do_set_priority(self):
-        pass
-
-    def do_get_activation(self):
-        return COMPLETION_ACTIVATION_USER_REQUESTED
-
-    #def do_get_info_widget(self, proposal):
-    #    self.info_widget.label.set_markup(proposal.get_info())
-    #    return self.info_widget
-
-    def do_update_info(self, proposal, info):
-        info.get_widget().label.set_markup(proposal.get_info())
-
-    def do_populate(self, context):
+    def complete(self, it, is_interactive):
         env = self.plugin().env
         root = self.plugin().project_path
         try:
@@ -122,14 +78,22 @@ class RopeCompletionProvider(gobject.GObject, CompletionProvider):
             import traceback
             traceback.print_exc()
             self.plugin().editor.message(str(e), 'error', 5000)
-            context.add_proposals(self, [], True)
             return
 
         if proposals:
-            context.add_proposals(self, [Proposal(p) for p in proposals], True)
+            for r in proposals:
+                yield r, (r, match)
         else:
-            context.add_proposals(self, [], True)
             self.plugin().editor.message("Can't assist")
+            return
 
-gobject.type_register(RopeCompletionProvider)
-gobject.type_register(Proposal)
+    def activate(self, textview, (proposal, match)):
+        buf = textview.get_buffer()
+
+        buf.begin_user_action()
+        cursor = buf.get_iter_at_mark(buf.get_insert())
+        start = cursor.copy()
+        start.backward_chars(len(match))
+        buf.delete(start, cursor)
+        buf.insert_at_cursor(proposal)
+        buf.end_user_action()

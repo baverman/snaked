@@ -1,5 +1,4 @@
 import os.path
-import weakref
 
 import gtk
 import gtksourceview2
@@ -24,6 +23,7 @@ import snaked.core.plugins
 import snaked.core.console
 import snaked.core.spot
 import snaked.core.monitor
+import snaked.core.completer
 
 prefs.add_option('RESTORE_POSITION', True, 'Restore snaked windows position')
 prefs.add_option('CONSOLE_FONT', 'Monospace 8', 'Font used in console panel')
@@ -48,6 +48,7 @@ keymap.map_generic('delete', 'Delete')
 keymap.map_generic('prev', '<ctrl>Up', 1)
 keymap.map_generic('next', '<ctrl>Down', 1)
 
+keymap.map_generic('complete', '<ctrl>space', 1)
 keymap.map_generic('goto-definition', 'F3')
 keymap.map_generic('show-outline', '<ctrl>o')
 keymap.map_generic('show-calltip', '<ctrl>Return', 1)
@@ -109,6 +110,7 @@ class EditorManager(object):
         self.plugin_manager.add_plugin(snaked.core.console)
         self.plugin_manager.add_plugin(snaked.core.spot)
         self.plugin_manager.add_plugin(snaked.core.monitor)
+        self.plugin_manager.add_plugin(snaked.core.completer)
 
         self.spot_manager = snaked.core.spot.Manager()
 
@@ -179,7 +181,7 @@ class EditorManager(object):
 
             idle(self.plugin_manager.ready, 'editor-with-new-buffer', editor)
 
-        self.plugin_manager.ready('editor', editor)
+        idle(self.plugin_manager.ready, 'editor', editor)
         return editor
 
     def open_or_activate(self, uri, window=None, line=None):

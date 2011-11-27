@@ -31,6 +31,7 @@ def create_widget(editor):
 
     widget.completion = EntryCompleter(create_simple_complete_view())
     widget.completion.attach(entry, fill_func, activate_func)
+    widget.completion.pass_enter_key = True
 
     widget.entry = entry
 
@@ -50,11 +51,6 @@ def on_entry_activate(entry, editor, widget):
         hide(editor, widget)
         editor.window.open_or_activate(filename)
 
-def on_entry_changed(entry, model):
-    path = os.path.dirname(entry.get_text())
-    if path != model.last_path:
-        fill_model(model, path, entry)
-
 def get_pos(entry):
     try:
         start, end = entry.get_selection_bounds()
@@ -71,39 +67,32 @@ def fill_func(view, entry, check):
     model = view.get_model()
     model.clear()
 
-    view.set_model(None)
     dirs = []
     files = []
-    for p in os.listdir(root):
-        if not next(check, False):
-            return
+    try:
+        for p in os.listdir(root):
+            next(check)
 
-        if p.startswith(key):
-            if os.path.isdir(os.path.join(root, p)):
-                dirs.append(p + '/')
-            else:
-                files.append(p)
+            if p.startswith(key):
+                if os.path.isdir(os.path.join(root, p)):
+                    dirs.append(p + '/')
+                else:
+                    files.append(p)
+    except OSError:
+        pass
 
     for p in sorted(dirs) + sorted(files):
         model.append((p,))
 
-    view.set_model(model)
-
-    completer = view.get_toplevel()
-    if not len(model):
-        idle(completer.popdown, entry)
-    else:
-        view.set_cursor((0,))
-        view.get_selection().unselect_all()
-        completer.set_position(entry)
+    #view.get_selection().unselect_all()
 
 def activate_func(view, path, entry, is_final):
-    pos = get_pos(entry)
-    root, key = get_key(entry)
-    if root[-1] != '/':
-        root += '/'
-
     if is_final:
+        pos = get_pos(entry)
+        root, key = get_key(entry)
+        if root[-1] != '/':
+            root += '/'
+
         entry.set_text(root + view.get_model()[path][0])
         entry.set_position(-1)
         idle(entry.emit, 'changed')

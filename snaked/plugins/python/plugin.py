@@ -5,6 +5,7 @@ from uxie.utils import idle
 
 from snaked.util import lazy_property
 from snaked.signals import connect_external, connect_all
+from snaked.core.completer import add_completion_provider, attach_completer
 
 from .utils import get_executable
 
@@ -19,8 +20,12 @@ class Plugin(object):
 
     def init_completion(self):
         provider = self.completion_provider
-        completion = self.editor.view.get_completion()
-        completion.add_provider(provider)
+
+        if not hasattr(self.editor.buffer, 'python_completion_added'):
+            add_completion_provider(self.editor.buffer, provider, 100)
+            self.editor.buffer.python_completion_added = True
+
+        attach_completer(self.editor.view)
 
     @property
     def env(self):

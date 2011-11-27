@@ -6,12 +6,10 @@ import os.path
 import re
 
 import weakref
-import gtk, gobject
-
-from gtksourceview2 import CompletionProvider, CompletionProposal
-from gtksourceview2 import COMPLETION_ACTIVATION_USER_REQUESTED
+import gtk
 
 from uxie.utils import idle, join_to_data_dir
+from snaked.core.completer import attach_completer, add_completion_provider, Provider
 
 from .parser import parse_snippets_from
 
@@ -23,7 +21,8 @@ completion_providers = {}
 stop_managers = weakref.WeakKeyDictionary()
 
 def init(injector):
-    injector.on_ready('editor-with-new-buffer', editor_opened)
+    injector.on_ready('editor', editor_opened)
+    injector.on_ready('buffer-created', buffer_opened)
     #from snaked.core.prefs import register_dialog
     #register_dialog('Snippets', show_snippet_preferences, 'snippet')
 
@@ -35,27 +34,32 @@ def show_snippet_preferences(editor):
     from prefs import PreferencesDialog
     PreferencesDialog(existing_snippet_contexts).show(editor)
 
-def editor_opened(editor):
+def buffer_opened(buf):
     if 'not_initialized' in existing_snippet_contexts:
         existing_snippet_contexts.clear()
         discover_snippet_contexts()
 
-    if not any(ctx in existing_snippet_contexts for ctx in editor.contexts):
+    if not any(ctx in existing_snippet_contexts for ctx in buf.contexts):
         return
 
     prior = 50
-    contexts = [c for c in editor.contexts if c in existing_snippet_contexts]
+    contexts = [c for c in buf.contexts if c in existing_snippet_contexts]
+    buf.snippet_contexts = contexts
     for ctx in contexts:
         if ctx not in loaded_snippets:
             load_snippets_for(ctx, prior)
             prior -= 1
 
-        editor.view.get_completion().add_provider(completion_providers[ctx])
+        add_completion_provider(buf, *completion_providers[ctx])
 
-    editor.view.connect('key-press-event', on_view_key_press_event,
-        contexts, weakref.ref(editor))
+    buf.connect_after('changed', on_buffer_changed)
 
-    editor.buffer.connect_after('changed', on_buffer_changed)
+def editor_opened(editor):
+    if hasattr(editor.buffer, 'snippet_contexts'):
+        editor.view.connect('key-press-event', on_view_key_press_event,
+            editor.buffer.snippet_contexts, weakref.ref(editor))
+
+        attach_completer(editor.view)
 
 def load_snippets_for(ctx, prior=None):
     snippets = parse_snippets_from(existing_snippet_contexts[ctx])
@@ -65,7 +69,7 @@ def load_snippets_for(ctx, prior=None):
         snippets_match_hash.setdefault(ctx, {}).setdefault(len(name), {})[name] = True
 
     if prior is not None:
-        completion_providers[ctx] = SnippetsCompletionProvider(ctx, prior)
+        completion_providers[ctx] = SnippetsCompletionProvider(ctx), prior
 
 def discover_snippet_contexts():
     dirs_to_scan = [
@@ -215,10 +219,7 @@ def insert_snippet(editor_ref, iter, snippet):
     stop_managers[buffer] = StopManager(editor_ref, offset, stop_offsets, insert_offsets)
 
 def show_proposals(view, iter, contexts):
-    completion = view.get_completion()
-    completion_context = completion.create_context(iter)
-    completion.show([completion_providers[c] for c in contexts], completion_context)
-
+    view.completer.complete(view, [completion_providers[c][0] for c in contexts], iter)
 
 class StopManager(object):
     def __init__(self, editor_ref, offset, stop_offsets, insert_offsets):
@@ -327,21 +328,6 @@ class StopManager(object):
         except KeyError:
             pass
 
-
-class SnippetProposal(gobject.GObject, CompletionProposal):
-    def __init__(self, snippet):
-        gobject.GObject.__init__(self)
-        self.snippet = snippet
-
-    def do_get_label(self):
-        return self.snippet.label
-
-    def do_get_text(self):
-        return self.snippet.label
-
-    def do_get_info(self):
-        return self.snippet.comment
-
 def iter_at_whitespace(iter):
     if iter.starts_line():
         return True
@@ -353,31 +339,21 @@ def iter_at_whitespace(iter):
         return char.isspace() or char in ('>', ')', '}', ']')
 
 
-class SnippetsCompletionProvider(gobject.GObject, CompletionProvider):
-    def __init__(self, ctx, priority):
-        gobject.GObject.__init__(self)
+class SnippetsCompletionProvider(Provider):
+    def __init__(self, ctx):
         self.ctx = ctx
-        self.last_editor_ref = None
-        self.priority = priority
 
-    def do_get_name(self):
+    def get_name(self):
         return '%s snippets' % self.ctx
 
-    def do_get_priority(self):
-        return self.priority
+    def is_match(self, iter):
+        return iter
 
-    def do_set_priority(self):
-        pass
-
-    def do_get_activation(self):
-        return COMPLETION_ACTIVATION_USER_REQUESTED
-
-    def do_populate(self, context):
+    def complete(self, iter, is_interactive):
         snippets = []
         all_snippets = sorted(loaded_snippets[self.ctx].values(), key=lambda r:r.label)
-        iter = context.get_iter()
 
-        if context.get_activation() == COMPLETION_ACTIVATION_USER_REQUESTED:
+        if is_interactive:
             if iter_at_whitespace(iter):
                 snippets = all_snippets
             else:
@@ -398,14 +374,12 @@ class SnippetsCompletionProvider(gobject.GObject, CompletionProvider):
             snippets = [s for s in all_snippets if match == s.snippet]
 
         if snippets:
-            context.add_proposals(self, [SnippetProposal(s) for s in snippets], True)
-            self.last_editor_ref = context.props.completion.props.view.editor_ref
+            for s in snippets:
+                yield s.label, s
         else:
-            context.add_proposals(self, [], True)
+            return
 
-    def do_activate_proposal(self, proposal, iter):
-        insert_snippet(self.last_editor_ref, iter, proposal.snippet)
-        return True
-
-gobject.type_register(SnippetsCompletionProvider)
-gobject.type_register(SnippetProposal)
+    def activate(self, view, snippet):
+        buf = view.get_buffer()
+        it = buf.get_iter_at_mark(buf.get_insert())
+        insert_snippet(view.editor_ref, it, snippet)
