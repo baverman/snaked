@@ -366,6 +366,7 @@ class EditorManager(object):
                 e = self.open(f)
                 window.attach_editor(e)
                 opened_files.add(f)
+                window.window_conf['active-uri'] = f
 
         for w in self.windows:
             if w:
