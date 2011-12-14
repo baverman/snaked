@@ -1,0 +1,300 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Getting started &mdash; Snaked v0.4.6 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Snaked v0.4.6 documentation" href="index.html" />
+    <link rel="next" title="Plugins" href="plugins.html" />
+    <link rel="prev" title="Installation" href="install.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="plugins.html" title="Plugins"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="install.html" title="Installation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Snaked v0.4.6 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="getting-started">
+<h1>Getting started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
+<p>This section explains how to start Snaked, perform basic editing tasks and configure
+it.</p>
+<div class="section" id="running">
+<h2>Running<a class="headerlink" href="#running" title="Permalink to this headline">¶</a></h2>
+<p>After <a class="reference internal" href="install.html#install"><em>installation</em></a> <tt class="docutils literal"><span class="pre">snaked</span></tt> script will be created.
+You can run it either from terminal or run dialog:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">snaked</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="#quick-open"><em>Quick Open dialog</em></a> will be shown after Snaked&#8217;s start to
+allow one open first file.</p>
+<p>This command will start snaked with a specified file opened:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">snaked</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">first_snaked_file</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+<img alt="_images/first-run.png" class="align-center" src="_images/first-run.png" />
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Specified file do not need to exist. Snaked will create it automatically on save operation.</p>
+</div>
+<p>You can provide several filenames to snaked:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">snaked</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">first_snaked_file</span><span class="o">.</span><span class="n">py</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">second_snaked_file</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+<p>And each file will be opened in own tab.</p>
+<img alt="_images/second-run.png" class="align-center" src="_images/second-run.png" />
+<p>One can switch tabs on <tt class="docutils literal"><span class="pre">&lt;alt&gt;Left</span></tt>/<tt class="docutils literal"><span class="pre">&lt;alt&gt;Right</span></tt> keys.</p>
+</div>
+<div class="section" id="project-navigation">
+<span id="quick-open"></span><h2>Project navigation<a class="headerlink" href="#project-navigation" title="Permalink to this headline">¶</a></h2>
+<p>Since specifying file names every time is too annoying, how one can open project
+file from Snaked itself?
+The solution is <cite>Quick Open</cite> dialog. Default shortcut
+<tt class="docutils literal"><span class="pre">&lt;ctrl&gt;&lt;alt&gt;r</span></tt>:</p>
+<img alt="_images/quick-open.png" src="_images/quick-open.png" />
+<p>Here is a very common Snaked dialog &#8211; search entry at of the top and list view
+below. It is also used for preferences finding and python outline navigation.</p>
+<p>Behavior is very simple: you type several characters contained in the name you search,
+&#8220;<tt class="docutils literal"><span class="pre">se</span></tt>&#8221; in my case and dialog shows variants to select. <tt class="docutils literal"><span class="pre">Up</span></tt>/<tt class="docutils literal"><span class="pre">Down</span></tt>
+navigate between items, <tt class="docutils literal"><span class="pre">Enter</span></tt> activates selection, <tt class="docutils literal"><span class="pre">&lt;alt&gt;s</span></tt> focuses search
+entry again.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If there is only one item in the list you can press <tt class="docutils literal"><span class="pre">Enter</span></tt> without
+setting the focus on the list view.</p>
+</div>
+<p><cite>Quick Open</cite> searches files only in current project
+following these matching rules:</p>
+<ul class="simple">
+<li>filename starts with the search term.</li>
+<li>filename contains the search term</li>
+<li>file path contains the search term</li>
+<li>fuzzy match. if search term contains slashes it matches similar file paths. For
+example <tt class="docutils literal"><span class="pre">pl/py</span></tt> will match <tt class="docutils literal"><span class="pre">plugin/python/__init__.py</span></tt> or
+<tt class="docutils literal"><span class="pre">plugin/name/python.py</span></tt></li>
+</ul>
+<p>If search entry is empty, <cite>browser mode</cite> is activated. With it you can investigate
+project structure in a more common way: <tt class="docutils literal"><span class="pre">Enter</span></tt> opens directory content and
+<tt class="docutils literal"><span class="pre">Backspace</span></tt> returns to upper level.</p>
+<div class="section" id="shortcuts">
+<h3>Shortcuts<a class="headerlink" href="#shortcuts" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">&lt;ctrl&gt;Enter</span></tt> opens selected item with default system editor. This important
+feature is missing in many other editors. For example you may open glade file
+as xml in Snaked (<tt class="docutils literal"><span class="pre">Enter</span></tt>) or show it in Glade Designer (<tt class="docutils literal"><span class="pre">&lt;ctrl&gt;Enter</span></tt>).</li>
+<li>At very bottom there is the project choice widget, it allows switching between project
+paths being searched. <tt class="docutils literal"><span class="pre">&lt;alt&gt;Up</span></tt> and <tt class="docutils literal"><span class="pre">&lt;alt&gt;Down</span></tt> keys change its value.</li>
+<li><tt class="docutils literal"><span class="pre">&lt;ctrl&gt;p</span></tt> popups project combo box for easy selecting from large list.</li>
+<li><tt class="docutils literal"><span class="pre">&lt;ctrl&gt;o</span></tt> shows standard file opener dialog.</li>
+<li><tt class="docutils literal"><span class="pre">&lt;ctrl&gt;Delete</span></tt> deletes current project from list.</li>
+</ul>
+</div>
+</div>
+<div class="section" id="creating-new-file">
+<h2>Creating new file<a class="headerlink" href="#creating-new-file" title="Permalink to this headline">¶</a></h2>
+<p>Standard GTK open dialog is too frustrating and hard to use from keyboard, so
+I implemented the file create panel.</p>
+<img alt="_images/create-new-file.png" src="_images/create-new-file.png" />
+<p>It provides folder auto-completion as you type. With <tt class="docutils literal"><span class="pre">Tab</span></tt> key you can cycle
+through proposals. <tt class="docutils literal"><span class="pre">Esc</span></tt> hides dialog, <tt class="docutils literal"><span class="pre">Enter</span></tt> opens an editor page associated to that file name.</p>
+</div>
+<div class="section" id="sessions">
+<h2>Sessions<a class="headerlink" href="#sessions" title="Permalink to this headline">¶</a></h2>
+<p>Snaked provides sessions to store open editors state on quit, this allow you forget about
+files at all. The following steps are required to enable sessions:</p>
+<p>Run Snaked with <tt class="docutils literal"><span class="pre">-s</span></tt> (or <tt class="docutils literal"><span class="pre">--session</span></tt>) option giving a session name. For example:</p>
+<div class="highlight-python"><pre>snaked -s test /tmp/first_snaked_file.py</pre>
+</div>
+<p>Now, after closing editor by <tt class="docutils literal"><span class="pre">&lt;ctrl&gt;q</span></tt> key or closing window by wm facilities
+<tt class="docutils literal"><span class="pre">test</span></tt> session will be created. Thus you can open it with that simple command:</p>
+<div class="highlight-python"><pre>snaked -s test</pre>
+</div>
+<p>You can also select a session on snaked startup:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">snaked</span> <span class="o">--</span><span class="n">select</span><span class="o">-</span><span class="n">session</span>
+</pre></div>
+</div>
+<p>Think about sessions as some sort of separate workspaces to group your files.
+One session for task or project or whatever, use it freely.</p>
+</div>
+<div class="section" id="preferences">
+<h2>Preferences<a class="headerlink" href="#preferences" title="Permalink to this headline">¶</a></h2>
+<p>Preferences dialog is made available on <tt class="docutils literal"><span class="pre">&lt;ctrl&gt;p</span></tt> key press:</p>
+<img alt="_images/prefs.png" src="_images/prefs.png" />
+<p>It is like Eclipse&#8217;s quick settings. You need to type what you want to
+configure it (<cite>font</cite>, <cite>key</cite>, etc.) and select wanted item.</p>
+<p>There are only three core configuration dialogs.</p>
+<div class="section" id="key-configuration">
+<h3>Key configuration<a class="headerlink" href="#key-configuration" title="Permalink to this headline">¶</a></h3>
+<p>Here you can see all Snaked shortcuts, and change them:</p>
+<img alt="_images/keys.png" src="_images/keys.png" />
+</div>
+<div class="section" id="editor-settings">
+<h3>Editor settings<a class="headerlink" href="#editor-settings" title="Permalink to this headline">¶</a></h3>
+<p>Allow one to tune editor theme, font, tabs, margin and so on.</p>
+<img alt="_images/editor-prefs.png" src="_images/editor-prefs.png" />
+<p>Every gtksourceview language can have its own settings. Also there is a special
+language: <tt class="docutils literal"><span class="pre">default</span></tt>, its settings are spread over all langs. For example you can
+change style theme for <tt class="docutils literal"><span class="pre">default</span></tt> language and all editors will
+inherit this setting by default.</p>
+</div>
+<div class="section" id="plugins">
+<h3>Plugins<a class="headerlink" href="#plugins" title="Permalink to this headline">¶</a></h3>
+<p>Simple list with available extensions. Check to enable, uncheck to disable,
+nothing more. If a plugin provide it&#8217;s own configuration dialog it will
+appear in preferences.</p>
+<img alt="_images/plugins.png" src="_images/plugins.png" />
+</div>
+</div>
+<div class="section" id="default-editor-shortcuts">
+<h2>Default editor shortcuts<a class="headerlink" href="#default-editor-shortcuts" title="Permalink to this headline">¶</a></h2>
+<p>These key bindings are provided by gtksourceview itself and can&#8217;t be changed (at
+least now).</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">Tab</span></tt> / <tt class="docutils literal"><span class="pre">&lt;shift&gt;Tab</span></tt> &#8211; (de)indents current line or selection.</li>
+<li><tt class="docutils literal"><span class="pre">&lt;ctrl&gt;Space</span></tt> &#8211; pop up completion dialog if any completions providers
+is associated with editor. Currently the only available provider works for python.</li>
+<li><tt class="docutils literal"><span class="pre">&lt;ctrl&gt;c</span></tt> / <tt class="docutils literal"><span class="pre">&lt;ctrl&gt;v</span></tt> / <tt class="docutils literal"><span class="pre">&lt;ctrl&gt;x</span></tt> &#8211; standard copy/paste/cut editor
+shortcuts. Also there are common <tt class="docutils literal"><span class="pre">&lt;ctrl&gt;Insert</span></tt> / <tt class="docutils literal"><span class="pre">&lt;shift&gt;Insert</span></tt> /
+<tt class="docutils literal"><span class="pre">&lt;shift&gt;Delete</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">&lt;ctrl&gt;z</span></tt> / <tt class="docutils literal"><span class="pre">&lt;ctrl&gt;y</span></tt> &#8211; undo/redo</li>
+<li><tt class="docutils literal"><span class="pre">&lt;alt&gt;Up</span></tt> / <tt class="docutils literal"><span class="pre">&lt;alt&gt;Down</span></tt> &#8211; moves selection content up or down. Very useful
+feature,   especially with smart select.</li>
+</ul>
+</div>
+<div class="section" id="spot-navigation">
+<h2>Spot navigation<a class="headerlink" href="#spot-navigation" title="Permalink to this headline">¶</a></h2>
+<p>Snaked tries to remember important editing places and allows one to
+navigate between such spots.</p>
+<p>Behavior is not fine tuned yet, but spot navigation satisfy my bookmarking requirements.</p>
+<div class="section" id="how-does-it-work">
+<h3>How does it work?<a class="headerlink" href="#how-does-it-work" title="Permalink to this headline">¶</a></h3>
+<p>If you move cursor to big distance (PageUp/Down, buffer start/end, switch tab,
+goto line, goto definition or moving to spot) a spot is placed. You can also place
+some spot manually by pressing <tt class="docutils literal"><span class="pre">&lt;alt&gt;T</span></tt>. Spots are organized in a fixed length stack.</p>
+</div>
+<div class="section" id="id1">
+<h3>Shortcuts<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">&lt;alt&gt;Q</span></tt> moves to last spot and put current cursor position at top of spot stack.
+Thereby double <tt class="docutils literal"><span class="pre">&lt;alt&gt;Q</span></tt> brings you back to same position.</li>
+<li><tt class="docutils literal"><span class="pre">&lt;ctrl&gt;&lt;alt&gt;Left/Right</span></tt> moves to previous/next spot in stack.</li>
+<li><tt class="docutils literal"><span class="pre">&lt;alt&gt;T</span></tt> adds a spot with current cursor position on top of stack.</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Getting started</a><ul>
+<li><a class="reference internal" href="#running">Running</a></li>
+<li><a class="reference internal" href="#project-navigation">Project navigation</a><ul>
+<li><a class="reference internal" href="#shortcuts">Shortcuts</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#creating-new-file">Creating new file</a></li>
+<li><a class="reference internal" href="#sessions">Sessions</a></li>
+<li><a class="reference internal" href="#preferences">Preferences</a><ul>
+<li><a class="reference internal" href="#key-configuration">Key configuration</a></li>
+<li><a class="reference internal" href="#editor-settings">Editor settings</a></li>
+<li><a class="reference internal" href="#plugins">Plugins</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#default-editor-shortcuts">Default editor shortcuts</a></li>
+<li><a class="reference internal" href="#spot-navigation">Spot navigation</a><ul>
+<li><a class="reference internal" href="#how-does-it-work">How does it work?</a></li>
+<li><a class="reference internal" href="#id1">Shortcuts</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="install.html"
+                        title="previous chapter">Installation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="plugins.html"
+                        title="next chapter">Plugins</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/start.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="plugins.html" title="Plugins"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="install.html" title="Installation"
+             >previous</a> |</li>
+        <li><a href="index.html">Snaked v0.4.6 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Anton Bobrov.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+  </body>
+</html>
