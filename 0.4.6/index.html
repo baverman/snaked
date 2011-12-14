@@ -1,0 +1,192 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Snaked user manual &mdash; Snaked v0.4.6 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Snaked v0.4.6 documentation" href="#" />
+    <link rel="next" title="About Snaked" href="intro.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="intro.html" title="About Snaked"
+             accesskey="N">next</a> |</li>
+        <li><a href="#">Snaked v0.4.6 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="snaked-user-manual">
+<h1>Snaked user manual<a class="headerlink" href="#snaked-user-manual" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference external" href="http://github.com/baverman/snaked">Snaked</a> (<strong>snak</strong>e <strong>ed</strong>itor) is light and <a class="reference internal" href="intro.html#minimalist-mean"><em>minimalist</em></a>
+editor inspired by <a class="reference external" href="http://scribes.sourceforge.net">Scribes</a>, mainly targeting python developers, it&#8217;s
+generic enough to please other kind of users too.</p>
+<p>Features:</p>
+<ul class="simple">
+<li>Light UI. There are no menu, tool bar, status bar or project browser at all.
+Only lasts the editor view itself.</li>
+<li><a class="reference external" href="http://projects.gnome.org/gtksourceview/">gtksourceview2</a> based.</li>
+<li>Keyboard oriented control.</li>
+<li>Automatic projects. In most cases you do not need such boring operation like
+<em class="menuselection">File ‣ New project</em>.
+With <a class="reference external" href="http://github.com/baverman/snaked">Snaked</a> you just start editing your file!</li>
+<li>Project navigation via <tt class="docutils literal"><span class="pre">Quick</span> <span class="pre">Open</span> <span class="pre">dialog</span></tt>.</li>
+<li>Sessions - restore the last state (or any explicit session).</li>
+<li>The current position is also stored of each edited file.</li>
+<li>Python auto completion and navigation via rope with very flexible type hinting
+framework. Plus an advanced support for PyGtk and Django.</li>
+<li>Basic python code hints via pyflakes.</li>
+<li>Snippets (macro-like code expansion for common coding patterns).</li>
+<li>Unittests (with <a class="reference external" href="http://pytest.org/">py.test</a> as backend, so there is
+support for usual UnitTest cases, nose cases and <tt class="docutils literal"><span class="pre">py.test</span></tt> itself).</li>
+<li>Multilingual Spell checking.</li>
+</ul>
+<a class="reference internal image-reference" href="_images/snaked.png"><img alt="_images/snaked.png" class="align-center" src="_images/snaked.png" style="width: 401.0px; height: 262.5px;" /></a>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Just a brief remark: I&#8217;m not a native English speaker so you may feel some
+confusion reading this manual.  Please, <a class="reference internal" href="contacts.html#contacts"><em>share</em></a> your
+discomfiture with me. I&#8217;ll be very grateful for that.</p>
+</div>
+<div class="section" id="content">
+<h2>Content<a class="headerlink" href="#content" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">About Snaked</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#motivation">Motivation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#goals">Goals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#what-does-minimalist-mean">What does <cite>minimalist</cite> mean?</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="install.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#from-pypi">From PYPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#from-source">From source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="start.html">Getting started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="start.html#running">Running</a></li>
+<li class="toctree-l2"><a class="reference internal" href="start.html#project-navigation">Project navigation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="start.html#creating-new-file">Creating new file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="start.html#sessions">Sessions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="start.html#preferences">Preferences</a></li>
+<li class="toctree-l2"><a class="reference internal" href="start.html#default-editor-shortcuts">Default editor shortcuts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="start.html#spot-navigation">Spot navigation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="plugins.html">Plugins</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="plugins.html#complete-words">Complete words</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins.html#edit-and-select">Edit and Select</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins.html#goto-dir">Goto Dir</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins.html#goto-line">Goto Line</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins.html#hash-comment">Hash Comment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins.html#python-flakes">Python Flakes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins.html#save-positions">Save positions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins.html#search">Search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins.html#external-tools">External tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins.html#snippets">Snippets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins.html#spell-check">Spell check</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="python.html">Python plugin</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="python.html#pretty-editor-title-formating">Pretty editor title formating</a></li>
+<li class="toctree-l2"><a class="reference internal" href="python.html#goto-definition">Goto Definition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="python.html#code-completion">Code completion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="python.html#outline-navigation">Outline navigation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="python.html#type-hints">Type hints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="python.html#unit-testing">Unit testing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contacts.html">Contacts</a></li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Snaked user manual</a><ul>
+<li><a class="reference internal" href="#content">Content</a><ul>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Next topic</h4>
+  <p class="topless"><a href="intro.html"
+                        title="next chapter">About Snaked</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="intro.html" title="About Snaked"
+             >next</a> |</li>
+        <li><a href="#">Snaked v0.4.6 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Anton Bobrov.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+  </body>
+</html>

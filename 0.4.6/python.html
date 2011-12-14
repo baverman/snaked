@@ -1,0 +1,295 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Python plugin &mdash; Snaked v0.4.6 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Snaked v0.4.6 documentation" href="index.html" />
+    <link rel="next" title="Contacts" href="contacts.html" />
+    <link rel="prev" title="Plugins" href="plugins.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="contacts.html" title="Contacts"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="plugins.html" title="Plugins"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Snaked v0.4.6 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="python-plugin">
+<h1>Python plugin<a class="headerlink" href="#python-plugin" title="Permalink to this headline">¶</a></h1>
+<p>Strictly for the sake of this plugin I started Snaked&#8217;s development. It requires
+<a class="reference external" href="http://rope.sourceforge.net/">rope</a> for it to work.</p>
+<div class="section" id="pretty-editor-title-formating">
+<h2>Pretty editor title formating<a class="headerlink" href="#pretty-editor-title-formating" title="Permalink to this headline">¶</a></h2>
+<p>Changes tabs&#8217; display, uses package modules names, instead of filenames.
+Example: <cite>module.py</cite> or <cite>__init__.py</cite> is shown as <cite>package.module</cite> or <cite>package</cite>.
+It&#8217;s a very useful extension to distinguish similar file
+names and is a must have for every Pytonista.</p>
+</div>
+<div class="section" id="goto-definition">
+<span id="python-goto-definition"></span><h2>Goto Definition<a class="headerlink" href="#goto-definition" title="Permalink to this headline">¶</a></h2>
+<p>Default <tt class="docutils literal"><span class="pre">F3</span></tt> shortcut navigates to symbol definition under cursor. It also
+handles symbols in quotes and comments. Like:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">param</span><span class="p">):</span>
+   <span class="sd">&quot;&quot;&quot;Some function</span>
+
+<span class="sd">   :param param: Some param of some_package.some_module.SomeClass</span>
+<span class="sd">   &quot;&quot;&quot;</span>
+   <span class="k">pass</span>
+</pre></div>
+</div>
+<p>To see <tt class="docutils literal"><span class="pre">param</span></tt> class you need to place cursor on <tt class="docutils literal"><span class="pre">SomeClass</span></tt> and hit <tt class="docutils literal"><span class="pre">F3</span></tt>.
+Or if rope can infer <tt class="docutils literal"><span class="pre">param</span></tt> type you can place cursor there and hit <tt class="docutils literal"><span class="pre">F3</span></tt>.</p>
+</div>
+<div class="section" id="code-completion">
+<span id="python-autocomplete"></span><h2>Code completion<a class="headerlink" href="#code-completion" title="Permalink to this headline">¶</a></h2>
+<p>Snaked uses gtksourceview2&#8217;s completion framework. I just implemented the python
+provider. Most of the UI work is done by gtksourceview.</p>
+<img alt="_images/complete.png" src="_images/complete.png" />
+<p><tt class="docutils literal"><span class="pre">&lt;ctrl&gt;space</span></tt> activates a popup. There is support for
+showing pydocs (docstrings) using <cite>Details...</cite> button.</p>
+</div>
+<div class="section" id="outline-navigation">
+<span id="python-outline"></span><h2>Outline navigation<a class="headerlink" href="#outline-navigation" title="Permalink to this headline">¶</a></h2>
+<p>This dialog allow easy jumping to module&#8217; blocks.</p>
+<img alt="_images/outline1.png" src="_images/outline1.png" />
+<img alt="_images/outline2.png" src="_images/outline2.png" />
+</div>
+<div class="section" id="type-hints">
+<span id="python-type-hints"></span><h2>Type hints<a class="headerlink" href="#type-hints" title="Permalink to this headline">¶</a></h2>
+<p>This is the most exiting Snaked part. It allows you to provide additional type
+information to rope for a better type inferring and as consequence, better
+completion and code navigation.</p>
+<p>Hints that can be provided:</p>
+<ul class="simple">
+<li>Function/method param types.</li>
+<li>Function/method return type.</li>
+<li>Replacing module attribute.</li>
+<li>Adding attributes to class.</li>
+</ul>
+<div class="section" id="usage">
+<h3>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h3>
+<p>There is special file to configure hints: <tt class="docutils literal"><span class="pre">.ropeproject/ropehints.py</span></tt> in your
+project root. It is an ordinary python file which must define the function
+<tt class="docutils literal"><span class="pre">init(provider)</span></tt>, where <tt class="docutils literal"><span class="pre">provider</span></tt> is default project hint provider with
+build-in scope matcher and doc string hint support.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Without any configured hints you still have the doc string hint provider.</p>
+</div>
+</div>
+<div class="section" id="snaked-s-hint-providers">
+<h3>Snaked&#8217;s hint providers<a class="headerlink" href="#snaked-s-hint-providers" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="snaked-s-scope-matchers">
+<h3>Snaked&#8217;s scope matchers<a class="headerlink" href="#snaked-s-scope-matchers" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="django-hints">
+<h3>Django hints<a class="headerlink" href="#django-hints" title="Permalink to this headline">¶</a></h3>
+<p>Look at the image:</p>
+<img alt="_images/django-hints.png" src="_images/django-hints.png" />
+<p>Cool, isn&#8217;t it? Simply add django support into your <tt class="docutils literal"><span class="pre">.ropeproject/ropehints.py</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="n">provider</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">snaked.plugins.python.djangohints</span> <span class="kn">import</span> <span class="n">add_django_support</span>
+    <span class="n">add_django_support</span><span class="p">(</span><span class="n">provider</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Django hints were developed against django 0.97 codebase (yeah, I maintain such old
+project) and not tested on current versions. Get me know if you
+encounter any issues.</p>
+</div>
+</div>
+<div class="section" id="pygtk-hints">
+<h3>PyGtk hints<a class="headerlink" href="#pygtk-hints" title="Permalink to this headline">¶</a></h3>
+<p>Image again:</p>
+<img alt="_images/pygtk-hints.png" src="_images/pygtk-hints.png" />
+<p>Who is there? <tt class="docutils literal"><span class="pre">BuilderAware</span></tt> is a simple wrapper that delegates missing
+attributes to GtkBuilder. <tt class="docutils literal"><span class="pre">Window</span></tt> is <tt class="docutils literal"><span class="pre">BuilderAware</span></tt> class constructed from
+glade file. <tt class="docutils literal"><span class="pre">vbox1</span></tt> is a GtkVBox defined in glade file and PyGtk hint provider
+resolves class attributes from it.</p>
+<p>Besides that, goto definition (<tt class="docutils literal"><span class="pre">F3</span></tt>) opens glade file and place cursor at
+<tt class="docutils literal"><span class="pre">vbox1</span></tt> declaration.</p>
+<p>And more, if there are any signal handlers in glade file their parameters will also
+be resolved.</p>
+<p>You only need to add pygtk support and assign glade file to class via
+<tt class="docutils literal"><span class="pre">ropehints.py</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="n">provider</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">snaked.plugins.python.pygtkhints</span> <span class="kn">import</span> <span class="n">add_gtk_support</span>
+    <span class="n">add_gtk_support</span><span class="p">(</span><span class="n">provider</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>And declare the glade filename in class&#8217; docstring:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Window</span><span class="p">(</span><span class="n">BuilderAware</span><span class="p">):</span>
+   <span class="sd">&quot;&quot;&quot;glade-file: main.glade&quot;&quot;&quot;</span>
+   <span class="o">...</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="unit-testing">
+<h2>Unit testing<a class="headerlink" href="#unit-testing" title="Permalink to this headline">¶</a></h2>
+<p>This is a holy grail of modern development. Honestly, I didn&#8217;t plan to integrate
+unit testing support in snaked &#8211; running <tt class="docutils literal"><span class="pre">py.test</span></tt> from terminal completely
+satisfy my requirements, but during heavy tests reorganization I realized too much
+time was spent for snaked/terminal switching and searching failure&#8217;s causes in
+<tt class="docutils literal"><span class="pre">py.test</span></tt> output.</p>
+<p>This plugin is completely based on <a class="reference external" href="http://pytest.org">py.test</a> capabilities.
+The latest version (2.0) is required.</p>
+<p>Unit testing features:</p>
+<ul class="simple">
+<li>Test framework agnostic. A killer feature, really &#8211; one shoot and three bunnies
+are dead: <tt class="docutils literal"><span class="pre">py.test</span></tt> itself, <a class="reference external" href="http://docs.python.org/library/unittest.html">unittest</a> and <a class="reference external" href="http://somethingaboutorange.com/mrl/projects/nose/">nose</a>.</li>
+<li>Test environment configuration is done by ordinary <tt class="docutils literal"><span class="pre">conftest.py</span></tt> and
+<a class="reference external" href="http://pytest.org/customize.html">pytest.ini</a>.</li>
+<li>Common GUI for testing process which can be founded in other IDEs.</li>
+<li>Tests output is not messed and can be seen for each test individually (thanks
+to <tt class="docutils literal"><span class="pre">py.test</span></tt>).</li>
+<li>Quick jump to test failure cause. Also one can navigate through traceback
+without relying on mouse clicks, fast ant easy.</li>
+</ul>
+<img alt="_images/unittest.png" src="_images/unittest.png" />
+<div class="section" id="shortcuts">
+<h3>Shortcuts<a class="headerlink" href="#shortcuts" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">&lt;ctrl&gt;&lt;shift&gt;F10</span></tt> runs all tests in project.</li>
+<li><tt class="docutils literal"><span class="pre">&lt;ctrl&gt;F10</span></tt> runs tests defined in scope under cursor. It can be test
+function/method, test case class or whole module.</li>
+<li><tt class="docutils literal"><span class="pre">&lt;shift&gt;&lt;alt&gt;x</span></tt> re-runs last tests.</li>
+<li><tt class="docutils literal"><span class="pre">&lt;alt&gt;1</span></tt> toggles test result window.</li>
+<li><tt class="docutils literal"><span class="pre">Enter</span></tt> in test list view jumps to failed test line.</li>
+<li><tt class="docutils literal"><span class="pre">&lt;alt&gt;u</span></tt>/<tt class="docutils literal"><span class="pre">&lt;alt&gt;n</span></tt> mnemonics navigate through traceback.</li>
+</ul>
+</div>
+<div class="section" id="running-django-tests">
+<h3>Running django tests<a class="headerlink" href="#running-django-tests" title="Permalink to this headline">¶</a></h3>
+<p>At first you need to configure django environment. Create <tt class="docutils literal"><span class="pre">conftest.py</span></tt> module
+in the root of you project:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">os</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;DJANGO_SETTINGS_MODULE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;settings&#39;</span>
+</pre></div>
+</div>
+<p>Then you should tell <tt class="docutils literal"><span class="pre">py.test</span></tt> which modules are tests proper. Create
+<tt class="docutils literal"><span class="pre">pytest.ini</span></tt> file in project root:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="n">pytest</span><span class="p">]</span>
+<span class="n">python_files</span> <span class="o">=</span> <span class="n">tests</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+<p>That&#8217;s all. Now you can run django tests with <tt class="docutils literal"><span class="pre">py.test</span></tt> and snaked.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Python plugin</a><ul>
+<li><a class="reference internal" href="#pretty-editor-title-formating">Pretty editor title formating</a></li>
+<li><a class="reference internal" href="#goto-definition">Goto Definition</a></li>
+<li><a class="reference internal" href="#code-completion">Code completion</a></li>
+<li><a class="reference internal" href="#outline-navigation">Outline navigation</a></li>
+<li><a class="reference internal" href="#type-hints">Type hints</a><ul>
+<li><a class="reference internal" href="#usage">Usage</a></li>
+<li><a class="reference internal" href="#snaked-s-hint-providers">Snaked&#8217;s hint providers</a></li>
+<li><a class="reference internal" href="#snaked-s-scope-matchers">Snaked&#8217;s scope matchers</a></li>
+<li><a class="reference internal" href="#django-hints">Django hints</a></li>
+<li><a class="reference internal" href="#pygtk-hints">PyGtk hints</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#unit-testing">Unit testing</a><ul>
+<li><a class="reference internal" href="#shortcuts">Shortcuts</a></li>
+<li><a class="reference internal" href="#running-django-tests">Running django tests</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="plugins.html"
+                        title="previous chapter">Plugins</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="contacts.html"
+                        title="next chapter">Contacts</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/python.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="contacts.html" title="Contacts"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="plugins.html" title="Plugins"
+             >previous</a> |</li>
+        <li><a href="index.html">Snaked v0.4.6 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Anton Bobrov.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+  </body>
+</html>

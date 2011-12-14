@@ -1,0 +1,258 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Plugins &mdash; Snaked v0.4.6 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Snaked v0.4.6 documentation" href="index.html" />
+    <link rel="next" title="Python plugin" href="python.html" />
+    <link rel="prev" title="Getting started" href="start.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="python.html" title="Python plugin"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="start.html" title="Getting started"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Snaked v0.4.6 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="plugins">
+<h1>Plugins<a class="headerlink" href="#plugins" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="complete-words">
+<span id="id1"></span><h2>Complete words<a class="headerlink" href="#complete-words" title="Permalink to this headline">¶</a></h2>
+<p>Similar to Eclipse behavior: cycles through possible word completions from
+opened documents.</p>
+<p>Default key: <tt class="docutils literal"><span class="pre">&lt;alt&gt;slash</span></tt></p>
+</div>
+<div class="section" id="edit-and-select">
+<span id="id2"></span><h2>Edit and Select<a class="headerlink" href="#edit-and-select" title="Permalink to this headline">¶</a></h2>
+<p>Provides features for easy text editing.</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">&lt;ctrl&gt;d</span></tt> deletes the line under the cursor, copying it into the clipboard.</li>
+<li><tt class="docutils literal"><span class="pre">&lt;ctrl&gt;&lt;alt&gt;o</span></tt> shows cursor offset and cursor column position.
+Huh? I simply need some offsets (column and line) when I&#8217;m writing tests (text parsing, code analyzing, etc.).</li>
+<li><tt class="docutils literal"><span class="pre">&lt;alt&gt;w</span></tt> smart select. Selects semantic blocks. Just try it. I&#8217;m sure you
+regularly want to select a whole function definition or a quoted string or function
+parameters or function call with parameters or any statement block? There is only
+one function for such tasks in Snaked. In conjunction with stock
+gtksourceview2 selection moving (<tt class="docutils literal"><span class="pre">&lt;alt&gt;Up</span></tt>, <tt class="docutils literal"><span class="pre">&lt;alt&gt;Down</span></tt>) you will quickly forget
+about copy-and-paste.</li>
+<li><tt class="docutils literal"><span class="pre">&lt;shift&gt;&lt;alt&gt;w</span></tt> shrinks smart selection back.</li>
+<li><tt class="docutils literal"><span class="pre">&lt;alt&gt;f</span></tt> reformats selection to current right margin width.</li>
+</ul>
+<p>That&#8217;s all for now. Planed feature functionality:</p>
+<ul class="simple">
+<li>Smart string literals edit.</li>
+<li>Automatic brackets and quotes pairing.</li>
+<li>Automatic text wrap.</li>
+<li>Maybe vertical selection.</li>
+<li>Vim-like numbers incrementing/decrementing (<tt class="docutils literal"><span class="pre">&lt;ctrl&gt;a</span></tt>, <tt class="docutils literal"><span class="pre">&lt;ctrl&gt;x</span></tt>).</li>
+<li>Vim-like above line symbols copying (<tt class="docutils literal"><span class="pre">&lt;ctrl&gt;y</span></tt>).</li>
+<li>Vim-like... Over 9000 other features. In order of first need. Maybe implement
+vim mode? Damn.</li>
+</ul>
+</div>
+<div class="section" id="goto-dir">
+<h2>Goto Dir<a class="headerlink" href="#goto-dir" title="Permalink to this headline">¶</a></h2>
+<p>Default shortcut <tt class="docutils literal"><span class="pre">&lt;crtl&gt;&lt;alt&gt;l</span></tt> opens the folder containing the current document in your file manager.</p>
+</div>
+<div class="section" id="goto-line">
+<h2>Goto Line<a class="headerlink" href="#goto-line" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">&lt;ctrl&gt;l</span></tt> popups a dialog allowing you to jump to the specified line number.</p>
+</div>
+<div class="section" id="hash-comment">
+<h2>Hash Comment<a class="headerlink" href="#hash-comment" title="Permalink to this headline">¶</a></h2>
+<p>Toggle hash <tt class="docutils literal"><span class="pre">#</span></tt> commenting. Only useful for languages allowing that kind of comments
+Default key <tt class="docutils literal"><span class="pre">&lt;ctrl&gt;slash</span></tt>.</p>
+</div>
+<div class="section" id="python-flakes">
+<h2>Python Flakes<a class="headerlink" href="#python-flakes" title="Permalink to this headline">¶</a></h2>
+<p>Background python code linter. Highlights problems like unused or undefined
+imports or variables. Also gives some feedback about syntax errors.
+This is a time saver plugin.</p>
+</div>
+<div class="section" id="save-positions">
+<h2>Save positions<a class="headerlink" href="#save-positions" title="Permalink to this headline">¶</a></h2>
+<p>Remembers latest position in file for the next time.</p>
+</div>
+<div class="section" id="search">
+<h2>Search<a class="headerlink" href="#search" title="Permalink to this headline">¶</a></h2>
+<p>Simple search (and replace), like other editors do.</p>
+<img alt="_images/search.png" src="_images/search.png" />
+<p>When <tt class="docutils literal"><span class="pre">Regex</span></tt> is on, replace entry supports back references:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">\1</span></tt> for the first group</li>
+</ul>
+<p><tt class="docutils literal"><span class="pre">\g&lt;name&gt;</span></tt> for <tt class="docutils literal"><span class="pre">name</span></tt> group</p>
+<div class="section" id="shortcuts">
+<h3>Shortcuts<a class="headerlink" href="#shortcuts" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">&lt;ctrl&gt;f</span></tt> shows dialog.</li>
+<li><tt class="docutils literal"><span class="pre">Escape</span></tt> hides it.</li>
+<li><tt class="docutils literal"><span class="pre">Enter</span></tt> in search or replace text entry will initiate the search.</li>
+<li><tt class="docutils literal"><span class="pre">&lt;ctrl&gt;j</span></tt>, <tt class="docutils literal"><span class="pre">&lt;ctrl&gt;k</span></tt> jumps to next/previous match.</li>
+<li><tt class="docutils literal"><span class="pre">&lt;ctrl&gt;h</span></tt> highlights selection occurrences.</li>
+</ul>
+<p>To control <cite>ignore case</cite>, <cite>regex</cite> checkboxes and activate <cite>Replace</cite>/<cite>Replace
+all</cite> buttons you can use the following mnemonics: <tt class="docutils literal"><span class="pre">&lt;alt&gt;c</span></tt>, <tt class="docutils literal"><span class="pre">&lt;alt&gt;x</span></tt>, <tt class="docutils literal"><span class="pre">&lt;alt&gt;p</span></tt> and
+<tt class="docutils literal"><span class="pre">&lt;alt&gt;a</span></tt>.</p>
+</div>
+</div>
+<div class="section" id="external-tools">
+<span id="id3"></span><h2>External tools<a class="headerlink" href="#external-tools" title="Permalink to this headline">¶</a></h2>
+<p>Plugin allowing to run commands, optionally piping selection or whole buffer&#8217;s
+content. stdout processing is also supported (for instance, you can get the external program output back into your buffer).</p>
+<img alt="_images/external-tools.png" src="_images/external-tools.png" />
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">Name</span></tt>: tool&#8217;s name. You can use underscore (&#8220;_&#8221;) to define mnemonic key and
+pango markup too.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">Langs</span></tt>: comma separated list of languages compatibles with this tool.
+Leave the field empty if the tool should be available on all editors.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">Command</span></tt>: Shell command to execute. Following variables are supported:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">%f</span></tt> — current filename</li>
+<li><tt class="docutils literal"><span class="pre">%d</span></tt> — current filename&#8217;s directory</li>
+<li><tt class="docutils literal"><span class="pre">%p</span></tt> — current project directory</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">You don&#8217;t have to quote it!</p>
+</div>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">Stdin</span></tt> and <tt class="docutils literal"><span class="pre">Stdout</span></tt> should be self-explanatory.</p>
+</li>
+</ul>
+<p>The default key to activate the &#8220;run&#8221; menu is <tt class="docutils literal"><span class="pre">&lt;alt&gt;x</span></tt>. Then, the specific tool can be selected by
+pressing it&#8217;s mnemonic key or by moving into the list and pressing <tt class="docutils literal"><span class="pre">Enter</span></tt>.</p>
+</div>
+<div class="section" id="snippets">
+<h2>Snippets<a class="headerlink" href="#snippets" title="Permalink to this headline">¶</a></h2>
+<p>It is similar to vim&#8217;s SnipMate plugin which is a clone of TextMate&#8217;s snippets,
+you may refer to these projects for syntax documentation.</p>
+<p>User snippet files are read from <tt class="docutils literal"><span class="pre">~/.config/snaked/snippets</span></tt>. You can
+configure it via preferences (<tt class="docutils literal"><span class="pre">&lt;ctrl&gt;p</span></tt>) item <tt class="docutils literal"><span class="pre">Snippets</span></tt>.</p>
+<p>There is ability to attach several snippet sets to one editor via multiple
+contexts (preferences <tt class="docutils literal"><span class="pre">File</span> <span class="pre">types</span></tt> item).</p>
+<p>Missing features:</p>
+<ul class="simple">
+<li>Variable/python commands/shell commands expansion via backticks.</li>
+</ul>
+</div>
+<div class="section" id="spell-check">
+<h2>Spell check<a class="headerlink" href="#spell-check" title="Permalink to this headline">¶</a></h2>
+<p>Attaches spell checker to current editor. You need <tt class="docutils literal"><span class="pre">pygtkspell</span></tt> installed
+(look at gnome-python-extras package for your distro).</p>
+<p>Spell check is activated/deactivated by pressing <tt class="docutils literal"><span class="pre">F7</span></tt> key.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Plugins</a><ul>
+<li><a class="reference internal" href="#complete-words">Complete words</a></li>
+<li><a class="reference internal" href="#edit-and-select">Edit and Select</a></li>
+<li><a class="reference internal" href="#goto-dir">Goto Dir</a></li>
+<li><a class="reference internal" href="#goto-line">Goto Line</a></li>
+<li><a class="reference internal" href="#hash-comment">Hash Comment</a></li>
+<li><a class="reference internal" href="#python-flakes">Python Flakes</a></li>
+<li><a class="reference internal" href="#save-positions">Save positions</a></li>
+<li><a class="reference internal" href="#search">Search</a><ul>
+<li><a class="reference internal" href="#shortcuts">Shortcuts</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#external-tools">External tools</a></li>
+<li><a class="reference internal" href="#snippets">Snippets</a></li>
+<li><a class="reference internal" href="#spell-check">Spell check</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="start.html"
+                        title="previous chapter">Getting started</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="python.html"
+                        title="next chapter">Python plugin</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/plugins.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="python.html" title="Python plugin"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="start.html" title="Getting started"
+             >previous</a> |</li>
+        <li><a href="index.html">Snaked v0.4.6 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Anton Bobrov.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+  </body>
+</html>

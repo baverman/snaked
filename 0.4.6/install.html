@@ -1,0 +1,163 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Installation &mdash; Snaked v0.4.6 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Snaked v0.4.6 documentation" href="index.html" />
+    <link rel="next" title="Getting started" href="start.html" />
+    <link rel="prev" title="About Snaked" href="intro.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="start.html" title="Getting started"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="intro.html" title="About Snaked"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Snaked v0.4.6 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="installation">
+<span id="install"></span><h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Python 2.6 or 2.7. Python3 support will be with gtk3 and gobject introspection
+framework release.</li>
+<li>PyGtk &gt;= 2.10</li>
+<li>pygtksourceview &gt;= 2.10</li>
+</ul>
+</div>
+<div class="section" id="from-pypi">
+<h2>From PYPI<a class="headerlink" href="#from-pypi" title="Permalink to this headline">¶</a></h2>
+<p>I&#8217;m regularly uploading new versions. So you can install Snaked with
+<tt class="docutils literal"><span class="pre">easy_install</span></tt>:</p>
+<div class="highlight-python"><pre>sudo easy_install snaked</pre>
+</div>
+<p>or <a class="reference external" href="http://pip.openplans.org/">pip</a>:</p>
+<div class="highlight-python"><pre>sudo pip install snaked</pre>
+</div>
+<p>Also, with pip you can install Snaked locally:</p>
+<div class="highlight-python"><pre>pip install snaked --user</pre>
+</div>
+<p>In this case executable script will be placed in <tt class="docutils literal"><span class="pre">$HOME/.local/bin</span></tt></p>
+</div>
+<div class="section" id="from-source">
+<h2>From source<a class="headerlink" href="#from-source" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><pre>git clone --depth=1 git://github.com/baverman/snaked.git
+cd snaked
+python setup.py build
+sudo python setup.py install</pre>
+</div>
+<p>If you often pull changes from master branch I recommend you the following recipe:</p>
+<ul>
+<li><p class="first">First install snaked in develop mode (remove any snaked dirs in site-packages
+before that):</p>
+<div class="highlight-python"><pre>sudo python setup.py develop</pre>
+</div>
+</li>
+<li><p class="first">Then, if you want use latest snaked version (from &#8220;master&#8221; branch) simply
+go the the closed snaked directory and type:</p>
+<div class="highlight-python"><pre>git pull</pre>
+</div>
+</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Installation</a><ul>
+<li><a class="reference internal" href="#dependencies">Dependencies</a></li>
+<li><a class="reference internal" href="#from-pypi">From PYPI</a></li>
+<li><a class="reference internal" href="#from-source">From source</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="intro.html"
+                        title="previous chapter">About Snaked</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="start.html"
+                        title="next chapter">Getting started</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/install.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="start.html" title="Getting started"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="intro.html" title="About Snaked"
+             >previous</a> |</li>
+        <li><a href="index.html">Snaked v0.4.6 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Anton Bobrov.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,190 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>About Snaked &mdash; Snaked v0.4.6 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Snaked v0.4.6 documentation" href="index.html" />
+    <link rel="next" title="Installation" href="install.html" />
+    <link rel="prev" title="Snaked user manual" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="install.html" title="Installation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Snaked user manual"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Snaked v0.4.6 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="about-snaked">
+<h1>About Snaked<a class="headerlink" href="#about-snaked" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference external" href="http://github.com/baverman/snaked">Snaked</a> (<strong>snak</strong>e <strong>ed</strong>itor) is light and minimalist editor inspired by
+<a class="reference external" href="http://scribes.sourceforge.net">Scribes</a>, mainly targeting python developers, it&#8217;s
+generic enough to please other kind of users too.</p>
+<div class="section" id="motivation">
+<h2>Motivation<a class="headerlink" href="#motivation" title="Permalink to this headline">¶</a></h2>
+<p>Why did I start this project? I was looking for a good python editor for a long time, tried
+many IDEs but nothing fit my needs: fast, quick project navigation, flexible
+code assist tuning, easy to extend.</p>
+<ul class="simple">
+<li><a class="reference external" href="http://pydev.org">PyDev</a>. Almost ideal solution. But very hard to extend.</li>
+<li><a class="reference external" href="http://netbeans.org">Netbeans</a>. It&#8217;s only a toy. Poor editing capabilities. Very poor auto
+completion.</li>
+<li><a class="reference external" href="http://www.jetbrains.com/pycharm/">PyCharm</a>. Single project edition only. Too bad, I too often edit modules from
+several projects simultaneously.</li>
+<li>Vim + <a class="reference external" href="http://rope.sourceforge.net/ropevim.html">ropevim</a>. May be this is funny, but it is very slow, especially on my
+netbook with syntax highlight and bracket matching enabled. It&#8217;s also hard to
+extend. However, I love vim, really, it&#8217;s editing experience is cool and I use
+it for all my non coding tasks.</li>
+<li>Emacs + <a class="reference external" href="http://rope.sourceforge.net/ropemacs.html">ropemacs</a>. It is completely new environment to me. Will take too long to learn.</li>
+<li><a class="reference external" href="http://www.wingware.com/">WingIDE</a>. Very good auto completion. Other features are terribly
+implemented.</li>
+</ul>
+<p>Some words about <a class="reference external" href="http://scribes.sourceforge.net">Scribes</a>. This editor impress me. It shows how one have to
+design editors (from UI point of view).  Moreover, I started to develop plugins fitting my
+needs. For extending I could use my existing PyGtk experience. It&#8217;s like my dream
+come true, but few reasons forced me to start hacking Snaked.</p>
+<ul class="simple">
+<li>Scribes internal architecture. Many little classes with spread out behaviour
+responsibility. Message passing is based on GObject signals, that&#8217;s a pain
+when you try to figure out how some features are implemented.</li>
+<li>Overall code style. Ignoring <span class="target" id="index-0"></span><a class="pep reference external" href="http://www.python.org/dev/peps/pep-0008"><strong>PEP 8</strong></a>. Groundless using of private attributes. Almost
+no white spaces in the code. Scribes sources are hard to read. The gtk
+main loop invocation is pointless. Objects are manually destroyed. There is
+too much boilerplate code and tons of copy/pasting.</li>
+<li>Strange author&#8217;s opinion about plugins and their dependencies distribution.</li>
+</ul>
+<p>After estimating the line count of a light gtksourceview
+wrapper of my own, I decided to write Snaked.</p>
+</div>
+<div class="section" id="goals">
+<h2>Goals<a class="headerlink" href="#goals" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>As little code base as possible. GtkSourceView gives enough features. Editor
+core should only implement <cite>editor</cite> and <cite>project</cite> abstractions, provide
+<cite>plugin system</cite>.
+Preferences dialogs implemented for editor settings, shortcut
+configuration and to choose active plugins from available extensions list.</li>
+<li>Clean and maintainable code and design.</li>
+<li>Tabs! I&#8217;m using awesome tiling wm, so Scribes lack of tabs is not a problem
+for me.  But most users complain about it.</li>
+<li>Speed. All development will be made on some Atom Netbook. Scribes is too slow on
+this hardware.</li>
+<li>Memory footprint. Scribes internals are too complicated to trace because of &#8220;spaghetti&#8221; object
+references and editor leaks like bloody shit. Weakrefs will save the world.</li>
+<li>Flexible plug-in system based on standard python packaging methods.</li>
+</ul>
+</div>
+<div class="section" id="what-does-minimalist-mean">
+<span id="minimalist-mean"></span><h2>What does <cite>minimalist</cite> mean?<a class="headerlink" href="#what-does-minimalist-mean" title="Permalink to this headline">¶</a></h2>
+<p>First of all it is an absence of user interface noise. During file edit you only
+need to see text view. Toolbar, menubar, statusbar or project browser are
+useless. Hence main Snaked principle &#8211; you see what you need to see.</p>
+<p>In the second hand you don&#8217;t need some feature already provided by another tool. For
+example, a project browser (to look at project&#8217;s structure or to do file operations)
+will never be implemented, because File Managers are intended for such tasks.</p>
+<p>And third minor claim: there are no widgets designed for mouse-only control.
+For example tab close buttons, toolbars and so on.</p>
+<p>However, <cite>minimalist</cite> doesn&#8217;t mean feature poor. I have a bunch of ideas
+increasing developer&#8217;s productivity which are waiting to be implemented. If you
+also have suggestions I&#8217;ll be glad to listen to them.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">About Snaked</a><ul>
+<li><a class="reference internal" href="#motivation">Motivation</a></li>
+<li><a class="reference internal" href="#goals">Goals</a></li>
+<li><a class="reference internal" href="#what-does-minimalist-mean">What does <cite>minimalist</cite> mean?</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Snaked user manual</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="install.html"
+                        title="next chapter">Installation</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/intro.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="install.html" title="Installation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Snaked user manual"
+             >previous</a> |</li>
+        <li><a href="index.html">Snaked v0.4.6 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Anton Bobrov.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+  </body>
+</html>
