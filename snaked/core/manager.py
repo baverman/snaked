@@ -362,11 +362,11 @@ class EditorManager(object):
         window = main_window or self.get_free_window()
         for f in files_to_open:
             f = os.path.abspath(f)
+            window.window_conf['active-uri'] = f
             if f not in opened_files:
                 e = self.open(f)
                 window.attach_editor(e)
                 opened_files.add(f)
-                window.window_conf['active-uri'] = f
 
         for w in self.windows:
             if w:
