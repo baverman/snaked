@@ -3,7 +3,8 @@ import weakref
 
 import gtk
 
-from uxie.floating import Manager as FloatingManager, TextFeedback, add_float, remove_float
+from uxie.floating import Manager as FloatingManager, TextFeedback, add_float, remove_float,\
+    Feedback
 from uxie.escape import Manager as EscapeManager
 from uxie.actions import wait_mod_unpress_for_last_shortcut
 from uxie.utils import idle, refresh_gui, lazy_func
@@ -382,7 +383,11 @@ class Window(gtk.Window):
         if timeout is None:
             timeout = fb.timeout
         self.push_escape(fb)
-        return self.floating_manager.add(parent or self, fb, 5, timeout)
+        return self.floating_manager.add(parent or self, fb, timeout=timeout)
+
+    def feedback(self, widget, priority=None, parent=None):
+        fb = Feedback(widget)
+        return self.floating_manager.add(parent or self, fb, priority)
 
     def emessage(self, message, category=None, timeout=None, markup=False):
         fb = TextFeedback(message, category, markup)
@@ -392,10 +397,10 @@ class Window(gtk.Window):
         e = self.get_editor_context()
         parent = e.view if e else self
         self.push_escape(fb)
-        return self.floating_manager.add(parent, fb, 5, timeout)
+        return self.floating_manager.add(parent, fb, timeout=timeout)
 
-    def push_escape(self, obj):
-        return self.escape_manager.push(obj)
+    def push_escape(self, obj, priority=None):
+        return self.escape_manager.push(obj, priority)
 
     def process_escape(self):
         if not self.escape_manager.process():
