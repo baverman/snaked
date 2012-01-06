@@ -23,8 +23,8 @@ def init(injector):
     injector.add_context('search', 'textview-active',
         lambda t: t if t in active_widgets or search_selections else None)
 
-    injector.bind_accel('textview-active', 'search',  'Edit/_Search#30', '<ctrl>f', search)
-    injector.bind_accel('textview-active', 'mark-selection', 'Edit/_Mark', '<ctrl>h', mark_selection)
+    injector.bind('textview-active', 'search',  'Edit/_Search#30', search).to('<ctrl>f')
+    injector.bind('textview-active', 'mark-selection', 'Edit/_Mark', mark_selection).to('<ctrl>h')
 
     injector.bind('search', 'next', 'Edit/Find _next', find_next)
     injector.bind('search', 'prev', 'Edit/Find _prev', find_prev)

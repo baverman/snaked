@@ -11,10 +11,10 @@ console_widget = []
 pty_master = [None]
 
 def init(injector):
-    injector.bind_accel('editor', 'toggle-console', 'View/Toggle _console#10',
-        '<alt>grave', toggle_console)
-    injector.bind_accel('editor-active', 'send-to-console', 'Edit/Sen_d to console#100',
-        '<alt>Return', send_to_console)
+    injector.bind('editor', 'toggle-console', 'View/Toggle _console#10',
+        toggle_console).to('<alt>grave')
+    injector.bind('editor-active', 'send-to-console', 'Edit/Sen_d to console#100',
+        send_to_console).to('<alt>Return')
 
 def get_console_widget(editor):
     try:

@@ -72,22 +72,22 @@ class EditorManager(object):
         self.activator = keymap.get_activator(config_section='editor_window')
         self.activator.add_context('manager', (), lambda: self)
 
-        self.activator.add_menu_entry('_File#1/')
-        self.activator.add_menu_entry('_Edit#10/')
-        self.activator.add_menu_entry('_Prefs#15/_Global#90/')
-        self.activator.add_menu_entry('Prefs/_Session/')
-        self.activator.add_menu_entry('Prefs/_Project/')
-        self.activator.add_menu_entry('_View#20/')
-        self.activator.add_menu_entry('Too_ls#30/')
-        self.activator.add_menu_entry('_Run#40/')
-        self.activator.add_menu_entry('_Tab#90/')
-        self.activator.add_menu_entry('_Window#100/')
+        self.activator.bind_menu('_File#1')
+        self.activator.bind_menu('_Edit#10')
+        self.activator.bind_menu('_Prefs#15/_Global#90')
+        self.activator.bind_menu('Prefs/_Session')
+        self.activator.bind_menu('Prefs/_Project')
+        self.activator.bind_menu('_View#20')
+        self.activator.bind_menu('Too_ls#30')
+        self.activator.bind_menu('_Run#40')
+        self.activator.bind_menu('_Tab#90')
+        self.activator.bind_menu('_Window#100')
 
-        self.activator.bind_accel('manager', 'quit', 'File/_Quit#100', '<ctrl>q', EditorManager.quit)
+        self.activator.bind('manager', 'quit', 'File/_Quit#100', EditorManager.quit).to('<ctrl>q')
         self.activator.bind('window', 'plugin-list', 'Prefs/Pl_ugins#10',
             snaked.core.plugins.show_plugins_prefs)
 
-        self.activator.add_menu_entry('Prefs/_Root menu#100', ('window', 'activator'), 'root-menu')
+        #self.activator.bind(('window', 'activator'), 'root-menu', 'Prefs/_Root menu#100')
 
         self.plugin_manager = PluginManager(self.activator)
 

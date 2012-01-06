@@ -16,12 +16,12 @@ def init(injector):
     injector.add_context('python-repl-result-chunk', 'python-repl',
         lambda p: p if cursor_in_result_chunk(p) else None)
 
-    injector.bind_accel('editor', 'python-repl', 'View/Python console', '<alt>2', toggle_repl)
-    injector.bind_accel(('editor', 'python-repl'), 'python-repl-exec', 'Python/_Execute',
-        '<ctrl>Return', exec_code, 1)
+    injector.bind('editor', 'python-repl', 'View/Python console', toggle_repl).to('<alt>2')
+    injector.bind(('editor', 'python-repl'), 'python-repl-exec',
+        'Python/_Execute', exec_code).to('<ctrl>Return', 1)
 
-    injector.bind_accel('python-repl-result-chunk', 'python-repl-squash-result-chunk',
-        'Python/S_quash result chunk', '<ctrl>d', squash_result_chunk)
+    injector.bind('python-repl-result-chunk', 'python-repl-squash-result-chunk',
+        'Python/S_quash result chunk', squash_result_chunk).to('<ctrl>d')
 
 repl_widget = None
 def get_repl_widget(editor):

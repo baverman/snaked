@@ -9,8 +9,8 @@ import gtk
 attached_spells = weakref.WeakKeyDictionary()
 
 def init(injector):
-    injector.bind_accel('editor', 'toggle-spell-check', 'Edit/Toggle spel_l check#50', 'F7',
-        toggle_spell, 1)
+    injector.bind('editor', 'toggle-spell-check', 'Edit/Toggle spel_l check#50',
+        toggle_spell).to('F7', 1)
 
     injector.on_ready('editor-with-buffer', editor_opened)
 

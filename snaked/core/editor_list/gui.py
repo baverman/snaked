@@ -41,8 +41,8 @@ class EditorListDialog(BuilderAware):
         self.mnemonic_hole.set_property('width', 20)
 
         for m in mnemonics:
-            self.activator.bind_accel('any', 'activate-mnemonic-'+m,
-                None, '<alt>'+m, self.mnemonic_activate, None, m)
+            self.activator.bind('any', 'activate-mnemonic-'+m,
+                None, self.mnemonic_activate, m).to('<alt>'+m)
 
     def show(self, window, recent_editors):
         self.pwindow = weakref.ref(window)

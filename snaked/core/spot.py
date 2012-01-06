@@ -7,17 +7,17 @@ def init(injector):
     #injector.add_context('master-spot', 'editor-active', spot_context('master'))
     injector.add_context('regular-spot', 'editor-active', spot_context('regular'))
 
-    injector.bind_accel(('spot-manager', 'editor-active', 'regular-spot'), 'goto-last-spot',
-        'Edit/Goto last spot#70', '<Alt>q', Manager.goto_last)
+    injector.bind(('spot-manager', 'editor-active', 'regular-spot'), 'goto-last-spot',
+        'Edit/Goto last spot#70', Manager.goto_last).to('<Alt>q')
 
     #injector.bind_accel(('spot-manager', 'editor-active', 'edit-spot'), 'goto-last-spot',
     #    '_Edit/Goto last edit spot', '<Alt>q', Manager.goto_last, 5)
 
-    injector.bind_accel(('spot-manager', 'editor-active'), 'goto-next-spot',
-        'Edit/Goto next spot', '<ctrl>bracketright', Manager.goto_next_prev, None, True)
+    injector.bind(('spot-manager', 'editor-active'), 'goto-next-spot',
+        'Edit/Goto next spot', Manager.goto_next_prev, True).to('<ctrl>bracketright')
 
-    injector.bind_accel(('spot-manager', 'editor-active'), 'goto-prev-spot',
-        'Edit/Goto prev spot', '<ctrl>bracketleft', Manager.goto_next_prev, None, False)
+    injector.bind(('spot-manager', 'editor-active'), 'goto-prev-spot',
+        'Edit/Goto prev spot', Manager.goto_next_prev, False).to('<ctrl>bracketleft')
 
     #injector.bind_accel(('spot-manager', 'editor-active', 'master-spot'), 'goto-last-spot',
     #    '_Edit/Goto last master spot', '<Alt>q', Manager.goto_last, 10)

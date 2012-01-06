@@ -186,14 +186,14 @@ ipython_runner = []
 
 
 def init(injector):
-    injector.bind_accel('editor', 'toggle-ipython', 'View/Toggle _IPython', '<ctrl>i', show_ipython)
-    injector.bind_accel('editor', 'ipython-run-current-code',
-        'Python/Run current code', '<ctrl>r', send_code)
-    injector.bind_accel('editor', 'ipython-run-file', 'Python/Run file', 'F6', run_file)
-    injector.bind_accel('editor', 'ipython-run-last', 'Python/Run last command', '<shift>F6', run_last)
-    injector.bind_accel('editor', 'ipython-debug', 'Python/Debug', '<ctrl>F6', debug_file)
-    injector.bind_accel('editor', 'restart-ipython', 'Python/Restart IPython',
-        '<ctrl><shift>i', restart_ipython)
+    injector.bind('editor', 'toggle-ipython', 'View/Toggle _IPython', show_ipython).to('<ctrl>i')
+    injector.bind('editor', 'ipython-run-current-code',
+        'Python/Run current code', send_code).to('<ctrl>r')
+    injector.bind('editor', 'ipython-run-file', 'Python/Run file', run_file).to('F6')
+    injector.bind('editor', 'ipython-run-last', 'Python/Run last command', run_last).to('<shift>F6')
+    injector.bind('editor', 'ipython-debug', 'Python/Debug', debug_file).to('<ctrl>F6')
+    injector.bind('editor', 'restart-ipython', 'Python/Restart IPython',
+        restart_ipython).to('<ctrl><shift>i')
 
     from snaked.core.prefs import add_option
 

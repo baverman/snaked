@@ -25,7 +25,7 @@ def init(injector):
 
     injector.bind('python-editor', 'show-calltip', 'Python/Show _calltip', show_calltips)
 
-    injector.bind_menu('python-editor', 'select-interpreter', 'Python/_Executable',
+    injector.bind_dynamic('python-editor', 'select-interpreter', 'Python/_Executable/executables',
         generate_python_executable_menu, resolve_python_executable_menu_entry)
 
     injector.bind('editor', 'run-test', 'Python/_Tests/_Run test in cursor scope', run_test)

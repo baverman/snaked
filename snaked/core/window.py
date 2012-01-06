@@ -24,29 +24,29 @@ def init(injector):
         lambda w: w.get_focus() if isinstance(w.get_focus(), gtk.TextView) else None)
 
     with injector.on('window', 'editor') as ctx:
-        ctx.bind_accel('save', 'File/_Save#20', '<ctrl>s', Window.save_editor)
+        ctx.bind('save', 'File/_Save#20', Window.save_editor).to('<ctrl>s')
 
-        ctx.bind_accel('close-editor', 'Tab/_Close#100', '<ctrl>w', Window.close_editor)
-        ctx.bind_accel('next-editor', 'Tab/_Next#50', '<ctrl>Page_Down', Window.switch_to, 1, 1)
-        ctx.bind_accel('prev-editor', 'Tab/_Prev', '<ctrl>Page_Up', Window.switch_to, 1, -1)
-        ctx.bind_accel('move-tab-left', 'Tab/Move to _left',
-            '<shift><ctrl>Page_Up', Window.move_tab, 1, False)
-        ctx.bind_accel('move-tab-right', 'Tab/Move to _right',
-            '<shift><ctrl>Page_Down', Window.move_tab, 1, True)
+        ctx.bind('close-editor', 'Tab/_Close#100', Window.close_editor).to('<ctrl>w')
+        ctx.bind('next-editor', 'Tab/_Next#50', Window.switch_to, 1).to('<ctrl>Page_Down', 1)
+        ctx.bind('prev-editor', 'Tab/_Prev', Window.switch_to, -1).to('<ctrl>Page_Up', 1)
+        ctx.bind('move-tab-left', 'Tab/Move to _left',
+            Window.move_tab, False).to('<shift><ctrl>Page_Up', 1)
+        ctx.bind('move-tab-right', 'Tab/Move to _right',
+            Window.move_tab, True).to('<shift><ctrl>Page_Down', 1)
 
         ctx.bind('detach-editor', 'Tab/_Detach', Window.retach_editor)
         ctx.bind('duplicate-editor', 'Tab/D_uplicate', Window.duplicate_editor)
 
-    injector.bind_accel('editor', 'new-file', 'File/_New', '<ctrl>n',
-        lazy_func('snaked.core.gui.new_file.show_create_file'))
+    injector.bind('editor', 'new-file', 'File/_New',
+        lazy_func('snaked.core.gui.new_file.show_create_file')).to('<ctrl>n')
 
     with injector.on('window') as ctx:
         ctx.bind('escape', None, Window.process_escape)
         ctx.bind('close-window', 'Window/_Close#100', Window.close)
 
         #ctx.bind_accel('save-all', '_File/Save _all', '<ctrl><shift>s', Window.save_all)
-        ctx.bind_accel('fullscreen', 'Window/Toggle _fullscreen#50', 'F11', Window.toggle_fullscreen)
-        ctx.bind_accel('toggle-tabs-visibility', 'Window/Toggle ta_bs', '<Alt>F11', Window.toggle_tabs)
+        ctx.bind_check('fullscreen', 'Window/_Fullscreen#50', Window.toggle_fullscreen).to('F11')
+        ctx.bind_check('show-tabs', 'Window/Show _Tabs', Window.show_tabs).to('<Alt>F11')
 
 
 class PanelHandler(object):
@@ -297,15 +297,22 @@ class Window(gtk.Window):
             remove_float(self.tab_menu.get_parent())
             del self.tab_menu
 
-    def toggle_fullscreen(self):
-        if self.window.get_state() & gtk.gdk.WINDOW_STATE_FULLSCREEN:
-            self.unfullscreen()
+    def toggle_fullscreen(self, is_set):
+        state = self.window.get_state() & gtk.gdk.WINDOW_STATE_FULLSCREEN
+        if is_set:
+            if state:
+                self.unfullscreen()
+            else:
+                self.fullscreen()
         else:
-            self.fullscreen()
+            return state
 
-    def toggle_tabs(self):
-        self.note.set_show_tabs(not self.note.get_show_tabs())
-        self.window_conf['show-tabs'] = self.note.get_show_tabs()
+    def show_tabs(self, is_set):
+        if is_set:
+            self.note.set_show_tabs(not self.note.get_show_tabs())
+            self.window_conf['show-tabs'] = self.note.get_show_tabs()
+        else:
+            return self.note.get_show_tabs()
 
     def append_panel(self, widget):
         v = self.panels[widget] = PanelHandler(widget)

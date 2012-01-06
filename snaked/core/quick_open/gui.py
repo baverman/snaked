@@ -23,19 +23,19 @@ class QuickOpenDialog(BuilderAware):
         self.shortcuts.bind('any', 'activate-search-entry',
             'Activate search entry', self.focus_search)
 
-        self.shortcuts.bind_accel('any', 'open-mime', 'Run _external editor',
-            '<ctrl>Return', self.open_mime)
-        self.shortcuts.bind_accel('any', 'open-dialog', '_Open...', '<ctrl>o', self.free_open)
-        self.shortcuts.bind_accel('any', 'toggle-hidden', 'Toggle _hidden',
-            '<ctrl>h', self.toggle_hidden)
+        self.shortcuts.bind('any', 'open-mime', 'Run _external editor',
+            self.open_mime).to('<ctrl>Return')
+        self.shortcuts.bind('any', 'open-dialog', '_Open...', self.free_open).to('<ctrl>o')
+        self.shortcuts.bind('any', 'toggle-hidden', 'Toggle _hidden',
+            self.toggle_hidden).to('<ctrl>h')
 
-        self.shortcuts.bind_accel('any', 'project-list', 'Toggle project _list',
-            '<ctrl>p', self.toggle_projects, 1)
+        self.shortcuts.bind('any', 'project-list', 'Toggle project _list',
+            self.toggle_projects).to('<ctrl>p', 1)
         self.shortcuts.bind('projectlist', 'delete', '_Delete project', self.delete_project)
-        self.shortcuts.bind_accel('projectlist', 'set-root', 'Use as _root',
-            'Return', self.use_as_root, 1)
+        self.shortcuts.bind('projectlist', 'set-root', 'Use as _root',
+            self.use_as_root).to('Return', 1)
 
-        self.shortcuts.bind_accel('any', 'goto-parent', 'Goto p_arent', 'BackSpace', self.browse_top)
+        self.shortcuts.bind('any', 'goto-parent', 'Goto p_arent', self.browse_top).to('BackSpace')
         self.shortcuts.bind('any', 'escape', '_Close', self.escape)
 
         self.shortcuts.add_context('projectlist', (),

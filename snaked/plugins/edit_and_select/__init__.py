@@ -10,24 +10,24 @@ last_smart_selections = weakref.WeakKeyDictionary()
 def init(injector):
     injector.add_context('editor-with-cursor-in-string', 'editor', in_string)
 
-    injector.bind_accel('editor-active', 'delete-line', 'Edit/_Delete line#20', '<ctrl>d', delete_line)
+    injector.bind('editor-active', 'delete-line', 'Edit/_Delete line#20', delete_line).to('<ctrl>d')
 
-    injector.bind_accel('editor-active', 'smart-select', 'Edit/Smart _select', '<alt>w', smart_select)
-    injector.bind_accel('editor-with-selection', 'smart-unselect', 'Edit/Smart _unselect',
-        '<shift><alt>w', smart_unselect)
+    injector.bind('editor-active', 'smart-select', 'Edit/Smart _select', smart_select).to('<alt>w')
+    injector.bind('editor-with-selection', 'smart-unselect', 'Edit/Smart _unselect',
+        smart_unselect).to('<shift><alt>w')
 
-    injector.bind_accel('editor-active', 'show_offset', 'Tools/Show offset and column#10',
-        '<ctrl><alt>o', show_offset)
+    injector.bind('editor-active', 'show_offset', 'Tools/Show offset and column#10',
+        show_offset).to('<ctrl><alt>o')
 
-    injector.bind_accel('editor-with-selection', 'wrap-text', 'Edit/_Wrap block', '<alt>f', wrap_text)
+    injector.bind('editor-with-selection', 'wrap-text', 'Edit/_Wrap block', wrap_text).to('<alt>f')
 
-    injector.bind_accel('editor-with-selection', 'move-selection-left',
-        'Edit/Move selection _left', '<alt>Left', move_word_left)
-    injector.bind_accel('editor-with-selection', 'move-selection-right',
-        'Edit/Move selection _right', '<alt>Right', move_word_right)
+    injector.bind('editor-with-selection', 'move-selection-left',
+        'Edit/Move selection _left', move_word_left).to('<alt>Left')
+    injector.bind('editor-with-selection', 'move-selection-right',
+        'Edit/Move selection _right', move_word_right).to('<alt>Right')
 
-    injector.bind_accel('editor-with-cursor-in-string', 'swap-quotes',
-        'Edit/Swap _quotes', '<alt>apostrophe', swap_quotes)
+    injector.bind('editor-with-cursor-in-string', 'swap-quotes',
+        'Edit/Swap _quotes', swap_quotes).to('<alt>apostrophe')
 
     from snaked.core.prefs import add_option
     add_option('DOUBLE_BRACKET_MATCHER', True, "Enable custom bracket matcher")

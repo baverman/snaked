@@ -21,7 +21,7 @@ def init(injector):
     injector.bind('window', 'project-contexts', 'Prefs/_Project/Conte_xts',
         show_contexts_config, 'project')
 
-    injector.map_menu('Prefs', '<ctrl>p')
+    injector.bind_menu('Prefs').to('<ctrl>p')
 
 def show_editor_preferences(window):
     from snaked.core.gui.editor_prefs import PreferencesDialog

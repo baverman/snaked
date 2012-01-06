@@ -11,8 +11,8 @@ def init(injector):
     injector.bind('editor', 'external-tools-session-config', 'Prefs/Session/_Tools',
         lazy_func('.plugin.edit_external_tools'), 'session')
 
-    injector.bind_menu('editor', 'external-tools', '_Run',
+    injector.bind_dynamic('editor', 'external-tools', '_Run/external-tools',
         lazy_func('.plugin.generate_menu'), lazy_func('.plugin.resolve_menu_entry'))
 
-    injector.map_menu('Run', '<Alt>X')
+    injector.bind_menu('Run').to('<Alt>X')
 
