@@ -26,7 +26,7 @@ def init(injector):
     injector.bind('python-editor', 'show-calltip', 'Python/Show _calltip', show_calltips)
 
     injector.bind_dynamic('python-editor', 'select-interpreter', 'Python/_Executable/executables',
-        generate_python_executable_menu, resolve_python_executable_menu_entry)
+        generate_python_executable_menu, resolve_python_executable_menu_entry, True)
 
     injector.bind('editor', 'run-test', 'Python/_Tests/_Run test in cursor scope', run_test)
     injector.bind('editor', 'run-all-tests', 'Python/Tests/Run _all tests', run_all_tests)
@@ -276,9 +276,10 @@ def set_python_executable(editor, name):
 
 def generate_python_executable_menu(editor):
     for t in sorted(set(('default', 'python2', 'python3')).union(editor.conf['PYTHON_EXECUTABLES'])):
-        yield t, t, (set_python_executable, (editor, t))
+        yield t == editor.conf['PYTHON_EXECUTABLE'], t, t, (set_python_executable, (editor, t))
 
 def resolve_python_executable_menu_entry(editor, entry_id):
-    return set_python_executable, (editor, entry_id), entry_id
+    return entry_id == editor.conf['PYTHON_EXECUTABLE'], set_python_executable,\
+        (editor, entry_id), entry_id
 
 
