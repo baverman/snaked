@@ -133,8 +133,11 @@ def run_as_command(editor, tool):
     if tool._output == 'to-iconsole':
         return run_cmd_in_tty(command_to_run, editor, env, on_finish)
 
-    proc = Popen(command_to_run, stdout=PIPE, stderr=PIPE, bufsize=1,
-        stdin=PIPE if stdin else None, cwd=editor.project_root, env=env)
+    if tool._output == 'to-background':
+        proc = Popen(command_to_run, cwd=editor.project_root, env=env)
+    else:
+        proc = Popen(command_to_run, stdout=PIPE, stderr=PIPE, bufsize=1,
+            stdin=PIPE if stdin else None, cwd=editor.project_root, env=env)
 
     if tool._output == 'to-console':
         from snaked.core.console import consume_output
@@ -144,6 +147,15 @@ def run_as_command(editor, tool):
             proc.stdin.close()
 
         consume_output(editor, proc, on_finish)
+    elif tool._output == 'to-background':
+        from threading import Thread
+        def bg_run():
+            proc.wait()
+            on_finish()
+
+        t = Thread(target=bg_run)
+        t.daemon = True
+        t.start()
     else:
         stdout, stderr = proc.communicate(stdin)
         on_finish()
@@ -227,7 +239,8 @@ def resolve_menu_entry(editor, entry_id):
 
 allowed_inputs = ('from_buffer_or_selection', 'from_buffer', 'from_selection')
 allowed_outputs = ('replace_buffer_or_selection', 'replace_buffer', 'replace_selection',
-    'to_console', 'to_iconsole', 'to_feedback', 'to_clipboard', 'insert', 'insert_at_end')
+    'to_console', 'to_iconsole', 'to_feedback', 'to_clipboard', 'insert', 'insert_at_end',
+    'to_background')
 
 class ToolExtractor(object):
     def __init__(self):
@@ -244,6 +257,7 @@ class ToolExtractor(object):
         self.to_iconsole = fake_tool
         self.to_feedback = fake_tool
         self.to_clipboard = fake_tool
+        self.to_background = fake_tool
         self.insert = fake_tool
         self.insert_at_end = fake_tool
 
@@ -260,8 +274,8 @@ class ToolExtractor(object):
         self._tools.append(t)
         return t(*args)
 
-    def when(self, ctx):
-        return Tool()
+    def when(_self, *ctx):
+        return Tool().when(*ctx)
 
 
 class Tool(object):
@@ -283,6 +297,7 @@ class Tool(object):
         self.to_iconsole = self
         self.to_feedback = self
         self.to_clipboard = self
+        self.to_background = self
         self.insert = self
         self.insert_at_end = self
 
