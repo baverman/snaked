@@ -45,11 +45,8 @@ def hide(editor, widget):
 
 def on_entry_activate(entry, editor, widget):
     filename = entry.get_text()
-    if os.path.exists(filename):
-        editor.message("%s already exists" % filename)
-    else:
-        hide(editor, widget)
-        editor.window.open_or_activate(filename)
+    hide(editor, widget)
+    editor.window.open_or_activate(filename)
 
 def get_pos(entry):
     try:
