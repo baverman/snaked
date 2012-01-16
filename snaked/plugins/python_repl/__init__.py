@@ -31,10 +31,7 @@ def get_repl_widget(editor):
 
     repl_widget = create_repl_widget(editor)
 
-    editor.window.append_panel(repl_widget)\
-        .on_activate(lambda p: p.view.grab_focus())\
-        .on_popup(lambda p: p.view.grab_focus())
-
+    editor.window.append_panel(repl_widget).on_activate(lambda p: p.view.grab_focus())
     return repl_widget
 
 def create_repl_widget(editor):
