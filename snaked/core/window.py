@@ -23,6 +23,8 @@ def init(injector):
         lambda e: e if e.buffer.get_has_selection() else None)
     injector.add_context('textview-active', 'window',
         lambda w: w.get_focus() if isinstance(w.get_focus(), gtk.TextView) else None)
+    injector.add_context('panel-visible', 'window', Window.get_panel_visible_context)
+
 
     with injector.on('window', 'editor') as ctx:
         ctx.bind('save', 'File/_Save#20', Window.save_editor).to('<ctrl>s')
@@ -49,6 +51,11 @@ def init(injector):
         ctx.bind_check('fullscreen', 'Window/_Fullscreen#50', Window.toggle_fullscreen).to('F11')
         ctx.bind_check('show-tabs', 'Window/Show _Tabs', Window.show_tabs).to('<Alt>F11')
 
+    with injector.on('panel-visible') as ctx:
+        ctx.bind('increase-panel-height', 'Window/_Increase panel height',
+            Window.change_panel_size, 10).to('<ctrl><alt>Up')
+        ctx.bind('decrease-panel-height', 'Window/_Decrease panel height',
+            Window.change_panel_size, -10).to('<ctrl><alt>Down')
 
 class PanelHandler(object):
     def __init__(self, widget):
@@ -417,3 +424,13 @@ class Window(gtk.Window):
                     return True
 
         return False
+
+    def get_panel_visible_context(self):
+        w = self.main_pane.get_child2()
+        if w and w.get_visible():
+            return self
+        else:
+            return None
+
+    def change_panel_size(self, delta):
+        self.main_pane.set_position(self.main_pane.get_position() - delta)
