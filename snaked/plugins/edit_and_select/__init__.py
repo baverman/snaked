@@ -4,6 +4,7 @@ desc = 'Various edit shortcuts'
 
 import weakref
 import gtk
+from uxie.floating import TextFeedback
 
 last_smart_selections = weakref.WeakKeyDictionary()
 
@@ -16,8 +17,8 @@ def init(injector):
     injector.bind('editor-with-selection', 'smart-unselect', 'Edit/Smart _unselect',
         smart_unselect).to('<shift><alt>w')
 
-    injector.bind('editor-active', 'show_offset', 'Tools/Show offset and column#10',
-        show_offset).to('<ctrl><alt>o')
+    injector.bind_check('editor-active', 'show_offset', 'Tools/Show offset and column#10',
+        toggle_offset).to('<ctrl><alt>o')
 
     injector.bind('editor-with-selection', 'wrap-text', 'Edit/_Wrap block', wrap_text).to('<alt>f')
 
@@ -92,9 +93,38 @@ def smart_unselect(editor):
         last_smart_selections[editor][:] = []
         editor.message('Nothing to unselect')
 
-def show_offset(editor):
-    editor.message('offset: %d\ncolumn: %d' % (
-        editor.cursor.get_offset(), editor.cursor.get_line_offset()), 3000)
+offset_feedbacks = weakref.WeakKeyDictionary()
+def get_offset_message(editor):
+    cursor = editor.cursor
+    return 'offset: %d\ncolumn: %d' % (cursor.get_offset(), cursor.get_line_offset())
+
+def on_buffer_cursor_changed(_buf, _prop, editor_ref):
+    editor = editor_ref()
+    offset_feedbacks[editor].label.set_text(get_offset_message(editor))
+
+def toggle_offset(editor, is_set):
+    if is_set:
+        if editor in offset_feedbacks:
+            offset_feedbacks[editor].cancel()
+        else:
+            feedback = offset_feedbacks[editor] = editor.window.floating_manager.add(editor.view,
+                TextFeedback(get_offset_message(editor), 'info'), 10)
+
+            editor.window.push_escape(feedback, 10)
+
+            editor_ref = weakref.ref(editor)
+            hid = editor.buffer.connect_after('notify::cursor-position', on_buffer_cursor_changed,
+                editor_ref)
+
+            def on_cancel(_feedback):
+                editor = editor_ref()
+                if editor:
+                    offset_feedbacks.pop(editor, None)
+                    editor.buffer.handler_disconnect(hid)
+
+            feedback.on_cancel(on_cancel)
+    else:
+        return editor in offset_feedbacks
 
 def wrap_text(editor):
     buf = editor.buffer
