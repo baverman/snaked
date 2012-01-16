@@ -275,7 +275,12 @@ def set_python_executable(editor, name):
     editor.message('Python executable was set to:\n' + get_executable(editor.conf))
 
 def generate_python_executable_menu(editor):
-    for t in sorted(set(('default', 'python2', 'python3')).union(editor.conf['PYTHON_EXECUTABLES'])):
+    from .utils import get_virtualenvwrapper_executables
+    executables = set(('default', 'python2', 'python3'))\
+        .union(get_virtualenvwrapper_executables())\
+        .union(editor.conf['PYTHON_EXECUTABLES'])
+
+    for t in sorted(executables):
         yield t == editor.conf['PYTHON_EXECUTABLE'], t, t, (set_python_executable, (editor, t))
 
 def resolve_python_executable_menu_entry(editor, entry_id):
