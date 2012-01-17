@@ -7,9 +7,8 @@ from snaked.util import lazy_property
 from snaked.signals import connect_external, connect_all
 from snaked.core.completer import add_completion_provider, attach_completer
 
-from .utils import get_executable
+from .utils import get_env
 
-environments = {}
 configured_projects = {}
 
 class Plugin(object):
@@ -29,16 +28,7 @@ class Plugin(object):
 
     @property
     def env(self):
-        executable = get_executable(self.editor.conf)
-        env = self.editor.conf['PYTHON_EXECUTABLE_ENV']
-
-        try:
-            env = environments[executable]
-        except KeyError:
-            import supplement.remote
-            env = environments[executable] = supplement.remote.Environment(executable, env)
-
-        return env
+        return get_env(self.editor.conf)
 
     @lazy_property
     def project_path(self):

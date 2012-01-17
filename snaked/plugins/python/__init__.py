@@ -52,6 +52,7 @@ def init(injector):
 
     injector.on_ready('editor-with-new-buffer-created', editor_created)
     injector.on_ready('editor-with-new-buffer', editor_opened)
+    injector.on_ready('manager', start_supplement)
     injector.on_done('last-buffer-editor', editor_closed)
     injector.on_done('manager', quit)
 
@@ -103,9 +104,8 @@ def quit(manager):
         outline_dialog.window.destroy()
         del outline_dialog
 
-    import plugin
-    for v in plugin.environments.values():
-        v.close()
+    from .utils import close_envs
+    close_envs()
 
 def goto_definition(editor):
     try:
@@ -270,9 +270,10 @@ def rerun_test(editor):
             editor.message('You did not run any test yet', 'warn')
 
 def set_python_executable(editor, name):
-    from .utils import get_executable
+    from .utils import get_executable, get_env
     editor.conf['PYTHON_EXECUTABLE'] = name
     editor.message('Python executable was set to:\n' + get_executable(editor.conf))
+    get_env(editor.conf).prepare()
 
 def generate_python_executable_menu(editor):
     from .utils import get_virtualenvwrapper_executables
@@ -287,4 +288,6 @@ def resolve_python_executable_menu_entry(editor, entry_id):
     return entry_id == editor.conf['PYTHON_EXECUTABLE'], set_python_executable,\
         (editor, entry_id), entry_id
 
-
+def start_supplement(manager):
+    from .utils import get_env
+    get_env(manager.conf).prepare()

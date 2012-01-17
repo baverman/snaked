@@ -2,6 +2,8 @@ import sys
 import os
 from os.path import exists, join, expanduser, isdir, realpath
 
+environments = {}
+
 def which(binary_name):
     for p in os.environ.get('PATH', '').split(os.pathsep):
         path = join(p, binary_name)
@@ -54,3 +56,19 @@ def get_executable(conf):
             return path
 
     return sys.executable
+
+def get_env(conf):
+    executable = get_executable(conf)
+
+    try:
+        env = environments[executable]
+    except KeyError:
+        import supplement.remote
+        env = environments[executable] = supplement.remote.Environment(
+            executable, conf['PYTHON_EXECUTABLE_ENV'])
+
+    return env
+
+def close_envs():
+    for v in environments.values():
+        v.close()
