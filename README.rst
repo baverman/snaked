@@ -39,7 +39,7 @@ Changes from v0.4 (implemented already)
 * Python plugin:
 
   * Dropped rope support in favor of
-    `supplement <https://github.com/baverman/sipplement>`_.
+    `supplement <https://github.com/baverman/supplement>`_.
 
   * Py3 support.
 
