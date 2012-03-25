@@ -7,8 +7,6 @@ import pytest
 class Collector(object):
     def __init__(self, send):
         self.send = send
-        self._durations = {}
-        self.tests = []
 
     def extract_trace(self, excinfo):
         """:type excinfo: py._code.code.ReprExceptionInfo"""
@@ -29,6 +27,9 @@ class Collector(object):
     def pytest_runtest_logreport(self, report):
         """:type report: _pytest.runner.TestReport()"""
 
+        if report.when != 'call':
+            return
+
         if report.passed:
             self.send(('PASS', report.nodeid))
         elif report.failed:
@@ -41,23 +42,8 @@ class Collector(object):
         elif report.skipped:
             self.send(('SKIP', report.nodeid))
 
-    def pytest_runtest_call(self, item, __multicall__):
-        names = tuple(item.listnames())
+    def pytest_runtest_call(self, item):
         self.send(('ITEM_CALL', item.nodeid))
-        start = time.time()
-        try:
-            return __multicall__.execute()
-        finally:
-            self._durations[names] = time.time() - start
-
-    def get_parents(self, node):
-        while True:
-            parent = node.parent
-            if parent:
-                yield parent.name
-                node = parent
-            else:
-                break
 
     def pytest_collectreport(self, report):
         """:type report: _pytest.runner.CollectReport()"""
@@ -72,22 +58,29 @@ class Collector(object):
         self.suite_start_time = time.time()
         self.send(('START', str(session.fspath)))
 
-    def pytest_sessionfinish(self, session, exitstatus, __multicall__):
+    def pytest_sessionfinish(self, session, exitstatus):
         self.send(('END', ))
 
-    def pytest_collection_finish(self):
-        self.send(('COLLECTED_TESTS', self.tests))
+    def pytest_collection_finish(self, session):
+        self.send(('COLLECTED_TESTS', [t.nodeid for t in session.items]))
 
-    def pytest_deselected(self, items):
-        for node in items:
-            self.tests.remove(node.nodeid)
 
-    def pytest_itemcollected(self, item):
-        self.tests.append(item.nodeid)
-
-    #def __getattr__(self, name):
-    #    print 'getattr', name
-    #    raise AttributeError()
+#class Collector(object):
+#    def __init__(self, *args, **kwargs):
+#        self.f = open('/tmp/result.txt', 'w')
+#
+#    def __getattr__(self, name):
+#        if not name.startswith('pytest_'):
+#            raise AttributeError(name)
+#
+#        from _pytest import hookspec
+#        import inspect
+#
+#        space = {'f':self.f}
+#        exec 'def {0}{1}:\n    print >>f, "{0}{1}", locals()'.format(
+#            name, inspect.formatargspec(*inspect.getargspec(getattr(hookspec, name)))) in space
+#
+#        return space[name]
 
 
 if __name__ == '__main__':

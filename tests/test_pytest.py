@@ -1,7 +1,7 @@
 import sys
 import time
 
-from snaked.util import join_to_file_dir
+from uxie.utils import join_to_file_dir
 from snaked.plugins.python.pytest_launcher import run_test
 
 def collect_results(proc, conn):
