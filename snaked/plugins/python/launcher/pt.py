@@ -1,8 +1,24 @@
-import time
 import sys
+import os
 
-import pytest
+try:
+    import pytest
+except ImportError:
+    fname = os.__file__
+    if fname.endswith('.pyc'):
+        fname = fname[:-1]
 
+    if not os.path.islink(fname):
+        raise
+
+    real_prefix = os.path.dirname(os.path.realpath(fname))
+    site_packages = os.path.join(real_prefix, 'site-packages')
+    old_path = sys.path
+    sys.path = old_path + [site_packages]
+    try:
+        import pytest
+    finally:
+        sys.path = old_path
 
 class Collector(object):
     def __init__(self, send):
@@ -55,7 +71,6 @@ class Collector(object):
         self.send(('INTERNAL_ERROR', excrepr))
 
     def pytest_sessionstart(self, session):
-        self.suite_start_time = time.time()
         self.send(('START', str(session.fspath)))
 
     def pytest_sessionfinish(self, session, exitstatus):
