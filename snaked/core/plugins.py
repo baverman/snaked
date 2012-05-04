@@ -9,7 +9,7 @@ snaked.plugins.__path__.insert(0, join_to_data_dir('snaked', 'plugins'))
 
 default_enabled_plugins = ['save_positions', 'edit_and_select',
     'python', 'complete_words', 'hash_comment', 'python_flakes', 'goto_line',
-    'goto_dir', 'search']
+    'search']
 
 enabled_plugins = []
 
